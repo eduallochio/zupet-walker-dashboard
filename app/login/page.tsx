@@ -1,9 +1,9 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
-export default function LoginPage() {
+function LoginForm() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const [email,    setEmail]    = useState('');
@@ -358,5 +358,13 @@ export default function LoginPage() {
         .login-footer-note a:hover { text-decoration: underline; }
       `}</style>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh', background: '#0a0f0d' }} />}>
+      <LoginForm />
+    </Suspense>
   );
 }
