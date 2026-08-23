@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
   const { data: profile } = await supabaseAdmin
     .from('walker_profiles')
     .select('id')
-    .eq('id', data.session.user.id)
+    .eq('user_id', data.session.user.id)
     .single();
 
   if (!profile) {

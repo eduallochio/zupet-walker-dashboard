@@ -32,7 +32,7 @@ function LoginForm() {
     const { data: profile } = await supabase
       .from('walker_profiles')
       .select('id')
-      .eq('id', data.user.id)
+      .eq('user_id', data.user.id)
       .single();
     if (!profile) {
       await supabase.auth.signOut();
