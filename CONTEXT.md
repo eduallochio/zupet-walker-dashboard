@@ -33,10 +33,34 @@ Usa o **mesmo Supabase** dos outros projetos (zupet, zupet-walker, zupet-dashboa
 Ver `.env.local.example`. Nunca commitar `.env.local`.
 
 ## Tabelas Supabase usadas
-- `walker_profiles` — `id, name, bio, phone, city, plan, rating, total_walks, created_at`
-- `walk_sessions` — passeios realizados
-- `walk_reports` — relatórios com fotos e eventos
-- `walker_payments` — `id, walker_id, amount, status, description, paid_at, created_at`
+
+> ⚠️ IMPORTANTE: Antes de referenciar qualquer coluna, consultar o schema real via MCP Supabase
+> (`list_tables` ou `execute_sql SELECT column_name FROM information_schema.columns WHERE table_name='...'`).
+> Nunca assumir colunas pelo CONTEXT.md — ele pode estar desatualizado.
+
+### `walker_profiles`
+| Coluna | Tipo | Obs |
+|--------|------|-----|
+| `id` | UUID | PK próprio (≠ auth.users.id) |
+| `user_id` | UUID NOT NULL | FK para `auth.users.id` — usar este para vincular ao usuário autenticado |
+| `name` | text | |
+| `bio` | text | |
+| `city` | text | |
+| `state` | text | |
+| `active` | bool | |
+| `plan` | text | `'free'` ou `'pro'` |
+| `rating` | numeric | |
+| `price_per_hour` | numeric | |
+| `experience_years` | int | |
+| `services` | text[] | ex: `{walk, daycare}` |
+| `avatar_url` | text | |
+| `created_at` | timestamptz | |
+
+### `walker_payments`
+`id, walker_id, amount, status, description, paid_at, created_at`
+
+### `walk_sessions` / `walk_reports`
+Passeios realizados e relatórios com fotos/eventos.
 
 ## Fluxo de assinatura Pro
 1. Walker acessa `/dashboard/pro` e vê a chave Pix + instruções
