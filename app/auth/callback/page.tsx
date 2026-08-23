@@ -13,6 +13,8 @@ export default function AuthCallbackPage() {
       if (done) return;
       done = true;
 
+      const { data: { session } } = await supabase.auth.getSession();
+
       const { data: profile } = await supabase
         .from('walker_profiles')
         .select('id')
@@ -22,9 +24,18 @@ export default function AuthCallbackPage() {
       if (!profile) {
         await supabase.auth.signOut();
         router.replace('/login?error=not_walker');
-      } else {
-        router.replace('/dashboard');
+        return;
       }
+
+      // Setar cookies que o middleware verifica
+      if (session) {
+        const maxAge7d  = 60 * 60 * 24 * 7;
+        const maxAge30d = 60 * 60 * 24 * 30;
+        document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=${maxAge7d}; samesite=lax`;
+        document.cookie = `sb-refresh-token=${session.refresh_token}; path=/; max-age=${maxAge30d}; samesite=lax`;
+      }
+
+      router.replace('/dashboard');
     };
 
     // Escuta eventos do Supabase — processa hash #access_token automaticamente
