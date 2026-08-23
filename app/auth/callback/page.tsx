@@ -7,46 +7,52 @@ export default function AuthCallbackPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const handle = async () => {
-      // Fluxo PKCE: ?code= no search params (processado pelo Supabase automaticamente)
-      // Fluxo implicit: #access_token= no hash
-      const { data: { session }, error } = await supabase.auth.getSession();
+    let done = false;
 
-      if (error || !session) {
-        router.replace('/login?error=auth_failed');
-        return;
-      }
+    const checkProfile = async (userId: string) => {
+      if (done) return;
+      done = true;
 
-      // Verificar se tem walker_profile vinculado
       const { data: profile } = await supabase
         .from('walker_profiles')
         .select('id')
-        .eq('user_id', session.user.id)
+        .eq('user_id', userId)
         .single();
 
       if (!profile) {
         await supabase.auth.signOut();
         router.replace('/login?error=not_walker');
-        return;
+      } else {
+        router.replace('/dashboard');
       }
-
-      router.replace('/dashboard');
     };
 
-    // Aguarda o Supabase processar o hash antes de chamar getSession
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        subscription.unsubscribe();
-        handle();
-      } else if (event === 'SIGNED_OUT') {
-        router.replace('/login?error=auth_failed');
+    // Escuta eventos do Supabase — processa hash #access_token automaticamente
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
+        checkProfile(session.user.id);
       }
     });
 
-    // Fallback: se já há sessão (ex: PKCE já processado)
-    handle();
+    // Verifica se já existe sessão ativa (ex: usuário volta à página)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session && !done) {
+        checkProfile(session.user.id);
+      }
+    });
 
-    return () => subscription.unsubscribe();
+    // Timeout de segurança: se nada acontecer em 8s, volta ao login
+    const timeout = setTimeout(() => {
+      if (!done) {
+        done = true;
+        router.replace('/login?error=auth_failed');
+      }
+    }, 8000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, [router]);
 
   return (
