@@ -94,6 +94,12 @@ export async function WalkersSection() {
       <div className="wk-chroma-wrap" suppressHydrationWarning>
         <WalkersGridClient items={items} />
       </div>
+      <div className="wk-cta-wrap" suppressHydrationWarning>
+        <p className="wk-cta-text" suppressHydrationWarning>Você ama cuidar de pets? Faça parte da nossa comunidade.</p>
+        <a href="https://walker.zupet.io" target="_blank" rel="noopener noreferrer" className="wk-cta-btn">
+          Seja um Walker
+        </a>
+      </div>
     </section>
   );
 }

@@ -590,12 +590,41 @@ body {
 
 /* ── WALKERS SECTION ── */
 .wk-section {
-  padding: 80px 6vw;
+  padding: 56px 6vw 64px;
   border-top: 1px solid var(--border);
 }
 .wk-chroma-wrap {
-  margin-top: 44px;
-  min-height: 420px;
+  margin-top: 36px;
+  min-height: 380px;
+}
+.wk-cta-wrap {
+  margin-top: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+}
+.wk-cta-text {
+  font-size: .95rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+.wk-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-size: .9rem;
+  font-weight: 700;
+  padding: 12px 28px;
+  border-radius: 100px;
+  text-decoration: none;
+  transition: opacity .2s, transform .2s;
+}
+.wk-cta-btn:hover {
+  opacity: .88;
+  transform: translateY(-1px);
 }
 
 /* ── WALKERS SKELETON ── */

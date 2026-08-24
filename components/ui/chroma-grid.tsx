@@ -3,6 +3,8 @@ import React, { useRef, useEffect } from 'react';
 import { gsap } from 'gsap';
 import { SiInstagram, SiWhatsapp } from 'react-icons/si';
 
+const FALLBACK_GRADIENT = 'linear-gradient(145deg, #166534, #0a0f0d)';
+
 export interface ChromaItem {
   image: string;
   title: string;
@@ -100,7 +102,7 @@ const ChromaGrid: React.FC<ChromaGridProps> = ({
       ref={rootRef}
       onPointerMove={handleMove}
       onPointerLeave={handleLeave}
-      className={`relative w-full h-full flex flex-wrap justify-center items-start gap-3 ${className}`}
+      className={`relative w-full h-full flex flex-wrap justify-start items-start gap-4 ${className}`}
       style={{ '--r': `${radius}px`, '--x': '50%', '--y': '50%' } as React.CSSProperties}
     >
       {data.map((c, i) => {
@@ -115,9 +117,9 @@ const ChromaGrid: React.FC<ChromaGridProps> = ({
           <article
             key={i}
             onMouseMove={handleCardMove}
-            className="group relative flex flex-col w-[280px] rounded-[22px] overflow-hidden transition-transform duration-300 cursor-pointer hover:scale-[1.03]"
+            className="group relative flex flex-col w-[320px] rounded-[22px] overflow-hidden transition-transform duration-300 cursor-pointer hover:scale-[1.03]"
             style={{
-              background: c.gradient,
+              background: c.gradient || FALLBACK_GRADIENT,
               border: `1.5px solid ${c.borderColor || 'rgba(255,255,255,0.12)'}`,
               '--spotlight-color': 'rgba(255,255,255,0.25)',
               boxShadow: '0 8px 32px rgba(0,0,0,0.45)',
@@ -140,7 +142,7 @@ const ChromaGrid: React.FC<ChromaGridProps> = ({
                   width: 88, height: 88,
                   border: `3px solid ${c.borderColor ?? 'rgba(255,255,255,0.3)'}`,
                   boxShadow: `0 0 0 3px rgba(0,0,0,0.3), 0 4px 16px rgba(0,0,0,0.5)`,
-                  background: isInitials ? 'rgba(255,255,255,0.08)' : undefined,
+                  background: isInitials ? 'transparent' : undefined,
                 }}
               >
                 <img
@@ -181,7 +183,7 @@ const ChromaGrid: React.FC<ChromaGridProps> = ({
                     <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.72rem] font-semibold"
                       style={{ background: 'rgba(37,211,102,0.18)', color: '#4ade80', border: '1px solid rgba(37,211,102,0.3)' }}>
                       <SiWhatsapp size={11} />
-                      {whatsapp.replace(/\D/g, '')}
+                      WhatsApp
                     </span>
                   )}
                 </div>
