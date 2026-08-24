@@ -80,6 +80,7 @@ export default function LandingPage() {
           <a href="#como-funciona" className="lp-nav-text">Como funciona</a>
           <a href="#planos"       className="lp-nav-text">Planos</a>
           <Link href="/cadastro"  className="lp-nav-text">Ser walker</Link>
+          <Link href="/cadastro"  className="lp-nav-cta-cadastro">Ser walker</Link>
           <Link href="/login" className="lp-nav-cta">Entrar</Link>
         </div>
       </nav>
