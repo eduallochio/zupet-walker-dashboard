@@ -36,7 +36,7 @@ function buildInitialsImage(name: string): string {
 export async function WalkersSection() {
   const { data: walkers } = await supabaseAdmin
     .from('walker_profiles')
-    .select('id, name, city, state, bio, avatar_url, rating, social_links')
+    .select('id, name, city, state, bio, avatar_url, rating, social_links, show_prices')
     .eq('active', true)
     .order('rating', { ascending: false, nullsFirst: false })
     .limit(6);
@@ -76,7 +76,8 @@ export async function WalkersSection() {
       meta: {
         bio: w.bio,
         rating: w.rating,
-        services: servicesMap[w.id] ?? [],
+        services: (w as any).show_prices !== false ? (servicesMap[w.id] ?? []) : [],
+        showPrices: (w as any).show_prices !== false,
         instagram,
         tiktok: (w.social_links as any)?.tiktok ?? null,
         whatsapp: (w.social_links as any)?.whatsapp ?? null,
