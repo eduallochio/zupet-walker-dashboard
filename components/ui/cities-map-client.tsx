@@ -1,6 +1,8 @@
 'use client';
-import { useState } from 'react';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore — react-simple-maps has no @types package; works correctly at runtime
 import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
+import React, { useState } from 'react';
 
 const GEO_URL = '/brazil-states.geojson';
 
@@ -51,8 +53,8 @@ export function CitiesMapClient({ cities, total }: CitiesMapClientProps) {
           style={{ width: '100%', height: 'auto' }}
         >
           <Geographies geography={GEO_URL}>
-            {({ geographies }) =>
-              geographies.map((geo) => {
+            {({ geographies }: { geographies: any[] }) =>
+              geographies.map((geo: any) => {
                 const uf: string = geo.properties.sigla;
                 const hasWalkers = statesWithWalkers.has(uf);
                 const isSelected = selected === uf;
@@ -63,7 +65,7 @@ export function CitiesMapClient({ cities, total }: CitiesMapClientProps) {
                     key={geo.rsmKey}
                     geography={geo}
                     onClick={() => setSelected(isSelected ? null : uf)}
-                    onMouseEnter={(e) => {
+                    onMouseEnter={(e: React.MouseEvent<SVGPathElement>) => {
                       const rect = (e.target as SVGPathElement)
                         .closest('svg')!
                         .getBoundingClientRect();
