@@ -96,9 +96,9 @@ export function ParallaxHero({ photoUrl, photoPosition = 'center 40%' }: Paralla
 
         <div ref={statsRef} className="parallax-stats">
           {[
-            { n: 'GPS',    l: 'Rota em tempo real' },
-            { n: 'Fotos',  l: 'Relatório automático' },
-            { n: 'Pix',    l: 'Pagamento direto' },
+            { n: 'GPS',      l: 'Rota em tempo real' },
+            { n: 'Fotos',    l: 'Relatório automático' },
+            { n: 'Agenda',   l: 'Gestão de agendamentos' },
           ].map((s) => (
             <div key={s.l} className="parallax-stat">
               <div className="parallax-stat-n">{s.n}</div>
