@@ -36,35 +36,54 @@ function buildInitialsImage(name: string): string {
 export async function WalkersSection() {
   const { data: walkers } = await supabaseAdmin
     .from('walker_profiles')
-    .select('id, name, city, state, bio, avatar_url, price_per_hour, rating, experience_years, services')
+    .select('id, name, city, state, bio, avatar_url, rating, social_links')
     .eq('active', true)
     .order('rating', { ascending: false, nullsFirst: false })
     .limit(6);
 
   if (!walkers || walkers.length === 0) return null;
 
+  // Busca o serviço de passeio mais barato de cada walker para exibir preço
+  const walkerIds = walkers.map((w) => w.id);
+  const { data: services } = await supabaseAdmin
+    .from('walker_services')
+    .select('walker_id, type, price')
+    .in('walker_id', walkerIds)
+    .eq('active', true)
+    .not('price', 'is', null)
+    .order('price', { ascending: true });
+
+  // Monta mapa walker_id → preço mínimo de passeio (type = walk) ou qualquer serviço
+  const priceMap: Record<string, number> = {};
+  (services ?? []).forEach((s: any) => {
+    if (s.type === 'walk' || !priceMap[s.walker_id]) {
+      if (!priceMap[s.walker_id] || s.type === 'walk') {
+        priceMap[s.walker_id] = s.price;
+      }
+    }
+  });
+
   const items: ChromaItem[] = walkers.map((w, i) => {
     const location = [w.city, w.state].filter(Boolean).join(', ');
-    const priceLabel = w.price_per_hour
-      ? `R$ ${Number(w.price_per_hour).toFixed(0)}/h`
-      : 'Consultar';
+    const price = priceMap[w.id];
+    const priceLabel = price != null ? `R$ ${Number(price).toFixed(0)}/sessão` : 'Consultar';
     const ratingLabel = w.rating ? `⭐ ${Number(w.rating).toFixed(1)}` : null;
     const subtitle = [priceLabel, ratingLabel].filter(Boolean).join('  ·  ');
+    const instagram = (w.social_links as any)?.instagram ?? null;
 
     return {
       image: w.avatar_url || buildInitialsImage(w.name),
       title: w.name,
       subtitle,
       location: location || undefined,
-      handle: w.experience_years ? `${w.experience_years} anos exp.` : undefined,
+      handle: instagram ? `@${instagram.replace(/^@/, '')}` : undefined,
       borderColor: BORDER_COLORS[i % BORDER_COLORS.length],
       gradient: GRADIENTS[i % GRADIENTS.length],
       meta: {
         bio: w.bio,
         rating: w.rating,
-        price_per_hour: w.price_per_hour,
-        experience_years: w.experience_years,
-        services: w.services,
+        price,
+        instagram,
         city: w.city,
         state: w.state,
       },

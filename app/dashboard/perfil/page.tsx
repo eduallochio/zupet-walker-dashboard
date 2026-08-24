@@ -17,12 +17,12 @@ export default async function PerfilPage() {
   const { data: profile } = await supabase
     .from('walker_profiles')
     .select('name, bio, phone, city, plan')
-    .eq('id', user.id)
+    .eq('user_id', user.id)
     .single();
 
   return (
-    <div className="space-y-6 max-w-xl">
-      <h1 className="text-2xl font-extrabold text-gray-900">Meu Perfil</h1>
+    <div style={{ maxWidth: 520 }}>
+      <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0D2926', letterSpacing: '-0.03em', marginBottom: 28 }}>Meu Perfil</h1>
       <ProfileForm
         initialName={profile?.name ?? ''}
         initialBio={profile?.bio ?? ''}

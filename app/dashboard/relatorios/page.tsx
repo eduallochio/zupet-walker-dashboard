@@ -13,47 +13,134 @@ export default async function RelatoriosPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data: reports } = await supabase
+  const { data: profile } = await supabase
+    .from('walker_profiles').select('id').eq('user_id', user.id).single();
+
+  const { data: reports } = profile?.id ? await supabase
     .from('walk_reports')
-    .select('id, created_at, duration_minutes, distance_meters, pee_count, poop_count, note_count, photos, notes')
-    .eq('walker_id', user.id)
+    .select('id, created_at, duration_minutes, distance_meters, pee_count, poop_count, note_count, photos, notes, pet_ids, owner_id')
+    .eq('walker_id', profile.id)
     .order('created_at', { ascending: false })
-    .limit(50);
+    .limit(50) : { data: [] };
+
+  const rows = (reports ?? []) as any[];
+
+  // Buscar nomes dos pets
+  const allPetIds = [...new Set(rows.flatMap((r: any) => r.pet_ids ?? []))];
+  let petNames: Record<string, string> = {};
+  if (allPetIds.length > 0) {
+    const { data: petsData } = await supabase
+      .from('pets').select('id, name').in('id', allPetIds);
+    (petsData ?? []).forEach((p: any) => { petNames[p.id] = p.name; });
+  }
+
+  // Buscar nomes dos tutores
+  const ownerIds = [...new Set(rows.map((r: any) => r.owner_id).filter(Boolean))];
+  let ownerNames: Record<string, string> = {};
+  if (ownerIds.length > 0) {
+    const { data: owners } = await supabase
+      .from('user_profiles').select('user_id, name').in('user_id', ownerIds);
+    (owners ?? []).forEach((o: any) => { ownerNames[o.user_id] = o.name; });
+  }
+
+  // Totais gerais
+  const totalDist = rows.reduce((s: number, r: any) => s + (r.distance_meters ?? 0), 0);
+  const totalMin  = rows.reduce((s: number, r: any) => s + (r.duration_minutes ?? 0), 0);
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-extrabold text-gray-900">Relatórios de Passeio</h1>
+      <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0D2926', letterSpacing: '-0.03em', marginBottom: 28 }}>
+        Relatórios de Passeio
+      </h1>
 
-      {!reports?.length && (
-        <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center text-gray-400">
+      {/* Resumo geral */}
+      {rows.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }}>
+          {[
+            { label: 'Passeios', value: String(rows.length) },
+            { label: 'Tempo total', value: totalMin >= 60 ? `${Math.floor(totalMin / 60)}h ${totalMin % 60}min` : `${totalMin}min` },
+            { label: 'Distância total', value: `${(totalDist / 1000).toFixed(1)} km` },
+          ].map(({ label, value }) => (
+            <div key={label} style={{ background: '#fff', border: '1px solid #D1EEEA', borderRadius: 12, padding: '16px 18px' }}>
+              <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 10 }}>{label}</p>
+              <p style={{ fontSize: 26, fontWeight: 800, color: '#0D2926', letterSpacing: '-0.04em', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{value}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!rows.length && (
+        <div style={{ background: '#fff', border: '1px solid #D1EEEA', borderRadius: 12, padding: '48px 20px', textAlign: 'center', color: '#6B7280', fontSize: 14 }}>
           Nenhum relatório ainda.
         </div>
       )}
 
-      <div className="space-y-4">
-        {reports?.map((r: any) => (
-          <div key={r.id} className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <p className="font-bold text-gray-800">{formatDate(r.created_at)}</p>
-              <span className="text-xs text-gray-400">{formatDuration(r.duration_minutes)}</span>
-            </div>
-            <div className="flex gap-4 text-sm text-gray-600 flex-wrap">
-              <span>📍 {(r.distance_meters / 1000).toFixed(1)} km</span>
-              {r.pee_count > 0  && <span>💧 {r.pee_count} xixi</span>}
-              {r.poop_count > 0 && <span>💩 {r.poop_count} cocô</span>}
-              {r.note_count > 0 && <span>📝 {r.note_count} notas</span>}
-            </div>
-            {r.notes && <p className="mt-3 text-sm text-gray-500 italic">{r.notes}</p>}
-            {r.photos?.length > 0 && (
-              <div className="flex gap-2 mt-3 flex-wrap">
-                {r.photos.map((url: string, i: number) => (
-                  <img key={i} src={url} alt="foto do passeio"
-                    className="w-20 h-20 object-cover rounded-xl border border-gray-100" />
-                ))}
-              </div>
-            )}
+      {/* Lista */}
+      <div style={{ background: '#fff', border: '1px solid #D1EEEA', borderRadius: 12, overflow: 'hidden' }}>
+        {rows.length > 0 && (
+          <div style={{ padding: '16px 20px 14px', borderBottom: '1px solid #e8f4f2' }}>
+            <h2 style={{ fontWeight: 700, fontSize: 13, color: '#0D2926', letterSpacing: '-0.01em' }}>Todos os passeios</h2>
           </div>
-        ))}
+        )}
+        <ul>
+          {rows.map((r: any, i: number) => {
+            const pets = (r.pet_ids ?? []).map((id: string) => petNames[id] ?? id);
+            const owner = ownerNames[r.owner_id];
+            return (
+              <li key={r.id} style={{ padding: '16px 20px', borderTop: i > 0 ? '1px solid #e8f4f2' : 'none' }}>
+                {/* Cabeçalho do card */}
+                <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
+                  <div>
+                    <p style={{ fontWeight: 700, color: '#0D2926', fontSize: 14 }}>{formatDate(r.created_at)}</p>
+                    {owner && <p style={{ fontSize: 12, color: '#6B7280', marginTop: 1 }}>👤 {owner}</p>}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 12, color: '#6B7280', background: '#F5FAFA', border: '1px solid #D1EEEA', padding: '3px 10px', borderRadius: 20 }}>
+                      {formatDuration(r.duration_minutes)}
+                    </span>
+                    <a href={`/dashboard/relatorios/${r.id}`} style={{ fontSize: 12, fontWeight: 600, color: '#00A88E', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                      Ver detalhes →
+                    </a>
+                  </div>
+                </div>
+
+                {/* Pets */}
+                {pets.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                    {pets.map((name: string, j: number) => (
+                      <span key={j} style={{ fontSize: 12, fontWeight: 600, color: '#00A88E', background: '#D1EEEA', padding: '2px 10px', borderRadius: 20 }}>
+                        🐾 {name}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Stats */}
+                <div className="flex gap-4 flex-wrap" style={{ fontSize: 13, color: '#4a6b65' }}>
+                  {r.distance_meters > 0  && <span>📍 {(r.distance_meters / 1000).toFixed(1)} km</span>}
+                  {r.pee_count > 0        && <span>💧 {r.pee_count} xixi</span>}
+                  {r.poop_count > 0       && <span>💩 {r.poop_count} cocô</span>}
+                  {r.note_count > 0       && <span>📝 {r.note_count} nota{r.note_count > 1 ? 's' : ''}</span>}
+                </div>
+
+                {/* Notas gerais */}
+                {r.notes && (
+                  <p style={{ marginTop: 8, fontSize: 13, color: '#6B7280', fontStyle: 'italic' }}>{r.notes}</p>
+                )}
+
+                {/* Fotos */}
+                {r.photos?.length > 0 && (
+                  <div className="flex gap-2 mt-3 flex-wrap">
+                    {r.photos.map((url: string, j: number) => (
+                      <img key={j} src={url} alt="foto do passeio"
+                        style={{ width: 76, height: 76, objectFit: 'cover', borderRadius: 8, border: '1px solid #D1EEEA' }} />
+                    ))}
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
       </div>
     </div>
   );

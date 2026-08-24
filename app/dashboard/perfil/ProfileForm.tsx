@@ -23,9 +23,9 @@ export default function ProfileForm({
   const [bio,   setBio]   = useState(initialBio);
   const [phone, setPhone] = useState(initialPhone);
   const [city,  setCity]  = useState(initialCity);
-  const [saving,   setSaving]   = useState(false);
-  const [success,  setSuccess]  = useState(false);
-  const [error,    setError]    = useState('');
+  const [saving,  setSaving]  = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error,   setError]   = useState('');
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,49 +42,81 @@ export default function ProfileForm({
     const { error: err } = await supabase
       .from('walker_profiles')
       .update({ name, bio, phone, city })
-      .eq('id', userId);
+      .eq('user_id', userId);
 
     if (err) setError(err.message);
     else setSuccess(true);
     setSaving(false);
   };
 
-  const inputCls = 'w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white';
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    border: '1px solid #D1EEEA',
+    borderRadius: 10,
+    padding: '11px 14px',
+    fontSize: 14,
+    color: '#0D2926',
+    background: '#fff',
+    outline: 'none',
+    fontFamily: 'inherit',
+  };
+
+  const labelStyle: React.CSSProperties = {
+    display: 'block',
+    fontSize: 11,
+    fontWeight: 600,
+    letterSpacing: '0.05em',
+    textTransform: 'uppercase',
+    color: '#6B7280',
+    marginBottom: 6,
+  };
 
   return (
-    <form onSubmit={save} className="space-y-5">
-      <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl border border-gray-100">
-        <span className="text-2xl">{plan === 'pro' ? '⭐' : '🆓'}</span>
+    <form onSubmit={save} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {/* Plano badge */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: '#F5FAFA', borderRadius: 10, border: '1px solid #D1EEEA' }}>
+        <span style={{ fontSize: 22 }}>{plan === 'pro' ? '✦' : '○'}</span>
         <div>
-          <p className="font-semibold text-gray-800">{plan === 'pro' ? 'Plano Pro' : 'Plano Gratuito'}</p>
-          <p className="text-xs text-gray-500">{plan === 'pro' ? 'Todos os recursos liberados' : 'Atualize para Pro para desbloquear mais'}</p>
+          <p style={{ fontWeight: 700, color: '#0D2926', fontSize: 14 }}>{plan === 'pro' ? 'Plano Pro' : 'Plano Gratuito'}</p>
+          <p style={{ fontSize: 12, color: '#6B7280' }}>{plan === 'pro' ? 'Todos os recursos liberados' : 'Faça upgrade para desbloquear mais'}</p>
         </div>
       </div>
 
       <div>
-        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Nome</label>
-        <input value={name} onChange={(e) => setName(e.target.value)} className={inputCls} required />
+        <label style={labelStyle}>Nome</label>
+        <input value={name} onChange={(e) => setName(e.target.value)} style={inputStyle} required />
       </div>
       <div>
-        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Bio</label>
-        <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={4} className={inputCls} />
+        <label style={labelStyle}>Bio</label>
+        <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={4} style={{ ...inputStyle, resize: 'vertical' }} />
       </div>
       <div>
-        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Telefone</label>
-        <input value={phone} onChange={(e) => setPhone(e.target.value)} className={inputCls} />
+        <label style={labelStyle}>Telefone</label>
+        <input value={phone} onChange={(e) => setPhone(e.target.value)} style={inputStyle} />
       </div>
       <div>
-        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Cidade</label>
-        <input value={city} onChange={(e) => setCity(e.target.value)} className={inputCls} />
+        <label style={labelStyle}>Cidade</label>
+        <input value={city} onChange={(e) => setCity(e.target.value)} style={inputStyle} />
       </div>
 
-      {error   && <p className="text-red-500 text-sm">{error}</p>}
-      {success && <p className="text-emerald-600 text-sm font-medium">Perfil salvo com sucesso!</p>}
+      {error   && <p style={{ color: '#991b1b', fontSize: 13 }}>{error}</p>}
+      {success && <p style={{ color: '#00A88E', fontSize: 13, fontWeight: 600 }}>Perfil salvo com sucesso!</p>}
 
       <button
         type="submit"
         disabled={saving}
-        className="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-700 transition disabled:opacity-60"
+        style={{
+          background: saving ? '#9CA3AF' : '#00C6A7',
+          color: '#fff',
+          fontWeight: 700,
+          fontSize: 14,
+          padding: '12px 0',
+          borderRadius: 10,
+          border: 'none',
+          cursor: saving ? 'not-allowed' : 'pointer',
+          fontFamily: 'inherit',
+          transition: 'opacity 0.15s',
+        }}
       >
         {saving ? 'Salvando...' : 'Salvar alterações'}
       </button>

@@ -21,13 +21,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const { data: profile } = await supabase
     .from('walker_profiles')
     .select('name, plan, avatar_url')
-    .eq('id', user.id)
+    .eq('user_id', user.id)
     .single();
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen" style={{ background: '#F5FAFA' }}>
       <WalkerSidebar profile={profile} />
-      <main className="flex-1 p-8 overflow-auto">{children}</main>
+      <main className="flex-1 overflow-auto" style={{ marginLeft: 240, padding: '36px 40px', maxWidth: 'calc(100vw - 240px)' }}>{children}</main>
     </div>
   );
 }
