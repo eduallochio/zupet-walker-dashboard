@@ -76,7 +76,7 @@ export async function WalkersSection() {
       meta: {
         bio: w.bio,
         rating: w.rating,
-        services: (w as any).show_prices !== false ? (servicesMap[w.id] ?? []) : [],
+        services: servicesMap[w.id] ?? [],
         showPrices: (w as any).show_prices !== false,
         instagram,
         tiktok: (w.social_links as any)?.tiktok ?? null,

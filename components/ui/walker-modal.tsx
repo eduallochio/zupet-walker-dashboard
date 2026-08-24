@@ -33,6 +33,7 @@ export function WalkerModal({ item, onClose }: WalkerModalProps) {
   const meta = item.meta ?? {};
   const bio = typeof meta.bio === 'string' ? meta.bio : null;
   const rating = meta.rating != null ? Number(meta.rating) : null;
+  const showPrices = meta.showPrices !== false;
   const instagram = typeof meta.instagram === 'string' ? meta.instagram.replace(/^@/, '') : null;
   const whatsapp = typeof meta.whatsapp === 'string' ? meta.whatsapp.replace(/\D/g, '') : null;
   const tiktok = typeof meta.tiktok === 'string' ? meta.tiktok.replace(/^@/, '') : null;
@@ -119,7 +120,12 @@ export function WalkerModal({ item, onClose }: WalkerModalProps) {
                       <span>{SERVICE_ICONS[s.type] ?? '🐾'}</span>
                       {s.label}
                     </span>
-                    <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#4ade80' }}>{fmtPrice(s)}</span>
+                    {showPrices && (
+                      <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#4ade80' }}>{fmtPrice(s)}</span>
+                    )}
+                    {!showPrices && (
+                      <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)' }}>Consultar</span>
+                    )}
                   </div>
                 ))}
               </div>
