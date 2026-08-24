@@ -715,6 +715,7 @@ body {
 .lp-cities {
   padding: 80px 6vw;
   border-top: 1px solid var(--border);
+  text-align: center;
 }
 .lp-cities-sub {
   color: var(--muted);
@@ -723,6 +724,8 @@ body {
   margin-bottom: 32px;
   max-width: 480px;
   line-height: 1.6;
+  margin-left: auto;
+  margin-right: auto;
 }
 .lp-cities-grid {
   display: flex;
@@ -736,6 +739,8 @@ body {
   grid-template-columns: 380px 1fr;
   gap: 40px;
   align-items: start;
+  max-width: 900px;
+  margin: 0 auto;
 }
 @media (max-width: 860px) {
   .cities-map-wrap { grid-template-columns: 1fr; }
