@@ -2,7 +2,6 @@
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import Lenis from '@studio-freight/lenis';
 
 interface ParallaxHeroProps {
   photoUrl: string;
@@ -17,11 +16,6 @@ export function ParallaxHero({ photoUrl, photoPosition = 'center 40%' }: Paralla
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
-
-    const lenis = new Lenis();
-    lenis.on('scroll', ScrollTrigger.update);
-    gsap.ticker.add((time) => { lenis.raf(time * 1000); });
-    gsap.ticker.lagSmoothing(0);
 
     const ctx = gsap.context(() => {
       // photo moves at 40% of scroll speed → parallax depth
@@ -68,7 +62,6 @@ export function ParallaxHero({ photoUrl, photoPosition = 'center 40%' }: Paralla
     return () => {
       ctx.revert();
       ScrollTrigger.getAll().forEach((st) => st.kill());
-      lenis.destroy();
     };
   }, []);
 
