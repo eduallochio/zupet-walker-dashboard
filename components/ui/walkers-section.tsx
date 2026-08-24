@@ -66,10 +66,14 @@ export async function WalkersSection() {
   const items: ChromaItem[] = walkers.map((w, i) => {
     const location = [w.city, w.state].filter(Boolean).join(', ');
     const price = priceMap[w.id];
-    const priceLabel = price != null ? `R$ ${Number(price).toFixed(0)}/sessão` : 'Consultar';
+    const priceNum = price != null ? Number(price) : null;
+    const priceLabel = priceNum != null
+      ? `R$ ${priceNum % 1 === 0 ? priceNum.toFixed(0) : priceNum.toFixed(2).replace('.', ',')}/sessão`
+      : 'Consultar';
     const ratingLabel = w.rating ? `⭐ ${Number(w.rating).toFixed(1)}` : null;
     const subtitle = [priceLabel, ratingLabel].filter(Boolean).join('  ·  ');
     const instagram = (w.social_links as any)?.instagram ?? null;
+    const whatsapp  = (w.social_links as any)?.whatsapp  ?? null;
 
     return {
       image: w.avatar_url || buildInitialsImage(w.name),
@@ -84,6 +88,8 @@ export async function WalkersSection() {
         rating: w.rating,
         price,
         instagram,
+        tiktok: (w.social_links as any)?.tiktok ?? null,
+        whatsapp: (w.social_links as any)?.whatsapp ?? null,
         city: w.city,
         state: w.state,
       },

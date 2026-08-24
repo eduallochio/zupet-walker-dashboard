@@ -31,12 +31,16 @@ export function WalkerModal({ item, onClose }: WalkerModalProps) {
   if (!item) return null;
 
   const meta = item.meta ?? {};
-  const services: string[] = Array.isArray(meta.services) ? (meta.services as string[]) : [];
   const bio = typeof meta.bio === 'string' ? meta.bio : null;
   const rating = meta.rating != null ? Number(meta.rating) : null;
-  const price = meta.price_per_hour != null ? Number(meta.price_per_hour) : null;
-  const experience = meta.experience_years != null ? Number(meta.experience_years) : null;
+  const price = meta.price != null ? Number(meta.price) : null;
+  const instagram = typeof meta.instagram === 'string' ? meta.instagram.replace(/^@/, '') : null;
+  const whatsapp = typeof meta.whatsapp === 'string' ? meta.whatsapp.replace(/\D/g, '') : null;
+  const tiktok = typeof meta.tiktok === 'string' ? meta.tiktok.replace(/^@/, '') : null;
   const location = [meta.city, meta.state].filter(Boolean).join(', ');
+  const priceLabel = price != null
+    ? `R$ ${price % 1 === 0 ? price.toFixed(0) : price.toFixed(2).replace('.', ',')}/sessão`
+    : null;
 
   return (
     <div className="wk-modal-backdrop" onClick={onClose} role="dialog" aria-modal="true">
@@ -66,16 +70,10 @@ export function WalkerModal({ item, onClose }: WalkerModalProps) {
         <div className="wk-modal-body">
           {/* quick stats */}
           <div className="wk-modal-stats">
-            {price != null && (
+            {priceLabel && (
               <div className="wk-modal-stat">
-                <span className="wk-modal-stat-val">R$ {price.toFixed(0)}/h</span>
-                <span className="wk-modal-stat-label">Valor hora</span>
-              </div>
-            )}
-            {experience != null && (
-              <div className="wk-modal-stat">
-                <span className="wk-modal-stat-val">{experience} {experience === 1 ? 'ano' : 'anos'}</span>
-                <span className="wk-modal-stat-label">Experiência</span>
+                <span className="wk-modal-stat-val">{priceLabel}</span>
+                <span className="wk-modal-stat-label">Valor por sessão</span>
               </div>
             )}
             {rating != null && (
@@ -94,16 +92,26 @@ export function WalkerModal({ item, onClose }: WalkerModalProps) {
             </div>
           )}
 
-          {/* services */}
-          {services.length > 0 && (
+          {/* redes sociais */}
+          {(instagram || whatsapp || tiktok) && (
             <div className="wk-modal-section">
-              <h3 className="wk-modal-section-title">Serviços</h3>
+              <h3 className="wk-modal-section-title">Redes sociais</h3>
               <div className="wk-modal-services">
-                {services.map((s) => (
-                  <span key={s} className="wk-modal-service-tag">
-                    {SERVICE_LABELS[s] ?? s}
-                  </span>
-                ))}
+                {instagram && (
+                  <a href={`https://instagram.com/${instagram}`} target="_blank" rel="noopener noreferrer" className="wk-modal-service-tag" style={{ textDecoration: 'none', color: '#f687b3' }}>
+                    📸 @{instagram}
+                  </a>
+                )}
+                {tiktok && (
+                  <a href={`https://tiktok.com/@${tiktok}`} target="_blank" rel="noopener noreferrer" className="wk-modal-service-tag" style={{ textDecoration: 'none', color: '#a78bfa' }}>
+                    🎵 @{tiktok}
+                  </a>
+                )}
+                {whatsapp && (
+                  <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer" className="wk-modal-service-tag" style={{ textDecoration: 'none', color: '#4ade80' }}>
+                    💬 {whatsapp}
+                  </a>
+                )}
               </div>
             </div>
           )}
