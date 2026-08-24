@@ -1,5 +1,6 @@
 'use client';
 import { useEffect } from 'react';
+import { SiInstagram, SiTiktok, SiWhatsapp } from 'react-icons/si';
 import { ChromaItem } from './chroma-grid';
 
 interface WalkerModalProps {
@@ -138,18 +139,18 @@ export function WalkerModal({ item, onClose }: WalkerModalProps) {
               <h3 className="wk-modal-section-title">Redes sociais</h3>
               <div className="wk-modal-services">
                 {instagram && (
-                  <a href={`https://instagram.com/${instagram}`} target="_blank" rel="noopener noreferrer" className="wk-modal-service-tag" style={{ textDecoration: 'none', color: '#f687b3' }}>
-                    📸 @{instagram}
+                  <a href={`https://instagram.com/${instagram}`} target="_blank" rel="noopener noreferrer" className="wk-modal-service-tag" style={{ textDecoration: 'none', color: '#f687b3', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <SiInstagram size={13} /> @{instagram}
                   </a>
                 )}
                 {tiktok && (
-                  <a href={`https://tiktok.com/@${tiktok}`} target="_blank" rel="noopener noreferrer" className="wk-modal-service-tag" style={{ textDecoration: 'none', color: '#a78bfa' }}>
-                    🎵 @{tiktok}
+                  <a href={`https://tiktok.com/@${tiktok}`} target="_blank" rel="noopener noreferrer" className="wk-modal-service-tag" style={{ textDecoration: 'none', color: '#a78bfa', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <SiTiktok size={13} /> @{tiktok}
                   </a>
                 )}
                 {whatsapp && (
-                  <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer" className="wk-modal-service-tag" style={{ textDecoration: 'none', color: '#4ade80' }}>
-                    💬 {whatsapp}
+                  <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer" className="wk-modal-service-tag" style={{ textDecoration: 'none', color: '#4ade80', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <SiWhatsapp size={13} /> {whatsapp}
                   </a>
                 )}
               </div>
