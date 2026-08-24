@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { CitiesMapClient } from './cities-map-client';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -14,7 +15,6 @@ export async function CitiesSection() {
 
   if (!data || data.length === 0) return null;
 
-  // Group and count by city+state
   const map = new Map<string, { city: string; state: string; count: number }>();
   for (const row of data) {
     const key = `${row.city}|${row.state}`;
@@ -33,18 +33,9 @@ export async function CitiesSection() {
       <h2 className="lp-section-title">Cidades atendidas</h2>
       <p className="lp-cities-sub">
         Walkers verificados já atendem em {cities.length} {cities.length === 1 ? 'cidade' : 'cidades'}.
-        Baixe o app e encontre um walker perto de você.
+        Clique em um estado para filtrar.
       </p>
-      <div className="lp-cities-grid">
-        {cities.map(({ city, state, count }) => (
-          <div key={`${city}-${state}`} className="lp-city-chip">
-            <span className="lp-city-dot" />
-            <span className="lp-city-name">{city}</span>
-            <span className="lp-city-state">{state}</span>
-            <span className="lp-city-count">{count} walker{count > 1 ? 's' : ''}</span>
-          </div>
-        ))}
-      </div>
+      <CitiesMapClient cities={cities} total={cities.length} />
     </section>
   );
 }
