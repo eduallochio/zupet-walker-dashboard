@@ -107,10 +107,7 @@ const ChromaGrid: React.FC<ChromaGridProps> = ({
         const bio = typeof meta.bio === 'string' ? meta.bio : null;
         const instagram = typeof meta.instagram === 'string' ? meta.instagram : null;
         const whatsapp = typeof meta.whatsapp === 'string' ? meta.whatsapp : null;
-        const price = meta.price != null ? Number(meta.price) : null;
-        const priceLabel = price != null
-          ? `R$ ${price % 1 === 0 ? price.toFixed(0) : price.toFixed(2).replace('.', ',')}`
-          : null;
+        const rating = meta.rating != null ? Number(meta.rating) : null;
         const isInitials = c.image.startsWith('data:image/svg');
 
         return (
@@ -190,17 +187,18 @@ const ChromaGrid: React.FC<ChromaGridProps> = ({
               )}
             </div>
 
-            {/* footer — price + rating */}
+            {/* footer — rating + ver perfil */}
             <footer className="relative z-10 mt-auto px-5 py-3 flex items-center justify-between"
               style={{ borderTop: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.25)' }}>
-              {priceLabel ? (
-                <span className="text-white font-bold text-[0.95rem]">{priceLabel}<span className="text-white/50 text-[0.72rem] font-normal">/sessão</span></span>
+              {rating != null ? (
+                <span className="text-yellow-300 font-semibold text-[0.8rem]">⭐ {rating.toFixed(1)}</span>
               ) : (
-                <span className="text-white/50 text-[0.8rem]">Consultar</span>
+                <span />
               )}
-              {c.subtitle.includes('⭐') && (
-                <span className="text-[0.78rem] text-yellow-300 font-semibold">{c.subtitle.match(/⭐[^·]*/)?.[0]?.trim()}</span>
-              )}
+              <span className="text-white/60 text-[0.75rem] font-medium flex items-center gap-1">
+                Ver perfil
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </span>
             </footer>
           </article>
         );

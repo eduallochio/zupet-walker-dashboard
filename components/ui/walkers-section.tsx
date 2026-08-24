@@ -43,37 +43,27 @@ export async function WalkersSection() {
 
   if (!walkers || walkers.length === 0) return null;
 
-  // Busca o serviço de passeio mais barato de cada walker para exibir preço
+  // Busca todos os serviços ativos de cada walker para o modal
   const walkerIds = walkers.map((w) => w.id);
   const { data: services } = await supabaseAdmin
     .from('walker_services')
-    .select('walker_id, type, price')
+    .select('walker_id, type, label, price, price_daily')
     .in('walker_id', walkerIds)
     .eq('active', true)
-    .not('price', 'is', null)
     .order('price', { ascending: true });
 
-  // Monta mapa walker_id → preço mínimo de passeio (type = walk) ou qualquer serviço
-  const priceMap: Record<string, number> = {};
+  // Agrupa serviços por walker_id
+  const servicesMap: Record<string, { type: string; label: string; price: number | null; price_daily: number | null }[]> = {};
   (services ?? []).forEach((s: any) => {
-    if (s.type === 'walk' || !priceMap[s.walker_id]) {
-      if (!priceMap[s.walker_id] || s.type === 'walk') {
-        priceMap[s.walker_id] = s.price;
-      }
-    }
+    if (!servicesMap[s.walker_id]) servicesMap[s.walker_id] = [];
+    servicesMap[s.walker_id].push({ type: s.type, label: s.label, price: s.price, price_daily: s.price_daily });
   });
 
   const items: ChromaItem[] = walkers.map((w, i) => {
     const location = [w.city, w.state].filter(Boolean).join(', ');
-    const price = priceMap[w.id];
-    const priceNum = price != null ? Number(price) : null;
-    const priceLabel = priceNum != null
-      ? `R$ ${priceNum % 1 === 0 ? priceNum.toFixed(0) : priceNum.toFixed(2).replace('.', ',')}/sessão`
-      : 'Consultar';
     const ratingLabel = w.rating ? `⭐ ${Number(w.rating).toFixed(1)}` : null;
-    const subtitle = [priceLabel, ratingLabel].filter(Boolean).join('  ·  ');
+    const subtitle = ratingLabel ?? '';
     const instagram = (w.social_links as any)?.instagram ?? null;
-    const whatsapp  = (w.social_links as any)?.whatsapp  ?? null;
 
     return {
       image: w.avatar_url || buildInitialsImage(w.name),
@@ -86,7 +76,7 @@ export async function WalkersSection() {
       meta: {
         bio: w.bio,
         rating: w.rating,
-        price,
+        services: servicesMap[w.id] ?? [],
         instagram,
         tiktok: (w.social_links as any)?.tiktok ?? null,
         whatsapp: (w.social_links as any)?.whatsapp ?? null,
