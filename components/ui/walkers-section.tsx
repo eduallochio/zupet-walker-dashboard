@@ -88,10 +88,10 @@ export async function WalkersSection() {
   });
 
   return (
-    <section className="wk-section">
-      <p className="lp-section-label">Comunidade</p>
-      <h2 className="lp-section-title">Walkers na plataforma</h2>
-      <div className="wk-chroma-wrap">
+    <section className="wk-section" suppressHydrationWarning>
+      <p className="lp-section-label" suppressHydrationWarning>Comunidade</p>
+      <h2 className="lp-section-title" suppressHydrationWarning>Walkers na plataforma</h2>
+      <div className="wk-chroma-wrap" suppressHydrationWarning>
         <WalkersGridClient items={items} />
       </div>
     </section>
