@@ -838,6 +838,25 @@ body {
   color: var(--muted);
   font-size: .88rem;
 }
+.cities-map-svg-wrap {
+  position: relative;
+}
+.cities-map-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: rgba(10,15,10,0.92);
+  border: 1px solid rgba(34,197,94,0.3);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: .8rem;
+  color: #e2e8f0;
+  white-space: nowrap;
+  z-index: 10;
+  backdrop-filter: blur(4px);
+}
+.cities-map-tooltip-none {
+  color: rgba(255,255,255,0.4);
+}
 .lp-city-chip {
   display: flex;
   align-items: center;
