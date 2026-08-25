@@ -107,7 +107,7 @@ export default function LandingPage() {
       {/* HOW IT WORKS */}
       <section id="como-funciona" className="lp-how">
         <p className="lp-section-label">Como funciona</p>
-        <h2 className="lp-section-title">Do app à renda em 4 passos</h2>
+        <h2 className="lp-section-title">Organize seu negócio em 4 passos</h2>
         <div className="lp-how-steps">
           {HOW_STEPS.map((s) => (
             <div key={s.title} className="lp-how-step">
