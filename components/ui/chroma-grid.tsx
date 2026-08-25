@@ -40,7 +40,6 @@ const ChromaGrid: React.FC<ChromaGridProps> = ({
   onCardClick,
 }) => {
   const rootRef = useRef<HTMLDivElement>(null);
-  const fadeRef = useRef<HTMLDivElement>(null);
   const setX = useRef<SetterFn | null>(null);
   const setY = useRef<SetterFn | null>(null);
   const pos = useRef({ x: 0, y: 0 });
@@ -75,12 +74,9 @@ const ChromaGrid: React.FC<ChromaGridProps> = ({
   const handleMove = (e: React.PointerEvent) => {
     const r = rootRef.current!.getBoundingClientRect();
     moveTo(e.clientX - r.left, e.clientY - r.top);
-    gsap.to(fadeRef.current, { opacity: 0, duration: 0.25, overwrite: true });
   };
 
-  const handleLeave = () => {
-    gsap.to(fadeRef.current, { opacity: 1, duration: fadeOut, overwrite: true });
-  };
+  const handleLeave = () => {};
 
   const handleCardClick = (item: ChromaItem) => {
     if (onCardClick) {
@@ -207,36 +203,6 @@ const ChromaGrid: React.FC<ChromaGridProps> = ({
         );
       })}
 
-      {/* hover mask — highlights hovered card, grays out others */}
-      <div
-        className="absolute inset-0 pointer-events-none z-30"
-        style={{
-          backdropFilter: 'grayscale(1) brightness(0.78)',
-          WebkitBackdropFilter: 'grayscale(1) brightness(0.78)',
-          background: 'rgba(0,0,0,0.001)',
-          maskImage:
-            'radial-gradient(circle var(--r) at var(--x) var(--y),transparent 0%,transparent 15%,rgba(0,0,0,0.10) 30%,rgba(0,0,0,0.22) 45%,rgba(0,0,0,0.35) 60%,rgba(0,0,0,0.50) 75%,rgba(0,0,0,0.68) 88%,white 100%)',
-          WebkitMaskImage:
-            'radial-gradient(circle var(--r) at var(--x) var(--y),transparent 0%,transparent 15%,rgba(0,0,0,0.10) 30%,rgba(0,0,0,0.22) 45%,rgba(0,0,0,0.35) 60%,rgba(0,0,0,0.50) 75%,rgba(0,0,0,0.68) 88%,white 100%)',
-        }}
-      />
-
-      {/* fade overlay — shown when mouse is outside */}
-      <div
-        ref={fadeRef}
-        className="absolute inset-0 pointer-events-none z-40"
-        style={{
-          backdropFilter: 'grayscale(1) brightness(0.78)',
-          WebkitBackdropFilter: 'grayscale(1) brightness(0.78)',
-          background: 'rgba(0,0,0,0.001)',
-          maskImage:
-            'radial-gradient(circle var(--r) at var(--x) var(--y),white 0%,white 15%,rgba(255,255,255,0.90) 30%,rgba(255,255,255,0.78) 45%,rgba(255,255,255,0.65) 60%,rgba(255,255,255,0.50) 75%,rgba(255,255,255,0.32) 88%,transparent 100%)',
-          WebkitMaskImage:
-            'radial-gradient(circle var(--r) at var(--x) var(--y),white 0%,white 15%,rgba(255,255,255,0.90) 30%,rgba(255,255,255,0.78) 45%,rgba(255,255,255,0.65) 60%,rgba(255,255,255,0.50) 75%,rgba(255,255,255,0.32) 88%,transparent 100%)',
-          opacity: 1,
-          transition: 'opacity 250ms',
-        }}
-      />
     </div>
   );
 };
