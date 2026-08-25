@@ -9,6 +9,7 @@ import { FaqTabs } from '@/components/ui/faq-tabs';
 import { ScrollNav } from '@/components/ui/scroll-nav';
 import { ScrollAnimations } from '@/components/ui/scroll-animations';
 import { TestimonialsSection } from '@/components/ui/testimonials-section';
+import { ActivityStatsSection } from '@/components/ui/activity-stats-section';
 
 const HOW_STEPS = [
   { emoji: '📲', title: 'Baixe o app', desc: 'Disponível para Android e iOS, gratuito para começar.' },
@@ -121,6 +122,11 @@ export default function LandingPage() {
       {/* STATS */}
       <Suspense fallback={null}>
         <StatsSection />
+      </Suspense>
+
+      {/* ACTIVITY STATS */}
+      <Suspense fallback={null}>
+        <ActivityStatsSection />
       </Suspense>
 
       {/* WALKERS */}

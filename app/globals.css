@@ -730,6 +730,52 @@ body {
   .lp-stat-item::before { display: none; }
 }
 
+/* ── ACTIVITY STATS ── */
+.lp-activity-stats {
+  padding: 72px 6vw;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+.lp-activity-grid {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  margin-top: 40px;
+  flex-wrap: wrap;
+}
+.lp-activity-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 36px 48px;
+  min-width: 220px;
+  transition: border-color .2s;
+}
+.lp-activity-card:hover { border-color: var(--accent); }
+.lp-activity-icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+.lp-activity-num {
+  font-size: clamp(2.4rem, 5vw, 3.2rem);
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: -.03em;
+  line-height: 1;
+}
+.lp-activity-label {
+  font-size: .85rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+@media (max-width: 520px) {
+  .lp-activity-card { min-width: 0; width: 100%; padding: 28px 24px; }
+}
+
 /* ── CITIES ── */
 .lp-cities {
   padding: 80px 6vw;
