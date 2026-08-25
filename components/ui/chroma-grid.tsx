@@ -98,7 +98,7 @@ const ChromaGrid: React.FC<ChromaGridProps> = ({
       ref={rootRef}
       onPointerMove={handleMove}
       onPointerLeave={handleLeave}
-      className={`relative w-full h-full flex flex-wrap justify-start items-start gap-4 ${className}`}
+      className={`relative w-full h-full flex flex-wrap justify-start items-start gap-3 sm:gap-4 ${className}`}
       style={{ '--r': `${radius}px`, '--x': '50%', '--y': '50%' } as React.CSSProperties}
     >
       {data.map((c, i) => {
@@ -113,7 +113,7 @@ const ChromaGrid: React.FC<ChromaGridProps> = ({
           <article
             key={i}
             onMouseMove={handleCardMove}
-            className="group relative flex flex-col w-[320px] rounded-[22px] overflow-hidden transition-transform duration-300 cursor-pointer hover:scale-[1.03]"
+            className="group relative flex flex-col w-full sm:w-[320px] rounded-[22px] overflow-hidden transition-transform duration-300 cursor-pointer hover:scale-[1.03]"
             style={{
               background: c.gradient || FALLBACK_GRADIENT,
               border: `1.5px solid ${c.borderColor || 'rgba(255,255,255,0.12)'}`,
