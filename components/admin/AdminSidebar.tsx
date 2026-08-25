@@ -7,6 +7,7 @@ const NAV = [
   { href: '/admin',             label: 'Visão Geral',  icon: '📊' },
   { href: '/admin/walkers',     label: 'Walkers',      icon: '🦮' },
   { href: '/admin/pagamentos',  label: 'Pagamentos',   icon: '💰' },
+  { href: '/admin/cupons',      label: 'Cupons',       icon: '🎟️' },
 ];
 
 export default function AdminSidebar() {
