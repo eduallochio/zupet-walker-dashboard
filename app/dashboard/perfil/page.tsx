@@ -2,6 +2,8 @@ import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 import ProfileForm from './ProfileForm';
 
+export const dynamic = 'force-dynamic';
+
 export default async function PerfilPage() {
   const jar = await cookies();
   const accessToken = jar.get('sb-access-token')?.value!;
@@ -16,7 +18,7 @@ export default async function PerfilPage() {
 
   const { data: profile } = await supabase
     .from('walker_profiles')
-    .select('name, bio, phone, city, plan')
+    .select('name, bio, phone, city, neighborhood, plan, summary_items, service_radius_km, accepted_sizes, accepts_last_minute')
     .eq('user_id', user.id)
     .single();
 
@@ -28,7 +30,12 @@ export default async function PerfilPage() {
         initialBio={profile?.bio ?? ''}
         initialPhone={profile?.phone ?? ''}
         initialCity={profile?.city ?? ''}
+        initialNeighborhood={(profile as any)?.neighborhood ?? ''}
         plan={profile?.plan ?? 'free'}
+        initialSummaryItems={(profile as any)?.summary_items ?? []}
+        initialServiceRadiusKm={(profile as any)?.service_radius_km ?? 5}
+        initialAcceptedSizes={(profile as any)?.accepted_sizes ?? ['small', 'medium', 'large']}
+        initialAcceptsLastMinute={(profile as any)?.accepts_last_minute ?? false}
         userId={user.id}
         accessToken={accessToken}
       />

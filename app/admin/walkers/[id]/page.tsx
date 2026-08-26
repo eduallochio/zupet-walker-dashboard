@@ -10,7 +10,7 @@ const supabaseAdmin = createClient(
 export default async function WalkerDetailPage({ params }: { params: { id: string } }) {
   const { data: walker } = await supabaseAdmin
     .from('walker_profiles')
-    .select('id, name, bio, plan, created_at, rating, total_walks')
+    .select('id, name, bio, plan, created_at, rating, total_walks, summary_items, service_radius_km, accepted_sizes, accepts_last_minute, city, neighborhood')
     .eq('id', params.id)
     .single();
 
@@ -48,10 +48,20 @@ export default async function WalkerDetailPage({ params }: { params: { id: strin
         ))}
       </div>
 
-      {walker.bio && (
-        <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700">
-          <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Bio</p>
-          <p className="text-gray-200 text-sm">{walker.bio}</p>
+      {(walker.bio || ((walker as any).summary_items?.length > 0)) && (
+        <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700 space-y-3">
+          <p className="text-xs text-gray-400 uppercase tracking-wider">Sobre</p>
+          {walker.bio && <p className="text-gray-200 text-sm">{walker.bio}</p>}
+          {(walker as any).summary_items?.length > 0 && (
+            <ul className="space-y-1.5">
+              {(walker as any).summary_items.map((item: string, i: number) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-gray-200">
+                  <span className="text-emerald-400 mt-0.5">✓</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
 

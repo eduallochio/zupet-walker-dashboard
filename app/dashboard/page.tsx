@@ -39,7 +39,7 @@ export default async function DashboardPage() {
 
   const profileId = profile?.id;
 
-  const [{ data: sessions }, { data: links }, { data: payments }, { data: recentReports }] = await Promise.all([
+  const [{ data: sessions }, { data: links }, { data: payments }, { data: recentReports }, { data: ratingsData }] = await Promise.all([
     profileId
       ? supabase.from('walk_sessions').select('id').eq('walker_id', profileId)
       : Promise.resolve({ data: [] }),
@@ -52,7 +52,15 @@ export default async function DashboardPage() {
     profileId
       ? supabase.from('walk_reports').select('id, created_at, duration_minutes, distance_meters, pee_count, poop_count, photos').eq('walker_id', profileId).order('created_at', { ascending: false }).limit(3)
       : Promise.resolve({ data: [] }),
+    profileId
+      ? supabase.from('walker_ratings').select('rating').eq('walker_id', profileId)
+      : Promise.resolve({ data: [] }),
   ]);
+
+  const avgRating = ratingsData && ratingsData.length > 0
+    ? Math.round(ratingsData.reduce((s: number, r: any) => s + Number(r.rating), 0) / ratingsData.length * 10) / 10
+    : null;
+  const ratingCount = ratingsData?.length ?? 0;
 
   const petIds = (links ?? []).map((l: any) => l.pet_id).filter(Boolean);
   const { data: pets } = petIds.length
@@ -91,9 +99,9 @@ export default async function DashboardPage() {
         <StatCard label="Pets vinculados" value={String(petIds.length)} sub="ativo agora" />
         <StatCard
           label="Avaliação"
-          value={profile?.rating ? profile.rating.toFixed(1) : '—'}
-          suffix={profile?.rating ? '/ 5' : undefined}
-          sub={profile?.rating ? undefined : 'sem avaliações ainda'}
+          value={avgRating ? avgRating.toFixed(1) : '—'}
+          suffix={avgRating ? `/ 5 (${ratingCount})` : undefined}
+          sub={avgRating ? undefined : 'sem avaliações ainda'}
         />
         <StatCard label="Total recebido" value={formatCurrency(totalEarned)} sub="este mês" />
       </div>

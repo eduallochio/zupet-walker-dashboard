@@ -113,7 +113,7 @@ const ChromaGrid: React.FC<ChromaGridProps> = ({
           <article
             key={i}
             onMouseMove={handleCardMove}
-            className="group relative flex flex-col w-full sm:w-[320px] rounded-[22px] overflow-hidden transition-transform duration-300 cursor-pointer hover:scale-[1.03]"
+            className="group relative flex flex-col w-full sm:w-[380px] rounded-[12px] overflow-hidden transition-transform duration-300 cursor-pointer hover:scale-[1.03]"
             style={{
               background: c.gradient || FALLBACK_GRADIENT,
               border: `1.5px solid ${c.borderColor || 'rgba(255,255,255,0.12)'}`,
@@ -131,11 +131,11 @@ const ChromaGrid: React.FC<ChromaGridProps> = ({
             />
 
             {/* avatar */}
-            <div className="relative z-10 flex flex-col items-center pt-7 pb-4 px-5 gap-3">
+            <div className="relative z-10 flex flex-col items-center pt-10 pb-6 px-8 gap-5">
               <div
                 className="relative rounded-full overflow-hidden flex-shrink-0"
                 style={{
-                  width: 88, height: 88,
+                  width: 110, height: 110,
                   border: `3px solid ${c.borderColor ?? 'rgba(255,255,255,0.3)'}`,
                   boxShadow: `0 0 0 3px rgba(0,0,0,0.3), 0 4px 16px rgba(0,0,0,0.5)`,
                   background: isInitials ? 'transparent' : undefined,
@@ -151,7 +151,7 @@ const ChromaGrid: React.FC<ChromaGridProps> = ({
 
               {/* name + location */}
               <div className="text-center">
-                <h3 className="m-0 text-white text-[1.1rem] font-bold leading-tight tracking-tight">{c.title}</h3>
+                <h3 className="m-0 text-white text-[1.15rem] font-bold leading-tight tracking-tight">{c.title}</h3>
                 {c.location && (
                   <p className="m-0 mt-0.5 text-white/60 text-[0.78rem] flex items-center justify-center gap-1">
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg>
@@ -162,7 +162,7 @@ const ChromaGrid: React.FC<ChromaGridProps> = ({
 
               {/* bio */}
               {bio && (
-                <p className="m-0 text-white/70 text-[0.8rem] text-center leading-relaxed line-clamp-2">{bio}</p>
+                <p className="m-0 text-white/70 text-[0.82rem] text-center leading-relaxed line-clamp-3">{bio}</p>
               )}
 
               {/* social chips */}
@@ -187,7 +187,7 @@ const ChromaGrid: React.FC<ChromaGridProps> = ({
             </div>
 
             {/* footer — rating + ver perfil */}
-            <footer className="relative z-10 mt-auto px-5 py-3 flex items-center justify-between"
+            <footer className="relative z-10 mt-auto px-6 py-4 flex items-center justify-between"
               style={{ borderTop: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.25)' }}>
               {rating != null ? (
                 <span className="text-yellow-300 font-semibold text-[0.8rem]">⭐ {rating.toFixed(1)}</span>
