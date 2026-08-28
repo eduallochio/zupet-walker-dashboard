@@ -53,13 +53,17 @@ const FEATURES = [
   },
 ];
 
-const PRO_FEATURES = [
-  'Pets ilimitados',
-  'Relatórios com fotos',
-  'Destaque no app para tutores',
-  'Suporte prioritário',
-  'Histórico financeiro completo',
-  'Agenda avançada',
+const PLAN_COMPARISON = [
+  { feature: 'Pets vinculados por tutores',   free: 'Até 7',      pro: 'Ilimitado' },
+  { feature: 'Pets cadastrados pelo walker',  free: 'Até 7',      pro: 'Ilimitado' },
+  { feature: 'Serviços criados',              free: '1 serviço',  pro: 'Ilimitado' },
+  { feature: 'Pets por passeio',              free: 'Até 2',      pro: 'Ilimitado' },
+  { feature: 'Histórico de relatórios',       free: '7 dias',     pro: 'Completo'  },
+  { feature: 'Dashboard web',                 free: true,         pro: true        },
+  { feature: 'Código de convite para tutores',free: true,         pro: true        },
+  { feature: 'Agendamentos de última hora',   free: false,        pro: true        },
+  { feature: 'Destaque no app para tutores',  free: false,        pro: true        },
+  { feature: 'Suporte prioritário',           free: false,        pro: true        },
 ];
 
 
@@ -140,41 +144,66 @@ export default function LandingPage() {
       </Suspense>
 
       {/* PLANS */}
-      <div id="planos" className="lp-plans">
-        <div>
-          <p className="lp-section-label">Planos</p>
-          <h2 className="lp-plans-title">Comece grátis.<br />Cresça no Pro.</h2>
-          <p className="lp-plans-sub">
-            Sem cartão de crédito. Assine o Pro pelo dashboard quando estiver pronto para escalar.
-          </p>
-          <div className="lp-pro-checklist">
-            {PRO_FEATURES.map((f) => (
-              <div key={f} className="lp-pro-check">
-                <span className="lp-pro-check-icon">✓</span>
-                {f}
-              </div>
-            ))}
-          </div>
+      <section id="planos" className="lp-plans-section">
+        <p className="lp-section-label">Planos</p>
+        <h2 className="lp-section-title">Comece grátis. Cresça no Pro.</h2>
+        <p className="lp-plans-sub">Sem cartão de crédito. Assine o Pro quando estiver pronto para escalar.</p>
+
+        <div className="lp-plans-table-wrap">
+          <table className="lp-plans-table">
+            <thead>
+              <tr>
+                <th className="lp-pt-feature-col"></th>
+                <th className="lp-pt-plan-col lp-pt-free">
+                  <div className="lp-pt-plan-label">Free</div>
+                  <div className="lp-pt-plan-price">R$ 0</div>
+                  <div className="lp-pt-plan-sub">para sempre</div>
+                </th>
+                <th className="lp-pt-plan-col lp-pt-pro">
+                  <div className="lp-pt-plan-badge">Recomendado</div>
+                  <div className="lp-pt-plan-label">Pro</div>
+                  <div className="lp-pt-plan-price">R$ 29<span>/mês</span></div>
+                  <div className="lp-pt-plan-sub">cancele quando quiser</div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {PLAN_COMPARISON.map((row) => (
+                <tr key={row.feature} className="lp-pt-row">
+                  <td className="lp-pt-feature">{row.feature}</td>
+                  <td className="lp-pt-cell">
+                    {typeof row.free === 'boolean'
+                      ? row.free
+                        ? <span className="lp-pt-check">✓</span>
+                        : <span className="lp-pt-x">—</span>
+                      : <span className="lp-pt-val">{row.free}</span>
+                    }
+                  </td>
+                  <td className="lp-pt-cell lp-pt-cell-pro">
+                    {typeof row.pro === 'boolean'
+                      ? row.pro
+                        ? <span className="lp-pt-check">✓</span>
+                        : <span className="lp-pt-x">—</span>
+                      : <span className="lp-pt-val lp-pt-val-pro">{row.pro}</span>
+                    }
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td></td>
+                <td className="lp-pt-cta-cell">
+                  <Link href="/cadastro" className="lp-pt-cta-free">Começar grátis</Link>
+                </td>
+                <td className="lp-pt-cta-cell lp-pt-cell-pro">
+                  <Link href="/dashboard/pro" className="lp-pt-cta-pro">Assinar Pro</Link>
+                </td>
+              </tr>
+            </tfoot>
+          </table>
         </div>
-        <div className="lp-plan-rows">
-          <div className="lp-plan-row">
-            <div>
-              <div className="lp-plan-name">Gratuito</div>
-              <div className="lp-plan-desc">Até 10 pets · 1 serviço</div>
-            </div>
-            <div className="lp-plan-price">R$ 0</div>
-            <Link href="/login" className="lp-plan-cta free">Começar</Link>
-          </div>
-          <div className="lp-plan-row highlight">
-            <div>
-              <div className="lp-plan-name pro">⭐ Pro</div>
-              <div className="lp-plan-desc">Pets ilimitados · Fotos · Destaque</div>
-            </div>
-            <div className="lp-plan-price">R$ 29/mês</div>
-            <a href="https://walker.zupet.io" target="_blank" rel="noopener noreferrer" className="lp-plan-cta pro-btn">Assinar</a>
-          </div>
-        </div>
-      </div>
+      </section>
 
       {/* TESTIMONIALS */}
       <TestimonialsSection />

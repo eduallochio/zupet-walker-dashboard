@@ -349,6 +349,122 @@ body {
   font-weight: 700;
 }
 
+/* ── PLANS TABLE ── */
+.lp-plans-section {
+  margin: 0 6vw 80px;
+  text-align: center;
+}
+.lp-plans-section .lp-plans-sub {
+  color: var(--muted); font-size: .95rem; margin: 8px 0 36px;
+}
+.lp-plans-table-wrap {
+  overflow-x: auto;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+}
+.lp-plans-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .88rem;
+  background: var(--bg-card);
+}
+.lp-plans-table thead tr {
+  border-bottom: 1px solid var(--border);
+}
+.lp-pt-feature-col { width: 42%; }
+.lp-pt-plan-col {
+  width: 29%;
+  padding: 24px 16px 20px;
+  text-align: center;
+  vertical-align: top;
+}
+.lp-pt-pro {
+  background: rgba(34,197,94,.04);
+  border-left: 1px solid rgba(34,197,94,.2);
+  border-right: 1px solid rgba(34,197,94,.2);
+}
+.lp-pt-plan-badge {
+  display: inline-block;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: rgba(34,197,94,.12);
+  border: 1px solid rgba(34,197,94,.25);
+  border-radius: 40px;
+  padding: 2px 10px;
+  margin-bottom: 8px;
+}
+.lp-pt-plan-label {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.lp-pt-plan-price {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1;
+}
+.lp-pt-plan-price span { font-size: .85rem; font-weight: 600; color: var(--muted); }
+.lp-pt-plan-sub { font-size: .72rem; color: var(--muted); margin-top: 4px; }
+.lp-pt-row { border-bottom: 1px solid var(--border); }
+.lp-pt-row:last-child { border-bottom: none; }
+.lp-pt-feature {
+  padding: 13px 20px;
+  color: var(--muted);
+  font-size: .83rem;
+  text-align: left;
+}
+.lp-pt-cell {
+  padding: 13px 16px;
+  text-align: center;
+  color: var(--muted);
+}
+.lp-pt-cell-pro {
+  background: rgba(34,197,94,.03);
+  border-left: 1px solid rgba(34,197,94,.12);
+  border-right: 1px solid rgba(34,197,94,.12);
+}
+.lp-pt-check { color: var(--accent); font-weight: 700; font-size: 1rem; }
+.lp-pt-x { color: var(--muted); opacity: .5; }
+.lp-pt-val { color: var(--text-sec); font-weight: 600; font-size: .82rem; }
+.lp-pt-val-pro { color: var(--accent-lt); }
+.lp-pt-cta-cell { padding: 20px 16px; text-align: center; }
+.lp-pt-cta-free {
+  display: inline-block;
+  padding: 10px 22px;
+  border-radius: 40px;
+  font-size: .82rem;
+  font-weight: 700;
+  text-decoration: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  transition: all .2s;
+}
+.lp-pt-cta-free:hover { border-color: var(--accent); color: var(--accent-lt); }
+.lp-pt-cta-pro {
+  display: inline-block;
+  padding: 10px 22px;
+  border-radius: 40px;
+  font-size: .82rem;
+  font-weight: 700;
+  text-decoration: none;
+  background: var(--accent);
+  color: #05130a;
+  transition: all .2s;
+}
+.lp-pt-cta-pro:hover { background: var(--accent-lt); }
+@media (max-width: 640px) {
+  .lp-plans-section { margin: 0 4vw 60px; }
+  .lp-pt-feature-col { width: 36%; }
+  .lp-pt-feature { padding: 12px 12px; font-size: .78rem; }
+  .lp-pt-cell { padding: 12px 10px; }
+  .lp-pt-plan-price { font-size: 1.2rem; }
+}
+
 /* ── FOOTER ── */
 .lp-footer {
   border-top: 1px solid var(--border);
