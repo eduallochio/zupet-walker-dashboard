@@ -16,17 +16,32 @@ export default async function RelatoriosPage() {
   const { data: profile } = await supabase
     .from('walker_profiles').select('id').eq('user_id', user.id).single();
 
-  const { data: reports } = profile?.id ? await supabase
-    .from('walk_reports')
-    .select('id, created_at, duration_minutes, distance_meters, pee_count, poop_count, note_count, photos, notes, pet_ids, owner_id')
-    .eq('walker_id', profile.id)
-    .order('created_at', { ascending: false })
-    .limit(50) : { data: [] };
+  const [{ data: reports }, { data: doneSchedules }] = await Promise.all([
+    profile?.id
+      ? supabase.from('walk_reports')
+          .select('id, created_at, duration_minutes, distance_meters, pee_count, poop_count, note_count, photos, notes, pet_ids, owner_id')
+          .eq('walker_id', profile.id)
+          .order('created_at', { ascending: false })
+          .limit(50)
+      : Promise.resolve({ data: [] }),
+    profile?.id
+      ? supabase.from('walk_schedules')
+          .select('id, scheduled_at, duration_minutes, pet_ids, owner_id, walker_services(type, label)')
+          .eq('walker_id', profile.id)
+          .eq('status', 'done')
+          .order('scheduled_at', { ascending: false })
+          .limit(50)
+      : Promise.resolve({ data: [] }),
+  ]);
 
   const rows = (reports ?? []) as any[];
+  const scheduleRows = (doneSchedules ?? []) as any[];
 
-  // Buscar nomes dos pets
-  const allPetIds = [...new Set(rows.flatMap((r: any) => r.pet_ids ?? []))];
+  // Buscar nomes dos pets (de ambas as fontes)
+  const allPetIds = [...new Set([
+    ...rows.flatMap((r: any) => r.pet_ids ?? []),
+    ...scheduleRows.flatMap((s: any) => s.pet_ids ?? []),
+  ])];
   let petNames: Record<string, string> = {};
   if (allPetIds.length > 0) {
     const { data: petsData } = await supabase
@@ -34,8 +49,11 @@ export default async function RelatoriosPage() {
     (petsData ?? []).forEach((p: any) => { petNames[p.id] = p.name; });
   }
 
-  // Buscar nomes dos tutores
-  const ownerIds = [...new Set(rows.map((r: any) => r.owner_id).filter(Boolean))];
+  // Buscar nomes dos tutores (de ambas as fontes)
+  const ownerIds = [...new Set([
+    ...rows.map((r: any) => r.owner_id),
+    ...scheduleRows.map((s: any) => s.owner_id),
+  ].filter(Boolean))];
   let ownerNames: Record<string, string> = {};
   if (ownerIds.length > 0) {
     const { data: owners } = await supabase
@@ -50,14 +68,15 @@ export default async function RelatoriosPage() {
   return (
     <div className="space-y-6">
       <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0D2926', letterSpacing: '-0.03em', marginBottom: 28 }}>
-        Relatórios de Passeio
+        Relatórios e Atendimentos
       </h1>
 
       {/* Resumo geral */}
       {rows.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
           {[
             { label: 'Passeios', value: String(rows.length) },
+            { label: 'Atendimentos', value: String(scheduleRows.length) },
             { label: 'Tempo total', value: totalMin >= 60 ? `${Math.floor(totalMin / 60)}h ${totalMin % 60}min` : `${totalMin}min` },
             { label: 'Distância total', value: `${(totalDist / 1000).toFixed(1)} km` },
           ].map(({ label, value }) => (
@@ -69,17 +88,67 @@ export default async function RelatoriosPage() {
         </div>
       )}
 
-      {!rows.length && (
+      {!rows.length && !scheduleRows.length && (
         <div style={{ background: '#fff', border: '1px solid #D1EEEA', borderRadius: 12, padding: '48px 20px', textAlign: 'center', color: '#6B7280', fontSize: 14 }}>
           Nenhum relatório ainda.
         </div>
       )}
 
-      {/* Lista */}
+      {/* Atendimentos concluídos (banho, adestramento, hospedagem etc.) */}
+      {scheduleRows.length > 0 && (
+        <div style={{ background: '#fff', border: '1px solid #D1EEEA', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
+          <div style={{ padding: '16px 20px 14px', borderBottom: '1px solid #e8f4f2' }}>
+            <h2 style={{ fontWeight: 700, fontSize: 13, color: '#0D2926', letterSpacing: '-0.01em' }}>Atendimentos concluídos</h2>
+          </div>
+          <ul style={{ listStyle: 'none' }}>
+            {scheduleRows.map((s: any, i: number) => {
+              const svc = s.walker_services;
+              const SERVICE_LABEL: Record<string, string> = {
+                walk: '🦮 Passeio', bath: '🛁 Banho e Tosa', boarding: '🌙 Hospedagem',
+                daycare: '🏠 Creche', vet_visit: '🏥 Visita ao Vet', training: '🎯 Adestramento',
+              };
+              const pets = (s.pet_ids ?? []).map((id: string) => petNames[id] ?? id);
+              return (
+                <li key={s.id} style={{ padding: '14px 20px', borderTop: i > 0 ? '1px solid #e8f4f2' : 'none', display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <p style={{ fontWeight: 700, color: '#0D2926', fontSize: 14 }}>
+                        {new Date(s.scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: '2-digit' })}
+                      </p>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: '#00A88E', background: '#D1EEEA', padding: '2px 8px', borderRadius: 20 }}>
+                        {SERVICE_LABEL[svc?.type] ?? svc?.label ?? '—'}
+                      </span>
+                    </div>
+                    {ownerNames[s.owner_id] && (
+                      <p style={{ fontSize: 12, color: '#6B7280', marginBottom: 4 }}>👤 {ownerNames[s.owner_id]}</p>
+                    )}
+                    {pets.length > 0 && (
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {pets.map((name: string, j: number) => (
+                          <span key={j} style={{ fontSize: 11, fontWeight: 600, color: '#00A88E', background: '#D1EEEA', padding: '2px 8px', borderRadius: 20 }}>
+                            🐾 {name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {s.duration_minutes && (
+                    <span style={{ fontSize: 12, color: '#6B7280', background: '#F5FAFA', border: '1px solid #D1EEEA', padding: '3px 10px', borderRadius: 20, flexShrink: 0 }}>
+                      {formatDuration(s.duration_minutes)}
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
+      {/* Lista de passeios com GPS */}
       <div style={{ background: '#fff', border: '1px solid #D1EEEA', borderRadius: 12, overflow: 'hidden' }}>
         {rows.length > 0 && (
           <div style={{ padding: '16px 20px 14px', borderBottom: '1px solid #e8f4f2' }}>
-            <h2 style={{ fontWeight: 700, fontSize: 13, color: '#0D2926', letterSpacing: '-0.01em' }}>Todos os passeios</h2>
+            <h2 style={{ fontWeight: 700, fontSize: 13, color: '#0D2926', letterSpacing: '-0.01em' }}>Relatórios de passeio</h2>
           </div>
         )}
         <ul>

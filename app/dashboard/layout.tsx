@@ -27,7 +27,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className="flex min-h-screen" style={{ background: '#F5FAFA' }}>
       <WalkerSidebar profile={profile} />
-      <main className="flex-1 overflow-auto" style={{ marginLeft: 240, padding: '36px 40px', maxWidth: 'calc(100vw - 240px)' }}>{children}</main>
+      <main className="flex-1 overflow-auto dashboard-main">{children}</main>
     </div>
   );
 }

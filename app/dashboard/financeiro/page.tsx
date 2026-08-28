@@ -6,11 +6,11 @@ import { TabelaPagamentos } from './TabelaPagamentos';
 
 const BILLING_TYPE_LABEL: Record<string, string> = {
   walk:        '🦮 Passeio',
-  bath:        '🛁 Banho',
-  hotel:       '🏠 Hospedagem',
-  vet:         '🩺 Veterinário',
-  day_care:    '☀️ Day care',
-  training:    '🎓 Treinamento',
+  bath:        '🛁 Banho e Tosa',
+  boarding:    '🌙 Hospedagem',
+  daycare:     '🏠 Creche',
+  vet_visit:   '🏥 Visita ao Vet',
+  training:    '🎯 Adestramento',
   per_session: '📋 Por sessão',
   daily:       '📅 Diário',
   weekly:      '📆 Semanal',
@@ -100,10 +100,10 @@ export default async function FinanceiroPage() {
   sixMonthsAgo.setDate(1);
   sixMonthsAgo.setHours(0, 0, 0, 0);
 
-  const [{ data: payments }, { data: reports }, { data: sessions }] = await Promise.all([
+  const [{ data: payments }, { data: reports }, { data: sessions }, { data: doneSchedules }] = await Promise.all([
     profile?.id
       ? supabase.from('walker_payments')
-          .select('id, amount, status, billing_type, created_at, notes, owner_id, walk_session_id')
+          .select('id, amount, status, billing_type, service_type, payment_method, description, created_at, notes, owner_id, walk_session_id, schedule_id')
           .eq('walker_id', profile.id)
           .order('created_at', { ascending: false })
       : Promise.resolve({ data: [] }),
@@ -121,11 +121,20 @@ export default async function FinanceiroPage() {
           .gte('ended_at', sixMonthsAgo.toISOString())
           .order('ended_at', { ascending: false })
       : Promise.resolve({ data: [] }),
+    profile?.id
+      ? supabase.from('walk_schedules')
+          .select('id, scheduled_at, duration_minutes, status, owner_id, pet_ids, service_id, walker_services(type, label, price)')
+          .eq('walker_id', profile.id)
+          .eq('status', 'done')
+          .gte('scheduled_at', sixMonthsAgo.toISOString())
+          .order('scheduled_at', { ascending: false })
+      : Promise.resolve({ data: [] }),
   ]);
 
-  const paymentsRows = (payments ?? []) as any[];
-  const reportsRows  = (reports  ?? []) as any[];
-  const sessionsRows = (sessions ?? []) as any[];
+  const paymentsRows      = (payments      ?? []) as any[];
+  const reportsRows       = (reports       ?? []) as any[];
+  const sessionsRows      = (sessions      ?? []) as any[];
+  const doneSchedulesRows = (doneSchedules ?? []) as any[];
 
   // Buscar todos os tutores vinculados ao walker via walker_pet_links
   const { data: linkedPets } = profile?.id
@@ -142,6 +151,7 @@ export default async function FinanceiroPage() {
     ...linkedOwnerIds,
     ...paymentsRows.map((p: any) => p.owner_id),
     ...reportsRows.map((r: any) => r.owner_id),
+    ...doneSchedulesRows.map((s: any) => s.owner_id),
   ].filter(Boolean))];
   let ownerNames: Record<string, string> = {};
   if (allOwnerIds.length > 0) {
@@ -202,13 +212,19 @@ export default async function FinanceiroPage() {
   // ── Item 4: Receita por tipo de serviço ────────────────────────
   const byType: Record<string, { paid: number; pending: number; count: number }> = {};
   paymentsRows.forEach((p: any) => {
-    const t = p.billing_type ?? 'outros';
+    const t = p.service_type ?? p.billing_type ?? 'outros';
     if (!byType[t]) byType[t] = { paid: 0, pending: 0, count: 0 };
     byType[t].count += 1;
     if (p.status === 'paid')    byType[t].paid    += p.amount ?? 0;
     if (p.status === 'pending') byType[t].pending += p.amount ?? 0;
   });
   const typeRows = Object.entries(byType).sort((a, b) => (b[1].paid + b[1].pending) - (a[1].paid + a[1].pending));
+
+  // ── Mapa schedule_id → payment (para mostrar status financeiro no histórico) ──
+  const paymentBySchedule: Record<string, any> = {};
+  paymentsRows.forEach((p: any) => {
+    if (p.schedule_id) paymentBySchedule[p.schedule_id] = p;
+  });
 
   // ── Itens 1 e 2: Passeios não cobrados ────────────────────────
   // Walk sessions 'done' que não têm um walker_payment associado
@@ -434,6 +450,73 @@ export default async function FinanceiroPage() {
           </div>
         )}
       </div>
+
+      {/* ── Histórico de atendimentos (walk_schedules done) ── */}
+      {doneSchedulesRows.length > 0 && (
+        <div style={{ background: '#fff', border: '1px solid #D1EEEA', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
+          <div style={{ padding: '16px 20px 14px', borderBottom: '1px solid #e8f4f2', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h2 style={{ fontWeight: 700, fontSize: 13, color: '#0D2926', letterSpacing: '-0.01em' }}>Atendimentos concluídos</h2>
+            <span style={{ fontSize: 12, color: '#6B7280' }}>últimos 6 meses</span>
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: '#F5FAFA' }}>
+                  {['Data', 'Tutor', 'Serviço', 'Valor', 'Pagamento'].map((h, i) => (
+                    <th key={h} style={{
+                      padding: '10px 20px',
+                      textAlign: i === 3 ? 'right' : i === 4 ? 'center' : 'left',
+                      fontSize: 11, fontWeight: 600, letterSpacing: '0.05em',
+                      textTransform: 'uppercase' as const, color: '#6B7280',
+                      borderBottom: '1px solid #D1EEEA',
+                    }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {doneSchedulesRows.map((s: any, i: number) => {
+                  const svc = s.walker_services;
+                  const pmt = paymentBySchedule[s.id];
+                  const serviceLabel = BILLING_TYPE_LABEL[svc?.type] ?? svc?.label ?? '—';
+                  const price = svc?.price ?? pmt?.amount ?? 0;
+                  const pmtStatus = pmt?.status;
+                  const pmtMethod = pmt?.payment_method;
+                  const PAYMENT_METHOD_LABEL: Record<string, string> = { cash: '💵 Dinheiro', pix: '📲 PIX', card: '💳 Cartão' };
+                  return (
+                    <tr key={s.id} style={{ borderTop: i > 0 ? '1px solid #e8f4f2' : 'none' }}>
+                      <td style={{ padding: '12px 20px', color: '#4a6b65', fontSize: 13 }}>
+                        {new Date(s.scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: '2-digit' })}
+                      </td>
+                      <td style={{ padding: '12px 20px', color: '#4a6b65', fontSize: 13 }}>
+                        {ownerNames[s.owner_id] ?? '—'}
+                      </td>
+                      <td style={{ padding: '12px 20px', color: '#4a6b65', fontSize: 13 }}>{serviceLabel}</td>
+                      <td style={{ padding: '12px 20px', textAlign: 'right', fontWeight: 700, color: '#0D2926', fontVariantNumeric: 'tabular-nums', fontSize: 13 }}>
+                        {price > 0 ? `R$ ${price.toFixed(2).replace('.', ',')}` : '—'}
+                      </td>
+                      <td style={{ padding: '12px 20px', textAlign: 'center' }}>
+                        {!pmt ? (
+                          <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, color: '#6B7280', background: '#f3f4f6' }}>
+                            Sem registro
+                          </span>
+                        ) : pmtStatus === 'paid' ? (
+                          <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, color: '#00A88E', background: '#D1EEEA' }}>
+                            {pmtMethod ? PAYMENT_METHOD_LABEL[pmtMethod] ?? pmtMethod : 'Pago'}
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, color: '#92400e', background: '#fef3c7' }}>
+                            Pendente
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* ── Histórico de pagamentos ── */}
       <div style={{ background: '#fff', border: '1px solid #D1EEEA', borderRadius: 12, overflow: 'hidden' }}>
