@@ -63,6 +63,7 @@ const PLAN_COMPARISON = [
   { feature: 'Código de convite para tutores',free: true,         pro: true        },
   { feature: 'Agendamentos de última hora',   free: false,        pro: true        },
   { feature: 'Destaque no app para tutores',  free: false,        pro: true        },
+  { feature: 'Página pública compartilhável', free: false,        pro: true        },
   { feature: 'Suporte prioritário',           free: false,        pro: true        },
 ];
 
@@ -142,6 +143,46 @@ export default function LandingPage() {
       <Suspense fallback={null}>
         <CitiesSection />
       </Suspense>
+
+      {/* PRO PROFILE HIGHLIGHT */}
+      <section className="lp-pro-profile-section">
+        <div className="lp-pro-profile-inner">
+          <div className="lp-pro-profile-text">
+            <span className="lp-pro-profile-badge">⭐ Exclusivo Pro</span>
+            <h2 className="lp-pro-profile-title">Sua página profissional na internet</h2>
+            <p className="lp-pro-profile-desc">
+              Walkers Pro ganham uma página personalizada para divulgar seus serviços nas redes sociais.
+              Compartilhe seu link, mostre avaliações reais e conquiste mais clientes.
+            </p>
+            <ul className="lp-pro-profile-list">
+              <li>🔗 Link único: <strong>walker.zupet.io/w/seu-nome</strong></li>
+              <li>📸 Foto, bio, serviços e preços em um só lugar</li>
+              <li>⭐ Avaliações dos tutores visíveis publicamente</li>
+              <li>💬 Botão direto para WhatsApp e Instagram</li>
+            </ul>
+            <Link href="/cadastro" className="lp-pro-profile-cta">Criar minha página grátis</Link>
+          </div>
+          <div className="lp-pro-profile-mockup">
+            <div className="lp-ppm-card">
+              <div className="lp-ppm-header">
+                <div className="lp-ppm-avatar">AW</div>
+                <div>
+                  <div className="lp-ppm-name">Ana Walker</div>
+                  <div className="lp-ppm-city">📍 São Paulo, SP</div>
+                  <div className="lp-ppm-stars">★★★★★ <span>5.0</span></div>
+                </div>
+                <div className="lp-ppm-pro-badge">Pro</div>
+              </div>
+              <div className="lp-ppm-services">
+                <div className="lp-ppm-svc">🦮 Passeio · R$ 35,00</div>
+                <div className="lp-ppm-svc">🛁 Banho e Tosa · R$ 60,00</div>
+                <div className="lp-ppm-svc">🌙 Hospedagem · R$ 80,00/dia</div>
+              </div>
+              <div className="lp-ppm-url">walker.zupet.io/w/ana-walker</div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* PLANS */}
       <section id="planos" className="lp-plans-section">
