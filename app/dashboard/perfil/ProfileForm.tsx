@@ -208,7 +208,7 @@ export default function ProfileForm({
                   <p>É uma página exclusiva sua na internet, como:</p>
                   <p style={{ color: '#00C6A7', fontWeight: 600, margin: '6px 0' }}>walker.zupet.io/w/<strong>seu-nome</strong></p>
                   <p>Você pode compartilhar nas redes sociais para mostrar seus serviços, avaliações e preços para potenciais clientes.</p>
-                  <div style={{ position: 'absolute', bottom: -6, left: '50%', transform: 'translateX(-50%)', width: 10, height: 10, background: '#0D2E22', border: '1px solid rgba(0,198,167,0.25)', borderTop: 'none', borderLeft: 'none', transform: 'translateX(-50%) rotate(45deg)' }} />
+                  <div style={{ position: 'absolute', bottom: -6, left: '50%', width: 10, height: 10, background: '#0D2E22', border: '1px solid rgba(0,198,167,0.25)', borderTop: 'none', borderLeft: 'none', transform: 'translateX(-50%) rotate(45deg)' }} />
                 </div>
               )}
             </div>
