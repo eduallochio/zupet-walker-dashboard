@@ -52,7 +52,7 @@ Dados de localização detalhados (pontos GPS individuais) não são armazenados
 • Revogar o consentimento para tratamento de dados.
 • Solicitar portabilidade dos seus dados.
 
-Para exercer esses direitos, entre em contato: **contato@zupet.io**`,
+Para exercer esses direitos, entre em contato: **eduallochio2@outlook.com**`,
   },
   {
     title: '6. Retenção de dados',
@@ -70,7 +70,7 @@ Para exercer esses direitos, entre em contato: **contato@zupet.io**`,
     title: '9. Contato',
     body: `Dúvidas, solicitações ou reclamações relacionadas à privacidade:
 
-**Zupet — contato@zupet.io**
+**Zupet — eduallochio2@outlook.com**
 Responsável pelo tratamento de dados: Eduardo Allochio`,
   },
 ];

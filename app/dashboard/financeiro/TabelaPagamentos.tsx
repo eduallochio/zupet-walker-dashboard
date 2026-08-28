@@ -16,15 +16,21 @@ const STATUS_COLOR: Record<string, { color: string; bg: string }> = {
 
 const BILLING_TYPE_LABEL: Record<string, string> = {
   walk:        '🦮 Passeio',
-  bath:        '🛁 Banho',
-  hotel:       '🏠 Hospedagem',
-  vet:         '🩺 Veterinário',
-  day_care:    '☀️ Day care',
-  training:    '🎓 Treinamento',
+  bath:        '🛁 Banho e Tosa',
+  boarding:    '🌙 Hospedagem',
+  daycare:     '🏠 Creche',
+  vet_visit:   '🏥 Visita ao Vet',
+  training:    '🎯 Adestramento',
   per_session: '📋 Por sessão',
   daily:       '📅 Diário',
   weekly:      '📆 Semanal',
   monthly:     '🗓️ Mensal',
+};
+
+const PAYMENT_METHOD_LABEL: Record<string, string> = {
+  cash: '💵 Dinheiro',
+  pix:  '📲 PIX',
+  card: '💳 Cartão',
 };
 
 type Payment = {
@@ -32,6 +38,8 @@ type Payment = {
   amount: number;
   status: string;
   billing_type: string;
+  service_type?: string;
+  payment_method?: string;
   description?: string;
   created_at: string;
   owner_id?: string;
@@ -60,8 +68,15 @@ function PaymentRow({ p, ownerName }: { p: Payment; ownerName: string }) {
       <td style={{ padding: '12px 20px', color: '#4a6b65', fontSize: 13 }}>{formatDate(p.created_at)}</td>
       <td style={{ padding: '12px 20px', color: '#4a6b65', fontSize: 13 }}>{ownerName}</td>
       <td style={{ padding: '12px 20px', color: '#4a6b65', fontSize: 13 }}>
-        <div>{BILLING_TYPE_LABEL[p.billing_type] ?? p.billing_type ?? '—'}</div>
-        {p.description && <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>{p.description}</div>}
+        <div>{BILLING_TYPE_LABEL[p.service_type ?? p.billing_type] ?? p.description ?? '—'}</div>
+        {p.payment_method && (
+          <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
+            {PAYMENT_METHOD_LABEL[p.payment_method] ?? p.payment_method}
+          </div>
+        )}
+        {!p.payment_method && p.description && (
+          <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>{p.description}</div>
+        )}
       </td>
       <td style={{ padding: '12px 20px', textAlign: 'right', fontWeight: 700, color: '#0D2926', fontVariantNumeric: 'tabular-nums', fontSize: 13 }}>
         {formatCurrency(p.amount ?? 0)}
