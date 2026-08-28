@@ -171,14 +171,14 @@ export default function ProClient({ isPro, email, pixKey }: { isPro: boolean; em
             <p style={{ fontWeight: 600, color: C.text, marginBottom: 8 }}>Como ativar:</p>
             {pricing.isFree ? (
               <ol style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingLeft: 16 }}>
-                <li>Envie um email para <span style={{ color: C.accent, fontWeight: 600 }}>contato@zupet.io</span></li>
+                <li>Entre em contato pelo WhatsApp <span style={{ color: C.accent, fontWeight: 600 }}>(27) 99871-4453</span> ou email <span style={{ color: C.accent, fontWeight: 600 }}>eduallochio2@outlook.com</span></li>
                 <li>Informe o cupom <strong style={{ color: C.text }}>{couponResult?.coupon.code}</strong> e seu email de cadastro</li>
                 <li>Ativamos em até 24h úteis</li>
               </ol>
             ) : (
               <ol style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingLeft: 16 }}>
                 <li>Faça o Pix de <strong style={{ color: C.text }}>R$ {pricing.final.toFixed(2).replace('.', ',')}</strong> para a chave acima</li>
-                <li>Envie o comprovante para <span style={{ color: C.accent, fontWeight: 600 }}>contato@zupet.io</span></li>
+                <li>Envie o comprovante pelo WhatsApp <span style={{ color: C.accent, fontWeight: 600 }}>(27) 99871-4453</span> ou email <span style={{ color: C.accent, fontWeight: 600 }}>eduallochio2@outlook.com</span></li>
                 {couponResult && <li>Informe o cupom <strong style={{ color: C.text }}>{couponResult.coupon.code}</strong> no email</li>}
                 <li>Informe seu email de cadastro</li>
                 <li>Ativamos em até 24h úteis</li>

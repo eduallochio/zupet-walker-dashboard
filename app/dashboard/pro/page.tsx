@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 import ProClient from './ProClient';
 
-const PIX_KEY = process.env.PIX_KEY ?? 'contato@zupet.io';
+const PIX_KEY = process.env.PIX_KEY ?? '33065719000160';
 
 export default async function ProPage() {
   const jar = await cookies();
