@@ -160,10 +160,7 @@ export default async function DashboardPage() {
     <div style={{ color: C.textPrimary, fontFamily: 'inherit' }}>
 
       {/* ── HEADER ── */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        marginBottom: 32, gap: 16, flexWrap: 'wrap',
-      }}>
+      <div className="db-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           {/* Avatar */}
           <div style={{
@@ -193,7 +190,7 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div className="db-header-actions">
           {/* Badge plano */}
           <span style={{
             fontSize: 11, fontWeight: 700, letterSpacing: '0.08em',
@@ -237,7 +234,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* ── STAT CARDS ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+      <div className="db-stat-grid">
         <StatCard
           icon="🦮" label="Passeios" value={String(allSessions?.length ?? 0)}
           sub="no total" accent={C.accent} accentDim={C.accentDim} C={C}
@@ -265,7 +262,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* ── LINHA 2: próximos agendamentos + pets ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+      <div className="db-row2">
 
         {/* Próximos agendamentos */}
         <div style={{
@@ -423,7 +420,7 @@ export default async function DashboardPage() {
             <p style={{ fontSize: 13, color: C.textSecondary }}>Nenhum passeio registrado ainda.</p>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', borderTop: 'none' }}>
+          <div className="db-reports-grid">
             {recentReports.map((r: any, i: number) => (
               <div key={r.id} style={{
                 padding: '16px 20px',

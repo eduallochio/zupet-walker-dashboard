@@ -1272,6 +1272,56 @@ body {
   }
 }
 
+/* ── DASHBOARD PAGE GRIDS ── */
+.db-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.db-row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.db-reports-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+.db-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.db-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 1024px) {
+  .db-stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .db-reports-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+  .db-stat-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
+  .db-row2 { grid-template-columns: 1fr; gap: 12px; margin-bottom: 12px; }
+  .db-reports-grid { grid-template-columns: 1fr 1fr; }
+  .db-header { margin-bottom: 20px; }
+  .db-header-actions { gap: 8px; }
+}
+
+@media (max-width: 480px) {
+  .db-stat-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .db-reports-grid { grid-template-columns: 1fr; }
+}
+
 /* ── focus ── */
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
 
