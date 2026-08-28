@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
 const SIZE_OPTIONS = [
@@ -20,6 +20,7 @@ export default function ProfileForm({
   initialServiceRadiusKm,
   initialAcceptedSizes,
   initialAcceptsLastMinute,
+  initialUsername,
   userId,
   accessToken,
 }: {
@@ -33,6 +34,7 @@ export default function ProfileForm({
   initialServiceRadiusKm: number;
   initialAcceptedSizes: string[];
   initialAcceptsLastMinute: boolean;
+  initialUsername: string;
   userId: string;
   accessToken: string;
 }) {
@@ -45,9 +47,38 @@ export default function ProfileForm({
   const [serviceRadiusKm,    setServiceRadiusKm]    = useState(initialServiceRadiusKm);
   const [acceptedSizes,      setAcceptedSizes]      = useState<string[]>(initialAcceptedSizes);
   const [acceptsLastMinute,  setAcceptsLastMinute]  = useState(initialAcceptsLastMinute);
+  const [username,           setUsername]           = useState(initialUsername ?? '');
+  const [usernameError,      setUsernameError]      = useState('');
+  const [usernameSaving,     setUsernameSaving]     = useState(false);
+  const [usernameSuccess,    setUsernameSuccess]    = useState(false);
+  const [tooltipVisible,     setTooltipVisible]     = useState(false);
+  const tooltipTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [saving,  setSaving]  = useState(false);
   const [success, setSuccess] = useState(false);
   const [error,   setError]   = useState('');
+
+  const saveUsername = async () => {
+    const clean = username.trim().toLowerCase();
+    if (clean && !/^[a-z0-9][a-z0-9\-]{1,28}[a-z0-9]$/.test(clean)) {
+      setUsernameError('Use apenas letras minúsculas, números e hífens (3–30 caracteres).');
+      return;
+    }
+    setUsernameError('');
+    setUsernameSaving(true);
+    setUsernameSuccess(false);
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { global: { headers: { Authorization: `Bearer ${accessToken}` } } }
+    );
+    const { error: err } = await supabase
+      .from('walker_profiles')
+      .update({ username: clean || null })
+      .eq('user_id', userId);
+    if (err) setUsernameError(err.message);
+    else setUsernameSuccess(true);
+    setUsernameSaving(false);
+  };
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,6 +166,97 @@ export default function ProfileForm({
           <p style={{ fontSize: 12, color: '#7FA898' }}>{plan === 'pro' ? 'Todos os recursos liberados' : 'Faça upgrade para desbloquear mais'}</p>
         </div>
       </div>
+
+      {/* Username Pro */}
+      {plan === 'pro' && (
+        <div style={{ padding: '18px 20px', background: '#132219', borderRadius: 14, border: '1.5px solid rgba(0,198,167,0.25)', display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {/* Header com tooltip */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: '#E8F5F0' }}>🔗 Link público personalizado</span>
+            <span style={{ fontSize: 10, fontWeight: 700, color: '#00C6A7', background: 'rgba(0,198,167,0.12)', border: '1px solid rgba(0,198,167,0.3)', borderRadius: 20, padding: '2px 8px' }}>Pro</span>
+            {/* Ícone de ajuda com tooltip */}
+            <div style={{ position: 'relative', display: 'inline-flex' }}>
+              <button
+                type="button"
+                onMouseEnter={() => {
+                  if (tooltipTimeout.current) clearTimeout(tooltipTimeout.current);
+                  setTooltipVisible(true);
+                }}
+                onMouseLeave={() => {
+                  tooltipTimeout.current = setTimeout(() => setTooltipVisible(false), 200);
+                }}
+                onFocus={() => setTooltipVisible(true)}
+                onBlur={() => setTooltipVisible(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: '#7FA898', display: 'flex', alignItems: 'center' }}
+                aria-label="O que é o link público?"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                  <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+              </button>
+              {tooltipVisible && (
+                <div style={{
+                  position: 'absolute', bottom: '120%', left: '50%', transform: 'translateX(-50%)',
+                  background: '#0D2E22', border: '1px solid rgba(0,198,167,0.25)', borderRadius: 10,
+                  padding: '12px 14px', width: 260, zIndex: 100,
+                  fontSize: 12, color: '#b0cfc5', lineHeight: 1.6,
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+                }}>
+                  <p style={{ fontWeight: 700, color: '#E8F5F0', marginBottom: 6 }}>O que é o link público?</p>
+                  <p>É uma página exclusiva sua na internet, como:</p>
+                  <p style={{ color: '#00C6A7', fontWeight: 600, margin: '6px 0' }}>walker.zupet.io/w/<strong>seu-nome</strong></p>
+                  <p>Você pode compartilhar nas redes sociais para mostrar seus serviços, avaliações e preços para potenciais clientes.</p>
+                  <div style={{ position: 'absolute', bottom: -6, left: '50%', transform: 'translateX(-50%)', width: 10, height: 10, background: '#0D2E22', border: '1px solid rgba(0,198,167,0.25)', borderTop: 'none', borderLeft: 'none', transform: 'translateX(-50%) rotate(45deg)' }} />
+                </div>
+              )}
+            </div>
+          </div>
+
+          <p style={{ fontSize: 12, color: '#7FA898', marginTop: -8 }}>
+            Defina um apelido único para seu perfil público. Use letras minúsculas, números e hífens (3–30 caracteres).
+          </p>
+
+          {/* Input de username */}
+          <div style={{ display: 'flex', alignItems: 'center', background: '#0D2E22', border: `1.5px solid ${usernameError ? '#F87171' : 'rgba(0,200,167,0.2)'}`, borderRadius: 10, overflow: 'hidden' }}>
+            <span style={{ padding: '11px 10px 11px 14px', fontSize: 13, color: '#7FA898', whiteSpace: 'nowrap', userSelect: 'none' }}>
+              walker.zupet.io/w/
+            </span>
+            <input
+              value={username}
+              onChange={e => { setUsername(e.target.value.toLowerCase()); setUsernameError(''); setUsernameSuccess(false); }}
+              placeholder="meu-nome"
+              style={{ flex: 1, border: 'none', background: 'transparent', padding: '11px 14px 11px 0', fontSize: 14, color: '#E8F5F0', outline: 'none', fontFamily: 'inherit' }}
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+            />
+          </div>
+          {usernameError && <p style={{ fontSize: 12, color: '#F87171', marginTop: -8 }}>{usernameError}</p>}
+          {usernameSuccess && !usernameError && (
+            <p style={{ fontSize: 12, color: '#22D3A5', fontWeight: 600, marginTop: -8 }}>
+              ✓ Link salvo! Acesse: <a href={`https://walker.zupet.io/w/${username}`} target="_blank" rel="noopener noreferrer" style={{ color: '#00C6A7' }}>walker.zupet.io/w/{username}</a>
+            </p>
+          )}
+
+          <button
+            type="button"
+            onClick={saveUsername}
+            disabled={usernameSaving}
+            style={{
+              alignSelf: 'flex-start',
+              background: usernameSaving ? '#9CA3AF' : '#00C6A7',
+              color: '#fff', fontWeight: 700, fontSize: 13,
+              padding: '9px 20px', borderRadius: 8, border: 'none',
+              cursor: usernameSaving ? 'not-allowed' : 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            {usernameSaving ? 'Salvando...' : 'Salvar link'}
+          </button>
+        </div>
+      )}
 
       {/* Dados básicos */}
       <div>

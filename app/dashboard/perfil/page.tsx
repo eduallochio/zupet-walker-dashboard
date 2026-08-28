@@ -18,7 +18,7 @@ export default async function PerfilPage() {
 
   const { data: profile } = await supabase
     .from('walker_profiles')
-    .select('name, bio, phone, city, neighborhood, plan, summary_items, service_radius_km, accepted_sizes, accepts_last_minute')
+    .select('name, bio, phone, city, neighborhood, plan, summary_items, service_radius_km, accepted_sizes, accepts_last_minute, username')
     .eq('user_id', user.id)
     .single();
 
@@ -36,6 +36,7 @@ export default async function PerfilPage() {
         initialServiceRadiusKm={(profile as any)?.service_radius_km ?? 5}
         initialAcceptedSizes={(profile as any)?.accepted_sizes ?? ['small', 'medium', 'large']}
         initialAcceptsLastMinute={(profile as any)?.accepts_last_minute ?? false}
+        initialUsername={(profile as any)?.username ?? ''}
         userId={user.id}
         accessToken={accessToken}
       />
