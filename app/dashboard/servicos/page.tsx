@@ -49,7 +49,9 @@ export default async function ServicosPage() {
   if (!user) return null;
 
   const { data: profile } = await supabase
-    .from('walker_profiles').select('id').eq('user_id', user.id).single();
+    .from('walker_profiles').select('id, plan').eq('user_id', user.id).single();
+
+  const isPro = profile?.plan === 'pro';
 
   const { data: services } = profile?.id ? await supabase
     .from('walker_services')
@@ -75,6 +77,13 @@ export default async function ServicosPage() {
           Gerencie no app
         </div>
       </div>
+
+      {!isPro && rows.length >= 1 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 10, padding: '10px 14px', marginBottom: 24, fontSize: 13, color: '#F59E0B' }}>
+          <span>🔒</span>
+          <span>Plano Free: limite de 1 serviço. Para adicionar mais, <a href="/dashboard/pro" style={{ color: '#F59E0B', fontWeight: 700, textDecoration: 'underline' }}>faça upgrade para o plano Pro.</a></span>
+        </div>
+      )}
 
       {rows.length === 0 ? (
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: '48px 20px', textAlign: 'center' }}>

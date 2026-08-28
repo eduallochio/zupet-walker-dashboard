@@ -100,7 +100,12 @@ export default async function FinanceiroPage() {
   if (!user) return null;
 
   const { data: profile } = await supabase
-    .from('walker_profiles').select('id').eq('user_id', user.id).single();
+    .from('walker_profiles').select('id, plan').eq('user_id', user.id).single();
+
+  const isPro = profile?.plan === 'pro';
+  const freeCutoff = isPro ? null : (() => {
+    const d = new Date(); d.setDate(d.getDate() - 7); return d.toISOString();
+  })();
 
   const sixMonthsAgo = new Date();
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
@@ -138,10 +143,13 @@ export default async function FinanceiroPage() {
       : Promise.resolve({ data: [] }),
   ]);
 
-  const paymentsRows      = (payments      ?? []) as any[];
-  const reportsRows       = (reports       ?? []) as any[];
-  const sessionsRows      = (sessions      ?? []) as any[];
-  const doneSchedulesRows = (doneSchedules ?? []) as any[];
+  const applyFreeCutoff = (rows: any[], dateField: string) =>
+    freeCutoff ? rows.filter((r: any) => r[dateField] >= freeCutoff!) : rows;
+
+  const paymentsRows      = applyFreeCutoff((payments      ?? []) as any[], 'created_at');
+  const reportsRows       = applyFreeCutoff((reports       ?? []) as any[], 'created_at');
+  const sessionsRows      = applyFreeCutoff((sessions      ?? []) as any[], 'ended_at');
+  const doneSchedulesRows = applyFreeCutoff((doneSchedules ?? []) as any[], 'scheduled_at');
 
   // Buscar todos os tutores vinculados ao walker via walker_pet_links
   const { data: linkedPets } = profile?.id
@@ -272,6 +280,13 @@ export default async function FinanceiroPage() {
         <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, letterSpacing: '-0.03em' }}>Financeiro</h1>
         <NovoLancamentoModal owners={allOwnerIds.map(id => ({ user_id: id, name: ownerNames[id] ?? id }))} />
       </div>
+
+      {!isPro && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 10, padding: '10px 14px', marginBottom: 24, fontSize: 13, color: '#F59E0B' }}>
+          <span>🔒</span>
+          <span>Plano Free: exibindo apenas os últimos 7 dias. <a href="/dashboard/pro" style={{ color: '#F59E0B', fontWeight: 700, textDecoration: 'underline' }}>Faça upgrade para ver o histórico completo.</a></span>
+        </div>
+      )}
 
       {/* ── Stats principais ── */}
       <div className="db-stat-grid" style={{ marginBottom: 24 }}>

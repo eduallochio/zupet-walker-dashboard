@@ -21,7 +21,12 @@ export default async function RelatoriosPage() {
   if (!user) return null;
 
   const { data: profile } = await supabase
-    .from('walker_profiles').select('id').eq('user_id', user.id).single();
+    .from('walker_profiles').select('id, plan').eq('user_id', user.id).single();
+
+  const isPro = profile?.plan === 'pro';
+  const cutoff = isPro ? null : (() => {
+    const d = new Date(); d.setDate(d.getDate() - 7); return d.toISOString();
+  })();
 
   const [{ data: reports }, { data: doneSchedules }] = await Promise.all([
     profile?.id
@@ -30,6 +35,7 @@ export default async function RelatoriosPage() {
           .eq('walker_id', profile.id)
           .order('created_at', { ascending: false })
           .limit(50)
+          .then(res => cutoff ? { data: (res.data ?? []).filter((r: any) => r.created_at >= cutoff!) } : res)
       : Promise.resolve({ data: [] }),
     profile?.id
       ? supabase.from('walk_schedules')
@@ -38,6 +44,7 @@ export default async function RelatoriosPage() {
           .eq('status', 'done')
           .order('scheduled_at', { ascending: false })
           .limit(50)
+          .then(res => cutoff ? { data: (res.data ?? []).filter((r: any) => r.scheduled_at >= cutoff!) } : res)
       : Promise.resolve({ data: [] }),
   ]);
 
@@ -74,9 +81,15 @@ export default async function RelatoriosPage() {
 
   return (
     <div style={{ padding: '28px 24px', maxWidth: 900, margin: '0 auto' }}>
-      <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, letterSpacing: '-0.03em', marginBottom: 28 }}>
+      <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, letterSpacing: '-0.03em', marginBottom: isPro ? 28 : 12 }}>
         Relatórios e Atendimentos
       </h1>
+      {!isPro && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 10, padding: '10px 14px', marginBottom: 24, fontSize: 13, color: '#F59E0B' }}>
+          <span>🔒</span>
+          <span>Plano Free: exibindo apenas os últimos 7 dias. <a href="/dashboard/pro" style={{ color: '#F59E0B', fontWeight: 700, textDecoration: 'underline' }}>Faça upgrade para ver o histórico completo.</a></span>
+        </div>
+      )}
 
       {/* Resumo geral */}
       {rows.length > 0 && (
