@@ -85,12 +85,12 @@ export default function ProfileForm({
 
   const inputStyle: React.CSSProperties = {
     width: '100%',
-    border: '1px solid #D1EEEA',
+    border: '1px solid rgba(0,200,167,0.2)',
     borderRadius: 10,
     padding: '11px 14px',
     fontSize: 14,
-    color: '#0D2926',
-    background: '#fff',
+    color: '#E8F5F0',
+    background: '#0D2E22',
     outline: 'none',
     fontFamily: 'inherit',
     boxSizing: 'border-box',
@@ -102,13 +102,13 @@ export default function ProfileForm({
     fontWeight: 600,
     letterSpacing: '0.05em',
     textTransform: 'uppercase',
-    color: '#6B7280',
+    color: '#7FA898',
     marginBottom: 6,
   };
 
   const sectionStyle: React.CSSProperties = {
     padding: '18px 0 0',
-    borderTop: '1px solid #E5F5F2',
+    borderTop: '1px solid rgba(0,200,167,0.12)',
     marginTop: 4,
   };
 
@@ -128,11 +128,11 @@ export default function ProfileForm({
   return (
     <form onSubmit={save} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Plano badge */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: '#F5FAFA', borderRadius: 10, border: '1px solid #D1EEEA' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: '#132219', borderRadius: 10, border: '1px solid rgba(0,200,167,0.12)' }}>
         <span style={{ fontSize: 22 }}>{plan === 'pro' ? '✦' : '○'}</span>
         <div>
-          <p style={{ fontWeight: 700, color: '#0D2926', fontSize: 14 }}>{plan === 'pro' ? 'Plano Pro' : 'Plano Gratuito'}</p>
-          <p style={{ fontSize: 12, color: '#6B7280' }}>{plan === 'pro' ? 'Todos os recursos liberados' : 'Faça upgrade para desbloquear mais'}</p>
+          <p style={{ fontWeight: 700, color: '#E8F5F0', fontSize: 14 }}>{plan === 'pro' ? 'Plano Pro' : 'Plano Gratuito'}</p>
+          <p style={{ fontSize: 12, color: '#7FA898' }}>{plan === 'pro' ? 'Todos os recursos liberados' : 'Faça upgrade para desbloquear mais'}</p>
         </div>
       </div>
 
@@ -163,7 +163,7 @@ export default function ProfileForm({
       {/* Diferenciais */}
       <div style={sectionStyle}>
         <label style={labelStyle}>Diferenciais do seu serviço</label>
-        <p style={{ fontSize: 12, color: '#6B7280', marginBottom: 12 }}>Escreva bullet points que aparecem no seu perfil público (ex: "Rotas tranquilas e adaptadas")</p>
+        <p style={{ fontSize: 12, color: '#7FA898', marginBottom: 12 }}>Escreva bullet points que aparecem no seu perfil público (ex: "Rotas tranquilas e adaptadas")</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {summaryItems.map((item, i) => (
             <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -177,7 +177,7 @@ export default function ProfileForm({
                 <button
                   type="button"
                   onClick={() => removeSummaryItem(i)}
-                  style={{ background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer', fontSize: 18, padding: '0 4px' }}
+                  style={{ background: 'none', border: 'none', color: '#7FA898', cursor: 'pointer', fontSize: 18, padding: '0 4px' }}
                 >×</button>
               )}
             </div>
@@ -187,7 +187,7 @@ export default function ProfileForm({
           <button
             type="button"
             onClick={addSummaryItem}
-            style={{ marginTop: 8, background: 'none', border: '1px dashed #D1EEEA', borderRadius: 8, padding: '8px 14px', color: '#00A88E', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
+            style={{ marginTop: 8, background: 'none', border: '1px dashed rgba(0,200,167,0.3)', borderRadius: 8, padding: '8px 14px', color: '#00C6A7', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
           >+ Adicionar diferencial</button>
         )}
       </div>
@@ -204,7 +204,7 @@ export default function ProfileForm({
             onChange={e => setServiceRadiusKm(Number(e.target.value))}
             style={{ flex: 1, accentColor: '#00C6A7' }}
           />
-          <span style={{ minWidth: 52, fontWeight: 700, color: '#0D2926', fontSize: 15 }}>{serviceRadiusKm} km</span>
+          <span style={{ minWidth: 52, fontWeight: 700, color: '#E8F5F0', fontSize: 15 }}>{serviceRadiusKm} km</span>
         </div>
       </div>
 
@@ -222,9 +222,9 @@ export default function ProfileForm({
                 style={{
                   padding: '8px 14px',
                   borderRadius: 8,
-                  border: `1.5px solid ${active ? '#00C6A7' : '#D1EEEA'}`,
-                  background: active ? '#E6FAF7' : '#fff',
-                  color: active ? '#00A88E' : '#6B7280',
+                  border: `1.5px solid ${active ? '#00C6A7' : 'rgba(0,200,167,0.15)'}`,
+                  background: active ? 'rgba(0,198,167,0.15)' : '#0D2E22',
+                  color: active ? '#00C6A7' : '#7FA898',
                   fontWeight: active ? 700 : 400,
                   fontSize: 13,
                   cursor: 'pointer',
@@ -241,8 +241,8 @@ export default function ProfileForm({
       <div style={sectionStyle}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <p style={{ fontWeight: 600, color: '#0D2926', fontSize: 14, marginBottom: 2 }}>Aceita agendamentos de última hora</p>
-            <p style={{ fontSize: 12, color: '#6B7280' }}>Tutores podem solicitar passeios com menos de 24h de antecedência</p>
+            <p style={{ fontWeight: 600, color: '#E8F5F0', fontSize: 14, marginBottom: 2 }}>Aceita agendamentos de última hora</p>
+            <p style={{ fontSize: 12, color: '#7FA898' }}>Tutores podem solicitar passeios com menos de 24h de antecedência</p>
           </div>
           <button
             type="button"
@@ -274,8 +274,8 @@ export default function ProfileForm({
         </div>
       </div>
 
-      {error   && <p style={{ color: '#991b1b', fontSize: 13 }}>{error}</p>}
-      {success && <p style={{ color: '#00A88E', fontSize: 13, fontWeight: 600 }}>Perfil salvo com sucesso!</p>}
+      {error   && <p style={{ color: '#F87171', fontSize: 13 }}>{error}</p>}
+      {success && <p style={{ color: '#22D3A5', fontSize: 13, fontWeight: 600 }}>Perfil salvo com sucesso!</p>}
 
       <button
         type="submit"

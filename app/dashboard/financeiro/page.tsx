@@ -4,6 +4,13 @@ import { formatCurrency } from '@/lib/utils';
 import { NovoLancamentoModal } from './NovoLancamentoModal';
 import { TabelaPagamentos } from './TabelaPagamentos';
 
+const C = {
+  card: '#132219', border: 'rgba(0,200,167,0.12)',
+  accent: '#00C6A7', accentDim: 'rgba(0,198,167,0.12)',
+  text: '#E8F5F0', textSec: '#7FA898', textMuted: '#4A6B60',
+  success: '#22D3A5', warning: '#F59E0B', danger: '#F87171',
+};
+
 const BILLING_TYPE_LABEL: Record<string, string> = {
   walk:        '🦮 Passeio',
   bath:        '🛁 Banho e Tosa',
@@ -55,10 +62,10 @@ function BarChart({ data }: { data: { label: string; paid: number; pending: numb
                 <rect x={x} y={BAR_H - 4 + 2} width={barW} height={4} rx={2} fill="#e8f4f2" />
               )}
               {/* Label mês */}
-              <text x={x + barW / 2} y={BAR_H + 16} textAnchor="middle" fontSize={9} fill="#9CA3AF">{d.label}</text>
+              <text x={x + barW / 2} y={BAR_H + 16} textAnchor="middle" fontSize={9} fill="#7FA898">{d.label}</text>
               {/* Valor total acima da barra */}
               {(d.paid + d.pending) > 0 && (
-                <text x={x + barW / 2} y={BAR_H - totalH - 2} textAnchor="middle" fontSize={8.5} fill="#0D2926" fontWeight="700">
+                <text x={x + barW / 2} y={BAR_H - totalH - 2} textAnchor="middle" fontSize={8.5} fill="#E8F5F0" fontWeight="700">
                   {formatCurrency(d.paid + d.pending)}
                 </text>
               )}
@@ -68,12 +75,12 @@ function BarChart({ data }: { data: { label: string; paid: number; pending: numb
       </svg>
       {/* Legenda */}
       <div style={{ display: 'flex', gap: 16, justifyContent: 'flex-end', marginTop: 4 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#6B7280' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#7FA898' }}>
           <div style={{ width: 10, height: 10, background: '#00C6A7', borderRadius: 2 }} />
           Recebido
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#6B7280' }}>
-          <div style={{ width: 10, height: 10, background: '#fde68a', borderRadius: 2, border: '1px solid #fde68a' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#7FA898' }}>
+          <div style={{ width: 10, height: 10, background: 'rgba(245,158,11,0.5)', borderRadius: 2, border: '1px solid rgba(245,158,11,0.4)' }} />
           Pendente
         </div>
       </div>
@@ -260,116 +267,114 @@ export default async function FinanceiroPage() {
   const petRows = Object.entries(byPet).sort((a, b) => b[1].walks - a[1].walks);
 
   return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0D2926', letterSpacing: '-0.03em' }}>Financeiro</h1>
+    <div style={{ padding: '28px 24px', maxWidth: 1100, margin: '0 auto' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, letterSpacing: '-0.03em' }}>Financeiro</h1>
         <NovoLancamentoModal owners={allOwnerIds.map(id => ({ user_id: id, name: ownerNames[id] ?? id }))} />
       </div>
 
       {/* ── Stats principais ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
-        <div style={{ background: '#fff', border: '1px solid #D1EEEA', borderRadius: 12, padding: '18px 20px' }}>
-          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 10 }}>Total recebido</p>
-          <p style={{ fontSize: 26, fontWeight: 800, color: '#00A88E', letterSpacing: '-0.04em', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(totalPaid)}</p>
-          <p style={{ fontSize: 11.5, color: '#6B7280', marginTop: 6 }}>pagamentos confirmados</p>
+      <div className="db-stat-grid" style={{ marginBottom: 24 }}>
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: '18px 20px' }}>
+          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: C.textSec, marginBottom: 10 }}>Total recebido</p>
+          <p style={{ fontSize: 26, fontWeight: 800, color: C.success, letterSpacing: '-0.04em', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(totalPaid)}</p>
+          <p style={{ fontSize: 11.5, color: C.textSec, marginTop: 6 }}>pagamentos confirmados</p>
         </div>
-        <div style={{ background: '#fff', border: '1px solid #D1EEEA', borderRadius: 12, padding: '18px 20px' }}>
-          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 10 }}>A receber</p>
-          <p style={{ fontSize: 26, fontWeight: 800, color: '#92400e', letterSpacing: '-0.04em', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(totalPending)}</p>
-          <p style={{ fontSize: 11.5, color: '#6B7280', marginTop: 6 }}>aguardando pagamento</p>
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: '18px 20px' }}>
+          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: C.textSec, marginBottom: 10 }}>A receber</p>
+          <p style={{ fontSize: 26, fontWeight: 800, color: C.warning, letterSpacing: '-0.04em', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(totalPending)}</p>
+          <p style={{ fontSize: 11.5, color: C.textSec, marginTop: 6 }}>aguardando pagamento</p>
         </div>
-        <div style={{ background: '#fff', border: '1px solid #D1EEEA', borderRadius: 12, padding: '18px 20px' }}>
-          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 10 }}>Passeios</p>
-          <p style={{ fontSize: 26, fontWeight: 800, color: '#0D2926', letterSpacing: '-0.04em', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{totalWalks}</p>
-          <p style={{ fontSize: 11.5, color: '#6B7280', marginTop: 6 }}>{formatDuration(totalMin)} no total</p>
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: '18px 20px' }}>
+          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: C.textSec, marginBottom: 10 }}>Passeios</p>
+          <p style={{ fontSize: 26, fontWeight: 800, color: C.text, letterSpacing: '-0.04em', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{totalWalks}</p>
+          <p style={{ fontSize: 11.5, color: C.textSec, marginTop: 6 }}>{formatDuration(totalMin)} no total</p>
         </div>
-        <div style={{ background: '#fff', border: '1px solid #D1EEEA', borderRadius: 12, padding: '18px 20px' }}>
-          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 10 }}>Distância</p>
-          <p style={{ fontSize: 26, fontWeight: 800, color: '#0D2926', letterSpacing: '-0.04em', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{(totalDist / 1000).toFixed(1)}</p>
-          <p style={{ fontSize: 11.5, color: '#6B7280', marginTop: 6 }}>km percorridos</p>
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: '18px 20px' }}>
+          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: C.textSec, marginBottom: 10 }}>Distância</p>
+          <p style={{ fontSize: 26, fontWeight: 800, color: C.text, letterSpacing: '-0.04em', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{(totalDist / 1000).toFixed(1)}</p>
+          <p style={{ fontSize: 11.5, color: C.textSec, marginTop: 6 }}>km percorridos</p>
         </div>
       </div>
 
-      {/* ── Item 3: Gráfico de receita mensal ── */}
-      <div style={{ background: '#fff', border: '1px solid #D1EEEA', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
-        <div style={{ padding: '16px 20px 14px', borderBottom: '1px solid #e8f4f2', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h2 style={{ fontWeight: 700, fontSize: 13, color: '#0D2926', letterSpacing: '-0.01em' }}>Receita mensal</h2>
-          <span style={{ fontSize: 12, color: '#6B7280' }}>últimos 6 meses</span>
+      {/* ── Gráfico de receita mensal ── */}
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden', marginBottom: 16 }}>
+        <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h2 style={{ fontWeight: 700, fontSize: 13, color: C.text, letterSpacing: '-0.01em' }}>Receita mensal</h2>
+          <span style={{ fontSize: 12, color: C.textSec }}>últimos 6 meses</span>
         </div>
         <BarChart data={chartData} />
       </div>
 
-      {/* ── Item 5: Projeção do mês atual ── */}
-      <div style={{ background: '#fff', border: '1px solid #D1EEEA', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
-        <div style={{ padding: '16px 20px 14px', borderBottom: '1px solid #e8f4f2' }}>
-          <h2 style={{ fontWeight: 700, fontSize: 13, color: '#0D2926', letterSpacing: '-0.01em' }}>Projeção — {MONTHS[now.getMonth()]} {now.getFullYear()}</h2>
+      {/* ── Projeção do mês atual ── */}
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden', marginBottom: 16 }}>
+        <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${C.border}` }}>
+          <h2 style={{ fontWeight: 700, fontSize: 13, color: C.text, letterSpacing: '-0.01em' }}>Projeção — {MONTHS[now.getMonth()]} {now.getFullYear()}</h2>
         </div>
         <div style={{ padding: '16px 20px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
           <div>
-            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 8 }}>Confirmado no mês</p>
-            <p style={{ fontSize: 22, fontWeight: 800, color: '#00A88E', letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(paidMes)}</p>
+            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: C.textSec, marginBottom: 8 }}>Confirmado no mês</p>
+            <p style={{ fontSize: 22, fontWeight: 800, color: C.success, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(paidMes)}</p>
           </div>
           <div>
-            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 8 }}>Pendente no mês</p>
-            <p style={{ fontSize: 22, fontWeight: 800, color: '#92400e', letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(pendingMes)}</p>
+            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: C.textSec, marginBottom: 8 }}>Pendente no mês</p>
+            <p style={{ fontSize: 22, fontWeight: 800, color: C.warning, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(pendingMes)}</p>
           </div>
           <div>
-            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 8 }}>Projeção até fim do mês</p>
-            <p style={{ fontSize: 22, fontWeight: 800, color: '#0D2926', letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(projecaoMes)}</p>
-            <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>baseado no ritmo atual (dia {diaAtual}/{diasNoMes})</p>
+            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: C.textSec, marginBottom: 8 }}>Projeção até fim do mês</p>
+            <p style={{ fontSize: 22, fontWeight: 800, color: C.text, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(projecaoMes)}</p>
+            <p style={{ fontSize: 11, color: C.textMuted, marginTop: 4 }}>baseado no ritmo atual (dia {diaAtual}/{diasNoMes})</p>
           </div>
         </div>
-        {/* Barra de progresso do mês */}
         <div style={{ padding: '0 20px 16px' }}>
-          <div style={{ height: 6, background: '#F5FAFA', borderRadius: 3, overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${(diaAtual / diasNoMes) * 100}%`, background: 'linear-gradient(90deg, #00C6A7, #00A88E)', borderRadius: 3 }} />
+          <div style={{ height: 6, background: 'rgba(0,198,167,0.08)', borderRadius: 3, overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${(diaAtual / diasNoMes) * 100}%`, background: 'linear-gradient(90deg, #00C6A7, #22D3A5)', borderRadius: 3 }} />
           </div>
-          <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 6 }}>{Math.round((diaAtual / diasNoMes) * 100)}% do mês decorrido</p>
+          <p style={{ fontSize: 11, color: C.textMuted, marginTop: 6 }}>{Math.round((diaAtual / diasNoMes) * 100)}% do mês decorrido</p>
         </div>
       </div>
 
-      {/* ── Item 2: Passeios não cobrados ── */}
+      {/* ── Passeios não cobrados ── */}
       {uncoveredSessions.length > 0 && (
-        <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
-          <div style={{ padding: '16px 20px 14px', borderBottom: '1px solid #fde68a', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 14, overflow: 'hidden', marginBottom: 16 }}>
+          <div style={{ padding: '16px 20px 14px', borderBottom: '1px solid rgba(245,158,11,0.3)', display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 16 }}>⚠️</span>
-            <h2 style={{ fontWeight: 700, fontSize: 13, color: '#92400e', letterSpacing: '-0.01em' }}>Passeios sem cobrança registrada</h2>
-            <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, color: '#92400e', background: '#fde68a', padding: '2px 10px', borderRadius: 20 }}>{uncoveredSessions.length}</span>
+            <h2 style={{ fontWeight: 700, fontSize: 13, color: C.warning, letterSpacing: '-0.01em' }}>Passeios sem cobrança registrada</h2>
+            <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, color: C.warning, background: 'rgba(245,158,11,0.2)', padding: '2px 10px', borderRadius: 20 }}>{uncoveredSessions.length}</span>
           </div>
           <ul style={{ listStyle: 'none' }}>
             {uncoveredSessions.slice(0, 5).map((s: any, i: number) => (
-              <li key={s.id} style={{ padding: '12px 20px', borderTop: i > 0 ? '1px solid #fde68a' : 'none', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <li key={s.id} style={{ padding: '12px 20px', borderTop: i > 0 ? '1px solid rgba(245,158,11,0.2)' : 'none', display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: '#78350f' }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: C.warning }}>
                     {s.ended_at ? new Date(s.ended_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) : '—'}
                   </p>
-                  <p style={{ fontSize: 12, color: '#92400e', marginTop: 1 }}>
+                  <p style={{ fontSize: 12, color: C.textSec, marginTop: 1 }}>
                     {ownerNames[s.owner_id] ?? 'Tutor'} · {(s.pet_ids ?? []).map((id: string) => petNames[id] ?? id).join(', ')}
                   </p>
                 </div>
-                <span style={{ fontSize: 11, color: '#78350f', background: '#fef3c7', border: '1px solid #fde68a', padding: '3px 10px', borderRadius: 20 }}>
+                <span style={{ fontSize: 11, color: C.warning, background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)', padding: '3px 10px', borderRadius: 20 }}>
                   Sem cobrança
                 </span>
               </li>
             ))}
           </ul>
           {uncoveredSessions.length > 5 && (
-            <p style={{ padding: '10px 20px', fontSize: 12, color: '#92400e', borderTop: '1px solid #fde68a' }}>
+            <p style={{ padding: '10px 20px', fontSize: 12, color: C.warning, borderTop: '1px solid rgba(245,158,11,0.2)' }}>
               + {uncoveredSessions.length - 5} passeio{uncoveredSessions.length - 5 > 1 ? 's' : ''} sem cobrança — registre no app
             </p>
           )}
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-
-        {/* ── Item 4: Receita por tipo de serviço ── */}
-        <div style={{ background: '#fff', border: '1px solid #D1EEEA', borderRadius: 12, overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px 14px', borderBottom: '1px solid #e8f4f2' }}>
-            <h2 style={{ fontWeight: 700, fontSize: 13, color: '#0D2926', letterSpacing: '-0.01em' }}>Por tipo de serviço</h2>
+      <div className="db-row2" style={{ marginBottom: 16 }}>
+        {/* Por tipo de serviço */}
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden' }}>
+          <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${C.border}` }}>
+            <h2 style={{ fontWeight: 700, fontSize: 13, color: C.text, letterSpacing: '-0.01em' }}>Por tipo de serviço</h2>
           </div>
           {typeRows.length === 0 ? (
-            <div style={{ padding: '36px 20px', textAlign: 'center', fontSize: 13, color: '#6B7280' }}>Nenhum dado ainda.</div>
+            <div style={{ padding: '36px 20px', textAlign: 'center', fontSize: 13, color: C.textSec }}>Nenhum dado ainda.</div>
           ) : (
             <ul style={{ listStyle: 'none' }}>
               {typeRows.map(([type, data], i) => {
@@ -377,20 +382,20 @@ export default async function FinanceiroPage() {
                 const maxType = typeRows[0][1].paid + typeRows[0][1].pending;
                 const pct = maxType > 0 ? (total / maxType) * 100 : 0;
                 return (
-                  <li key={type} style={{ padding: '12px 20px', borderTop: i > 0 ? '1px solid #e8f4f2' : 'none' }}>
+                  <li key={type} style={{ padding: '12px 20px', borderTop: i > 0 ? `1px solid ${C.border}` : 'none' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: '#0D2926' }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: C.text }}>
                         {BILLING_TYPE_LABEL[type] ?? type}
                       </span>
                       <div style={{ textAlign: 'right' }}>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: '#00A88E', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(data.paid)}</span>
-                        {data.pending > 0 && <span style={{ fontSize: 11, color: '#92400e', marginLeft: 6 }}>+{formatCurrency(data.pending)}</span>}
+                        <span style={{ fontSize: 13, fontWeight: 700, color: C.success, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(data.paid)}</span>
+                        {data.pending > 0 && <span style={{ fontSize: 11, color: C.warning, marginLeft: 6 }}>+{formatCurrency(data.pending)}</span>}
                       </div>
                     </div>
-                    <div style={{ height: 4, background: '#F5FAFA', borderRadius: 2, overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${pct}%`, background: '#00C6A7', borderRadius: 2 }} />
+                    <div style={{ height: 4, background: 'rgba(0,198,167,0.08)', borderRadius: 2, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${pct}%`, background: C.accent, borderRadius: 2 }} />
                     </div>
-                    <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>{data.count} registro{data.count !== 1 ? 's' : ''}</p>
+                    <p style={{ fontSize: 11, color: C.textMuted, marginTop: 4 }}>{data.count} registro{data.count !== 1 ? 's' : ''}</p>
                   </li>
                 );
               })}
@@ -398,28 +403,28 @@ export default async function FinanceiroPage() {
           )}
         </div>
 
-        {/* Atividade por tutor */}
-        <div style={{ background: '#fff', border: '1px solid #D1EEEA', borderRadius: 12, overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px 14px', borderBottom: '1px solid #e8f4f2' }}>
-            <h2 style={{ fontWeight: 700, fontSize: 13, color: '#0D2926', letterSpacing: '-0.01em' }}>Por tutor</h2>
+        {/* Por tutor */}
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden' }}>
+          <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${C.border}` }}>
+            <h2 style={{ fontWeight: 700, fontSize: 13, color: C.text, letterSpacing: '-0.01em' }}>Por tutor</h2>
           </div>
           {ownerRows.length === 0 ? (
-            <div style={{ padding: '36px 20px', textAlign: 'center', fontSize: 13, color: '#6B7280' }}>Nenhum dado ainda.</div>
+            <div style={{ padding: '36px 20px', textAlign: 'center', fontSize: 13, color: C.textSec }}>Nenhum dado ainda.</div>
           ) : (
             <ul style={{ listStyle: 'none' }}>
               {ownerRows.map(([ownerId, data], i) => (
-                <li key={ownerId} style={{ padding: '12px 20px', borderTop: i > 0 ? '1px solid #e8f4f2' : 'none', display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'rgba(0,198,167,0.1)', border: '1px solid #D1EEEA', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, flexShrink: 0 }}>
+                <li key={ownerId} style={{ padding: '12px 20px', borderTop: i > 0 ? `1px solid ${C.border}` : 'none', display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: '50%', background: C.accentDim, border: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, flexShrink: 0 }}>
                     👤
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: 13.5, fontWeight: 600, color: '#0D2926', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{data.name}</p>
-                    <p style={{ fontSize: 12, color: '#6B7280', marginTop: 1 }}>{data.walks} passeio{data.walks !== 1 ? 's' : ''} · {formatDuration(data.minutes)}</p>
+                    <p style={{ fontSize: 13.5, fontWeight: 600, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{data.name}</p>
+                    <p style={{ fontSize: 12, color: C.textSec, marginTop: 1 }}>{data.walks} passeio{data.walks !== 1 ? 's' : ''} · {formatDuration(data.minutes)}</p>
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    {data.paid > 0 && <p style={{ fontSize: 13, fontWeight: 700, color: '#00A88E', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(data.paid)}</p>}
-                    {data.pending > 0 && <p style={{ fontSize: 11, color: '#92400e', fontVariantNumeric: 'tabular-nums' }}>+ {formatCurrency(data.pending)} pend.</p>}
-                    {data.paid === 0 && data.pending === 0 && <p style={{ fontSize: 11, color: '#9CA3AF' }}>sem cobrança</p>}
+                    {data.paid > 0 && <p style={{ fontSize: 13, fontWeight: 700, color: C.success, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(data.paid)}</p>}
+                    {data.pending > 0 && <p style={{ fontSize: 11, color: C.warning, fontVariantNumeric: 'tabular-nums' }}>+ {formatCurrency(data.pending)} pend.</p>}
+                    {data.paid === 0 && data.pending === 0 && <p style={{ fontSize: 11, color: C.textMuted }}>sem cobrança</p>}
                   </div>
                 </li>
               ))}
@@ -428,22 +433,22 @@ export default async function FinanceiroPage() {
         </div>
       </div>
 
-      {/* Atividade por pet */}
-      <div style={{ background: '#fff', border: '1px solid #D1EEEA', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
-        <div style={{ padding: '16px 20px 14px', borderBottom: '1px solid #e8f4f2' }}>
-          <h2 style={{ fontWeight: 700, fontSize: 13, color: '#0D2926', letterSpacing: '-0.01em' }}>Por pet</h2>
+      {/* Por pet */}
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden', marginBottom: 16 }}>
+        <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${C.border}` }}>
+          <h2 style={{ fontWeight: 700, fontSize: 13, color: C.text, letterSpacing: '-0.01em' }}>Por pet</h2>
         </div>
         {petRows.length === 0 ? (
-          <div style={{ padding: '36px 20px', textAlign: 'center', fontSize: 13, color: '#6B7280' }}>Nenhum passeio registrado.</div>
+          <div style={{ padding: '36px 20px', textAlign: 'center', fontSize: 13, color: C.textSec }}>Nenhum passeio registrado.</div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', padding: '12px 20px', gap: 12 }}>
             {petRows.map(([petId, data]) => (
-              <div key={petId} style={{ background: '#F5FAFA', border: '1px solid #D1EEEA', borderRadius: 10, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#D1EEEA', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>🐶</div>
+              <div key={petId} style={{ background: C.accentDim, border: `1px solid ${C.border}`, borderRadius: 10, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(0,198,167,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>🐶</div>
                 <div style={{ minWidth: 0 }}>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: '#0D2926', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{data.name}</p>
-                  <p style={{ fontSize: 11, color: '#6B7280', marginTop: 2 }}>{data.walks} passeio{data.walks !== 1 ? 's' : ''}</p>
-                  <p style={{ fontSize: 11, color: '#9CA3AF' }}>{(data.distance / 1000).toFixed(1)} km · {formatDuration(data.minutes)}</p>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{data.name}</p>
+                  <p style={{ fontSize: 11, color: C.textSec, marginTop: 2 }}>{data.walks} passeio{data.walks !== 1 ? 's' : ''}</p>
+                  <p style={{ fontSize: 11, color: C.textMuted }}>{(data.distance / 1000).toFixed(1)} km · {formatDuration(data.minutes)}</p>
                 </div>
               </div>
             ))}
@@ -451,24 +456,24 @@ export default async function FinanceiroPage() {
         )}
       </div>
 
-      {/* ── Histórico de atendimentos (walk_schedules done) ── */}
+      {/* ── Atendimentos concluídos ── */}
       {doneSchedulesRows.length > 0 && (
-        <div style={{ background: '#fff', border: '1px solid #D1EEEA', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
-          <div style={{ padding: '16px 20px 14px', borderBottom: '1px solid #e8f4f2', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <h2 style={{ fontWeight: 700, fontSize: 13, color: '#0D2926', letterSpacing: '-0.01em' }}>Atendimentos concluídos</h2>
-            <span style={{ fontSize: 12, color: '#6B7280' }}>últimos 6 meses</span>
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden', marginBottom: 16 }}>
+          <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h2 style={{ fontWeight: 700, fontSize: 13, color: C.text, letterSpacing: '-0.01em' }}>Atendimentos concluídos</h2>
+            <span style={{ fontSize: 12, color: C.textSec }}>últimos 6 meses</span>
           </div>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ background: '#F5FAFA' }}>
+                <tr style={{ background: 'rgba(0,198,167,0.06)' }}>
                   {['Data', 'Tutor', 'Serviço', 'Valor', 'Pagamento'].map((h, i) => (
                     <th key={h} style={{
                       padding: '10px 20px',
                       textAlign: i === 3 ? 'right' : i === 4 ? 'center' : 'left',
                       fontSize: 11, fontWeight: 600, letterSpacing: '0.05em',
-                      textTransform: 'uppercase' as const, color: '#6B7280',
-                      borderBottom: '1px solid #D1EEEA',
+                      textTransform: 'uppercase' as const, color: C.textSec,
+                      borderBottom: `1px solid ${C.border}`,
                     }}>{h}</th>
                   ))}
                 </tr>
@@ -483,28 +488,26 @@ export default async function FinanceiroPage() {
                   const pmtMethod = pmt?.payment_method;
                   const PAYMENT_METHOD_LABEL: Record<string, string> = { cash: '💵 Dinheiro', pix: '📲 PIX', card: '💳 Cartão' };
                   return (
-                    <tr key={s.id} style={{ borderTop: i > 0 ? '1px solid #e8f4f2' : 'none' }}>
-                      <td style={{ padding: '12px 20px', color: '#4a6b65', fontSize: 13 }}>
+                    <tr key={s.id} style={{ borderTop: i > 0 ? `1px solid ${C.border}` : 'none' }}>
+                      <td style={{ padding: '12px 20px', color: C.textSec, fontSize: 13 }}>
                         {new Date(s.scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: '2-digit' })}
                       </td>
-                      <td style={{ padding: '12px 20px', color: '#4a6b65', fontSize: 13 }}>
-                        {ownerNames[s.owner_id] ?? '—'}
-                      </td>
-                      <td style={{ padding: '12px 20px', color: '#4a6b65', fontSize: 13 }}>{serviceLabel}</td>
-                      <td style={{ padding: '12px 20px', textAlign: 'right', fontWeight: 700, color: '#0D2926', fontVariantNumeric: 'tabular-nums', fontSize: 13 }}>
+                      <td style={{ padding: '12px 20px', color: C.textSec, fontSize: 13 }}>{ownerNames[s.owner_id] ?? '—'}</td>
+                      <td style={{ padding: '12px 20px', color: C.textSec, fontSize: 13 }}>{serviceLabel}</td>
+                      <td style={{ padding: '12px 20px', textAlign: 'right', fontWeight: 700, color: C.text, fontVariantNumeric: 'tabular-nums', fontSize: 13 }}>
                         {price > 0 ? `R$ ${price.toFixed(2).replace('.', ',')}` : '—'}
                       </td>
                       <td style={{ padding: '12px 20px', textAlign: 'center' }}>
                         {!pmt ? (
-                          <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, color: '#6B7280', background: '#f3f4f6' }}>
+                          <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, color: C.textMuted, background: 'rgba(127,168,152,0.12)' }}>
                             Sem registro
                           </span>
                         ) : pmtStatus === 'paid' ? (
-                          <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, color: '#00A88E', background: '#D1EEEA' }}>
+                          <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, color: C.success, background: 'rgba(34,211,165,0.15)' }}>
                             {pmtMethod ? PAYMENT_METHOD_LABEL[pmtMethod] ?? pmtMethod : 'Pago'}
                           </span>
                         ) : (
-                          <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, color: '#92400e', background: '#fef3c7' }}>
+                          <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, color: C.warning, background: 'rgba(245,158,11,0.15)' }}>
                             Pendente
                           </span>
                         )}
@@ -519,9 +522,9 @@ export default async function FinanceiroPage() {
       )}
 
       {/* ── Histórico de pagamentos ── */}
-      <div style={{ background: '#fff', border: '1px solid #D1EEEA', borderRadius: 12, overflow: 'hidden' }}>
-        <div style={{ padding: '16px 20px 14px', borderBottom: '1px solid #e8f4f2' }}>
-          <h2 style={{ fontWeight: 700, fontSize: 13, color: '#0D2926', letterSpacing: '-0.01em' }}>Histórico de pagamentos</h2>
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden' }}>
+        <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${C.border}` }}>
+          <h2 style={{ fontWeight: 700, fontSize: 13, color: C.text, letterSpacing: '-0.01em' }}>Histórico de pagamentos</h2>
         </div>
         <TabelaPagamentos payments={paymentsRows} ownerNames={ownerNames} />
       </div>

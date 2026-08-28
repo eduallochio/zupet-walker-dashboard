@@ -2,6 +2,13 @@ import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 import { formatDate, formatDuration } from '@/lib/utils';
 
+const C = {
+  card: '#132219', border: 'rgba(0,200,167,0.12)',
+  accent: '#00C6A7', accentDim: 'rgba(0,198,167,0.12)',
+  text: '#E8F5F0', textSec: '#7FA898', textMuted: '#4A6B60',
+  success: '#22D3A5',
+};
+
 export default async function RelatoriosPage() {
   const jar = await cookies();
   const accessToken = jar.get('sb-access-token')?.value!;
@@ -66,39 +73,39 @@ export default async function RelatoriosPage() {
   const totalMin  = rows.reduce((s: number, r: any) => s + (r.duration_minutes ?? 0), 0);
 
   return (
-    <div className="space-y-6">
-      <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0D2926', letterSpacing: '-0.03em', marginBottom: 28 }}>
+    <div style={{ padding: '28px 24px', maxWidth: 900, margin: '0 auto' }}>
+      <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, letterSpacing: '-0.03em', marginBottom: 28 }}>
         Relatórios e Atendimentos
       </h1>
 
       {/* Resumo geral */}
       {rows.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
+        <div className="db-stat-grid" style={{ marginBottom: 24 }}>
           {[
             { label: 'Passeios', value: String(rows.length) },
             { label: 'Atendimentos', value: String(scheduleRows.length) },
             { label: 'Tempo total', value: totalMin >= 60 ? `${Math.floor(totalMin / 60)}h ${totalMin % 60}min` : `${totalMin}min` },
             { label: 'Distância total', value: `${(totalDist / 1000).toFixed(1)} km` },
           ].map(({ label, value }) => (
-            <div key={label} style={{ background: '#fff', border: '1px solid #D1EEEA', borderRadius: 12, padding: '16px 18px' }}>
-              <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 10 }}>{label}</p>
-              <p style={{ fontSize: 26, fontWeight: 800, color: '#0D2926', letterSpacing: '-0.04em', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{value}</p>
+            <div key={label} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: '16px 18px' }}>
+              <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: C.textSec, marginBottom: 10 }}>{label}</p>
+              <p style={{ fontSize: 26, fontWeight: 800, color: C.text, letterSpacing: '-0.04em', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{value}</p>
             </div>
           ))}
         </div>
       )}
 
       {!rows.length && !scheduleRows.length && (
-        <div style={{ background: '#fff', border: '1px solid #D1EEEA', borderRadius: 12, padding: '48px 20px', textAlign: 'center', color: '#6B7280', fontSize: 14 }}>
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: '48px 20px', textAlign: 'center', color: C.textSec, fontSize: 14 }}>
           Nenhum relatório ainda.
         </div>
       )}
 
-      {/* Atendimentos concluídos (banho, adestramento, hospedagem etc.) */}
+      {/* Atendimentos concluídos */}
       {scheduleRows.length > 0 && (
-        <div style={{ background: '#fff', border: '1px solid #D1EEEA', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
-          <div style={{ padding: '16px 20px 14px', borderBottom: '1px solid #e8f4f2' }}>
-            <h2 style={{ fontWeight: 700, fontSize: 13, color: '#0D2926', letterSpacing: '-0.01em' }}>Atendimentos concluídos</h2>
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden', marginBottom: 16 }}>
+          <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${C.border}` }}>
+            <h2 style={{ fontWeight: 700, fontSize: 13, color: C.text, letterSpacing: '-0.01em' }}>Atendimentos concluídos</h2>
           </div>
           <ul style={{ listStyle: 'none' }}>
             {scheduleRows.map((s: any, i: number) => {
@@ -109,23 +116,23 @@ export default async function RelatoriosPage() {
               };
               const pets = (s.pet_ids ?? []).map((id: string) => petNames[id] ?? id);
               return (
-                <li key={s.id} style={{ padding: '14px 20px', borderTop: i > 0 ? '1px solid #e8f4f2' : 'none', display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                      <p style={{ fontWeight: 700, color: '#0D2926', fontSize: 14 }}>
+                <li key={s.id} style={{ padding: '14px 20px', borderTop: i > 0 ? `1px solid ${C.border}` : 'none', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1, minWidth: 200 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+                      <p style={{ fontWeight: 700, color: C.text, fontSize: 14 }}>
                         {new Date(s.scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: '2-digit' })}
                       </p>
-                      <span style={{ fontSize: 11, fontWeight: 600, color: '#00A88E', background: '#D1EEEA', padding: '2px 8px', borderRadius: 20 }}>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: C.accent, background: C.accentDim, padding: '2px 8px', borderRadius: 20 }}>
                         {SERVICE_LABEL[svc?.type] ?? svc?.label ?? '—'}
                       </span>
                     </div>
                     {ownerNames[s.owner_id] && (
-                      <p style={{ fontSize: 12, color: '#6B7280', marginBottom: 4 }}>👤 {ownerNames[s.owner_id]}</p>
+                      <p style={{ fontSize: 12, color: C.textSec, marginBottom: 4 }}>👤 {ownerNames[s.owner_id]}</p>
                     )}
                     {pets.length > 0 && (
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                         {pets.map((name: string, j: number) => (
-                          <span key={j} style={{ fontSize: 11, fontWeight: 600, color: '#00A88E', background: '#D1EEEA', padding: '2px 8px', borderRadius: 20 }}>
+                          <span key={j} style={{ fontSize: 11, fontWeight: 600, color: C.accent, background: C.accentDim, padding: '2px 8px', borderRadius: 20 }}>
                             🐾 {name}
                           </span>
                         ))}
@@ -133,7 +140,7 @@ export default async function RelatoriosPage() {
                     )}
                   </div>
                   {s.duration_minutes && (
-                    <span style={{ fontSize: 12, color: '#6B7280', background: '#F5FAFA', border: '1px solid #D1EEEA', padding: '3px 10px', borderRadius: 20, flexShrink: 0 }}>
+                    <span style={{ fontSize: 12, color: C.textSec, background: 'rgba(0,198,167,0.08)', border: `1px solid ${C.border}`, padding: '3px 10px', borderRadius: 20, flexShrink: 0 }}>
                       {formatDuration(s.duration_minutes)}
                     </span>
                   )}
@@ -145,10 +152,10 @@ export default async function RelatoriosPage() {
       )}
 
       {/* Lista de passeios com GPS */}
-      <div style={{ background: '#fff', border: '1px solid #D1EEEA', borderRadius: 12, overflow: 'hidden' }}>
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden' }}>
         {rows.length > 0 && (
-          <div style={{ padding: '16px 20px 14px', borderBottom: '1px solid #e8f4f2' }}>
-            <h2 style={{ fontWeight: 700, fontSize: 13, color: '#0D2926', letterSpacing: '-0.01em' }}>Relatórios de passeio</h2>
+          <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${C.border}` }}>
+            <h2 style={{ fontWeight: 700, fontSize: 13, color: C.text, letterSpacing: '-0.01em' }}>Relatórios de passeio</h2>
           </div>
         )}
         <ul>
@@ -156,53 +163,48 @@ export default async function RelatoriosPage() {
             const pets = (r.pet_ids ?? []).map((id: string) => petNames[id] ?? id);
             const owner = ownerNames[r.owner_id];
             return (
-              <li key={r.id} style={{ padding: '16px 20px', borderTop: i > 0 ? '1px solid #e8f4f2' : 'none' }}>
-                {/* Cabeçalho do card */}
-                <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
+              <li key={r.id} style={{ padding: '16px 20px', borderTop: i > 0 ? `1px solid ${C.border}` : 'none' }}>
+                <div className="flex items-center justify-between" style={{ marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
                   <div>
-                    <p style={{ fontWeight: 700, color: '#0D2926', fontSize: 14 }}>{formatDate(r.created_at)}</p>
-                    {owner && <p style={{ fontSize: 12, color: '#6B7280', marginTop: 1 }}>👤 {owner}</p>}
+                    <p style={{ fontWeight: 700, color: C.text, fontSize: 14 }}>{formatDate(r.created_at)}</p>
+                    {owner && <p style={{ fontSize: 12, color: C.textSec, marginTop: 1 }}>👤 {owner}</p>}
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 12, color: '#6B7280', background: '#F5FAFA', border: '1px solid #D1EEEA', padding: '3px 10px', borderRadius: 20 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 12, color: C.textSec, background: 'rgba(0,198,167,0.08)', border: `1px solid ${C.border}`, padding: '3px 10px', borderRadius: 20 }}>
                       {formatDuration(r.duration_minutes)}
                     </span>
-                    <a href={`/dashboard/relatorios/${r.id}`} style={{ fontSize: 12, fontWeight: 600, color: '#00A88E', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                    <a href={`/dashboard/relatorios/${r.id}`} style={{ fontSize: 12, fontWeight: 600, color: C.accent, textDecoration: 'none', whiteSpace: 'nowrap' }}>
                       Ver detalhes →
                     </a>
                   </div>
                 </div>
 
-                {/* Pets */}
                 {pets.length > 0 && (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
                     {pets.map((name: string, j: number) => (
-                      <span key={j} style={{ fontSize: 12, fontWeight: 600, color: '#00A88E', background: '#D1EEEA', padding: '2px 10px', borderRadius: 20 }}>
+                      <span key={j} style={{ fontSize: 12, fontWeight: 600, color: C.accent, background: C.accentDim, padding: '2px 10px', borderRadius: 20 }}>
                         🐾 {name}
                       </span>
                     ))}
                   </div>
                 )}
 
-                {/* Stats */}
-                <div className="flex gap-4 flex-wrap" style={{ fontSize: 13, color: '#4a6b65' }}>
+                <div className="flex gap-4 flex-wrap" style={{ fontSize: 13, color: C.textMuted }}>
                   {r.distance_meters > 0  && <span>📍 {(r.distance_meters / 1000).toFixed(1)} km</span>}
                   {r.pee_count > 0        && <span>💧 {r.pee_count} xixi</span>}
                   {r.poop_count > 0       && <span>💩 {r.poop_count} cocô</span>}
                   {r.note_count > 0       && <span>📝 {r.note_count} nota{r.note_count > 1 ? 's' : ''}</span>}
                 </div>
 
-                {/* Notas gerais */}
                 {r.notes && (
-                  <p style={{ marginTop: 8, fontSize: 13, color: '#6B7280', fontStyle: 'italic' }}>{r.notes}</p>
+                  <p style={{ marginTop: 8, fontSize: 13, color: C.textSec, fontStyle: 'italic' }}>{r.notes}</p>
                 )}
 
-                {/* Fotos */}
                 {r.photos?.length > 0 && (
                   <div className="flex gap-2 mt-3 flex-wrap">
                     {r.photos.map((url: string, j: number) => (
                       <img key={j} src={url} alt="foto do passeio"
-                        style={{ width: 76, height: 76, objectFit: 'cover', borderRadius: 8, border: '1px solid #D1EEEA' }} />
+                        style={{ width: 76, height: 76, objectFit: 'cover', borderRadius: 8, border: `1px solid ${C.border}` }} />
                     ))}
                   </div>
                 )}

@@ -48,28 +48,34 @@ export default function ProClient({ isPro, email, pixKey }: { isPro: boolean; em
     setCouponCode('');
   }
 
+  const C = {
+    card: '#132219', border: 'rgba(0,200,167,0.12)', accent: '#00C6A7',
+    accentDim: 'rgba(0,198,167,0.12)', text: '#E8F5F0', textSec: '#7FA898',
+    success: '#22D3A5',
+  };
+
   if (isPro) {
     return (
-      <div style={{ maxWidth: 560 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0D2926', letterSpacing: '-0.03em', marginBottom: 28 }}>Plano Pro</h1>
-        <div style={{ background: '#fff', border: '1px solid #D1EEEA', borderRadius: 12, padding: 32, textAlign: 'center' }}>
+      <div style={{ maxWidth: 560, padding: '28px 24px' }}>
+        <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, letterSpacing: '-0.03em', marginBottom: 28 }}>Plano Pro</h1>
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 32, textAlign: 'center' }}>
           <div style={{ fontSize: 36, marginBottom: 12 }}>✦</div>
-          <h2 style={{ fontSize: 18, fontWeight: 800, color: '#00A88E', marginBottom: 8 }}>Você já é Pro!</h2>
-          <p style={{ fontSize: 14, color: '#6B7280' }}>Aproveite todos os recursos sem limites.</p>
+          <h2 style={{ fontSize: 18, fontWeight: 800, color: C.success, marginBottom: 8 }}>Você já é Pro!</h2>
+          <p style={{ fontSize: 14, color: C.textSec }}>Aproveite todos os recursos sem limites.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ maxWidth: 680 }}>
-      <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0D2926', letterSpacing: '-0.03em', marginBottom: 28 }}>Assinar Plano Pro</h1>
+    <div style={{ maxWidth: 720, padding: '28px 24px' }}>
+      <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, letterSpacing: '-0.03em', marginBottom: 28 }}>Assinar Plano Pro</h1>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
         {/* Benefícios */}
-        <div style={{ background: '#fff', border: '1px solid #D1EEEA', borderRadius: 12, overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px 14px', borderBottom: '1px solid #e8f4f2' }}>
-            <h2 style={{ fontWeight: 700, color: '#0D2926', fontSize: 13, letterSpacing: '-0.01em' }}>O que você ganha com o Pro</h2>
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden' }}>
+          <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${C.border}` }}>
+            <h2 style={{ fontWeight: 700, color: C.text, fontSize: 13, letterSpacing: '-0.01em' }}>O que você ganha com o Pro</h2>
           </div>
           <div style={{ padding: '16px 20px' }}>
             <ul style={{ display: 'flex', flexDirection: 'column', gap: 12, listStyle: 'none' }}>
@@ -80,7 +86,7 @@ export default function ProClient({ isPro, email, pixKey }: { isPro: boolean; em
                 ['📊', 'Histórico completo (free: 30 dias)'],
                 ['🔍', 'Destaque na busca de tutores'],
               ].map(([icon, text]) => (
-                <li key={text as string} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13, color: '#4a6b65' }}>
+                <li key={text as string} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13, color: C.textSec }}>
                   <span style={{ fontSize: 16, lineHeight: 1.4 }}>{icon}</span>
                   <span>{text}</span>
                 </li>
@@ -88,23 +94,23 @@ export default function ProClient({ isPro, email, pixKey }: { isPro: boolean; em
             </ul>
 
             {/* Campo de cupom */}
-            <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #e8f4f2' }}>
-              <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 8 }}>
+            <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${C.border}` }}>
+              <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: C.textSec, marginBottom: 8 }}>
                 Cupom de desconto
               </p>
               {couponResult ? (
-                <div style={{ background: '#f0fdf8', border: '1px solid #6ee7b7', borderRadius: 8, padding: 12 }}>
+                <div style={{ background: 'rgba(34,211,165,0.1)', border: '1px solid rgba(34,211,165,0.3)', borderRadius: 8, padding: 12 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                      <p style={{ fontWeight: 700, color: '#065f46', fontSize: 13 }}>
+                      <p style={{ fontWeight: 700, color: C.success, fontSize: 13 }}>
                         {couponResult.coupon.discountPct ? `${couponResult.coupon.discountPct}% off` : `R$ ${couponResult.coupon.discountBrl?.toFixed(2)} off`}
                         {pricing.isFree && ' — GRÁTIS!'}
                       </p>
                       {couponResult.coupon.description && (
-                        <p style={{ fontSize: 11, color: '#6B7280', marginTop: 2 }}>{couponResult.coupon.description}</p>
+                        <p style={{ fontSize: 11, color: C.textSec, marginTop: 2 }}>{couponResult.coupon.description}</p>
                       )}
                     </div>
-                    <button onClick={handleRemover} style={{ fontSize: 11, color: '#6B7280', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
+                    <button onClick={handleRemover} style={{ fontSize: 11, color: C.textSec, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
                       remover
                     </button>
                   </div>
@@ -116,72 +122,72 @@ export default function ProClient({ isPro, email, pixKey }: { isPro: boolean; em
                     onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); setCouponError(''); }}
                     onKeyDown={(e) => e.key === 'Enter' && handleValidar()}
                     placeholder="CÓDIGO"
-                    style={{ flex: 1, padding: '8px 12px', border: `1px solid ${couponError ? '#fca5a5' : '#D1EEEA'}`, borderRadius: 8, fontSize: 13, fontFamily: 'monospace', fontWeight: 600, background: '#fff', outline: 'none', textTransform: 'uppercase' }}
+                    style={{ flex: 1, padding: '8px 12px', border: `1px solid ${couponError ? 'rgba(248,113,113,0.5)' : C.border}`, borderRadius: 8, fontSize: 13, fontFamily: 'monospace', fontWeight: 600, background: '#0D2E22', color: C.text, outline: 'none', textTransform: 'uppercase' }}
                   />
                   <button
                     onClick={handleValidar}
                     disabled={loading || !couponCode.trim()}
-                    style={{ padding: '8px 14px', background: '#0D2926', color: '#fff', borderRadius: 8, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', opacity: loading || !couponCode.trim() ? 0.5 : 1 }}
+                    style={{ padding: '8px 14px', background: C.accent, color: '#fff', borderRadius: 8, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', opacity: loading || !couponCode.trim() ? 0.5 : 1 }}
                   >
                     {loading ? '…' : 'Aplicar'}
                   </button>
                 </div>
               )}
-              {couponError && <p style={{ fontSize: 11, color: '#ef4444', marginTop: 6 }}>{couponError}</p>}
+              {couponError && <p style={{ fontSize: 11, color: '#F87171', marginTop: 6 }}>{couponError}</p>}
             </div>
           </div>
         </div>
 
         {/* Pagamento */}
-        <div style={{ background: '#0D2926', borderRadius: 12, padding: 24, color: '#fff', display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ background: '#0A1A14', border: `1px solid ${C.border}`, borderRadius: 14, padding: 24, color: C.text, display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div>
-            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>Investimento</p>
+            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: C.textSec, marginBottom: 4 }}>Investimento</p>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
               {couponResult && pricing.discount > 0 && (
-                <p style={{ fontSize: 18, fontWeight: 500, color: 'rgba(255,255,255,0.35)', textDecoration: 'line-through' }}>
+                <p style={{ fontSize: 18, fontWeight: 500, color: C.textSec, textDecoration: 'line-through' }}>
                   R$ {pricing.original}
                 </p>
               )}
-              <p style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.03em', color: pricing.isFree ? '#6ee7b7' : '#fff' }}>
+              <p style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.03em', color: pricing.isFree ? C.success : C.text }}>
                 {pricing.isFree ? 'GRÁTIS' : `R$ ${pricing.final.toFixed(2).replace('.', ',')}`}
-                {!pricing.isFree && <span style={{ fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.5)' }}>/mês</span>}
+                {!pricing.isFree && <span style={{ fontSize: 14, fontWeight: 500, color: C.textSec }}>/mês</span>}
               </p>
             </div>
             {couponResult && pricing.discount > 0 && (
-              <p style={{ fontSize: 11, color: '#6ee7b7', marginTop: 4 }}>
+              <p style={{ fontSize: 11, color: C.success, marginTop: 4 }}>
                 Economia de R$ {pricing.discount.toFixed(2).replace('.', ',')} com o cupom {couponResult.coupon.code}
               </p>
             )}
           </div>
 
           {!pricing.isFree && (
-            <div style={{ background: 'rgba(0,198,167,0.12)', borderRadius: 10, padding: 16, border: '1px solid rgba(0,198,167,0.2)' }}>
-              <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#00C6A7', marginBottom: 6 }}>Chave Pix</p>
-              <p style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 16, color: '#fff' }}>{pixKey}</p>
+            <div style={{ background: C.accentDim, borderRadius: 10, padding: 16, border: `1px solid rgba(0,198,167,0.2)` }}>
+              <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.accent, marginBottom: 6 }}>Chave Pix</p>
+              <p style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 16, color: C.text }}>{pixKey}</p>
             </div>
           )}
 
-          <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 10, padding: 16, fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>
-            <p style={{ fontWeight: 600, color: '#fff', marginBottom: 8 }}>Como ativar:</p>
+          <div style={{ background: 'rgba(0,198,167,0.06)', borderRadius: 10, padding: 16, fontSize: 13, color: C.textSec }}>
+            <p style={{ fontWeight: 600, color: C.text, marginBottom: 8 }}>Como ativar:</p>
             {pricing.isFree ? (
               <ol style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingLeft: 16 }}>
-                <li>Envie um email para <span style={{ color: '#00C6A7', fontWeight: 600 }}>contato@zupet.io</span></li>
-                <li>Informe o cupom <strong>{couponResult?.coupon.code}</strong> e seu email de cadastro</li>
+                <li>Envie um email para <span style={{ color: C.accent, fontWeight: 600 }}>contato@zupet.io</span></li>
+                <li>Informe o cupom <strong style={{ color: C.text }}>{couponResult?.coupon.code}</strong> e seu email de cadastro</li>
                 <li>Ativamos em até 24h úteis</li>
               </ol>
             ) : (
               <ol style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingLeft: 16 }}>
-                <li>Faça o Pix de <strong>R$ {pricing.final.toFixed(2).replace('.', ',')}</strong> para a chave acima</li>
-                <li>Envie o comprovante para <span style={{ color: '#00C6A7', fontWeight: 600 }}>contato@zupet.io</span></li>
-                {couponResult && <li>Informe o cupom <strong>{couponResult.coupon.code}</strong> no email</li>}
+                <li>Faça o Pix de <strong style={{ color: C.text }}>R$ {pricing.final.toFixed(2).replace('.', ',')}</strong> para a chave acima</li>
+                <li>Envie o comprovante para <span style={{ color: C.accent, fontWeight: 600 }}>contato@zupet.io</span></li>
+                {couponResult && <li>Informe o cupom <strong style={{ color: C.text }}>{couponResult.coupon.code}</strong> no email</li>}
                 <li>Informe seu email de cadastro</li>
                 <li>Ativamos em até 24h úteis</li>
               </ol>
             )}
           </div>
 
-          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.38)' }}>
-            Seu email: <span style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>{email}</span>
+          <p style={{ fontSize: 12, color: C.textSec }}>
+            Seu email: <span style={{ color: C.text, fontWeight: 600 }}>{email}</span>
           </p>
         </div>
       </div>

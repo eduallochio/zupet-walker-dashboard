@@ -3,11 +3,18 @@ import { createClient } from '@supabase/supabase-js';
 
 type ScheduleStatus = 'proposed' | 'confirmed' | 'cancelled' | 'done';
 
+const C = {
+  bg: '#0D1F18', card: '#132219', border: 'rgba(0,200,167,0.12)',
+  accent: '#00C6A7', accentDim: 'rgba(0,198,167,0.12)',
+  text: '#E8F5F0', textSec: '#7FA898', textMuted: '#4A6B60',
+  success: '#22D3A5', warning: '#F59E0B', danger: '#F87171',
+};
+
 const STATUS_CONFIG: Record<ScheduleStatus, { label: string; color: string; bg: string }> = {
-  confirmed: { label: 'Confirmado', color: '#00A88E', bg: '#D1EEEA' },
-  proposed:  { label: 'Pendente',   color: '#B45309', bg: '#FEF3C7' },
-  cancelled: { label: 'Cancelado',  color: '#9CA3AF', bg: '#F3F4F6' },
-  done:      { label: 'Concluído',  color: '#6B7280', bg: '#F3F4F6' },
+  confirmed: { label: 'Confirmado', color: C.success,  bg: 'rgba(34,211,165,0.15)' },
+  proposed:  { label: 'Pendente',   color: C.warning,  bg: 'rgba(245,158,11,0.15)' },
+  cancelled: { label: 'Cancelado',  color: C.danger,   bg: 'rgba(248,113,113,0.15)' },
+  done:      { label: 'Concluído',  color: C.textSec,  bg: 'rgba(127,168,152,0.12)' },
 };
 
 function formatDateTime(iso: string) {
@@ -78,18 +85,18 @@ export default async function AgendaPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div style={{ padding: '28px 24px', maxWidth: 900, margin: '0 auto' }}>
       {/* Header + stats */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0D2926', letterSpacing: '-0.03em' }}>Agenda</h1>
-          <p style={{ fontSize: 13, color: '#6B7280', marginTop: 3 }}>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, letterSpacing: '-0.03em' }}>Agenda</h1>
+          <p style={{ fontSize: 13, color: C.textSec, marginTop: 3 }}>
             {confirmedToday.length > 0
               ? `${confirmedToday.length} passeio${confirmedToday.length > 1 ? 's' : ''} confirmado${confirmedToday.length > 1 ? 's' : ''} hoje`
               : 'Nenhum passeio confirmado para hoje'}
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {(['proposed', 'confirmed'] as ScheduleStatus[]).map((st) => {
             const count = upcoming.filter((s: any) => s.status === st).length;
             const cfg = STATUS_CONFIG[st];
@@ -103,12 +110,12 @@ export default async function AgendaPage() {
       </div>
 
       {/* Próximos */}
-      <div style={{ background: '#fff', border: '1px solid #D1EEEA', borderRadius: 12, overflow: 'hidden' }}>
-        <div style={{ padding: '16px 20px 14px', borderBottom: '1px solid #e8f4f2' }}>
-          <h2 style={{ fontWeight: 700, fontSize: 13, color: '#0D2926', letterSpacing: '-0.01em' }}>Próximos agendamentos</h2>
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden', marginBottom: 16 }}>
+        <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${C.border}` }}>
+          <h2 style={{ fontWeight: 700, fontSize: 13, color: C.text, letterSpacing: '-0.01em' }}>Próximos agendamentos</h2>
         </div>
         {upcoming.length === 0 ? (
-          <div style={{ padding: '36px 20px', textAlign: 'center', fontSize: 13, color: '#6B7280' }}>
+          <div style={{ padding: '36px 20px', textAlign: 'center', fontSize: 13, color: C.textSec }}>
             Nenhum agendamento pendente ou confirmado.
           </div>
         ) : (
@@ -117,21 +124,21 @@ export default async function AgendaPage() {
               const cfg = STATUS_CONFIG[s.status as ScheduleStatus] ?? STATUS_CONFIG.proposed;
               const pets = (s.pet_ids ?? []).map((id: string) => petNames[id] ?? id);
               return (
-                <li key={s.id} style={{ padding: '14px 20px', borderTop: i > 0 ? '1px solid #e8f4f2' : 'none', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 10, background: '#F5FAFA', border: '1px solid #D1EEEA', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
+                <li key={s.id} style={{ padding: '14px 20px', borderTop: i > 0 ? `1px solid ${C.border}` : 'none', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: C.accentDim, border: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
                     🐾
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className="flex items-center gap-2" style={{ marginBottom: 4 }}>
-                      <span style={{ fontSize: 14, fontWeight: 600, color: '#0D2926' }}>{formatDateTime(s.scheduled_at)}</span>
+                    <div className="flex items-center gap-2" style={{ marginBottom: 4, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{formatDateTime(s.scheduled_at)}</span>
                       <span style={{ fontSize: 11, fontWeight: 600, color: cfg.color, background: cfg.bg, padding: '2px 8px', borderRadius: 20, flexShrink: 0 }}>{cfg.label}</span>
                     </div>
-                    <div style={{ fontSize: 12, color: '#6B7280', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                    <div style={{ fontSize: 12, color: C.textSec, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                       {ownerNames[s.owner_id] && <span>👤 {ownerNames[s.owner_id]}</span>}
                       {pets.length > 0 && <span>🐶 {pets.join(', ')}</span>}
                       <span>⏱ {formatDuration(s.duration_minutes)}</span>
                     </div>
-                    {s.notes && <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 4, fontStyle: 'italic' }}>{s.notes}</p>}
+                    {s.notes && <p style={{ fontSize: 12, color: C.textMuted, marginTop: 4, fontStyle: 'italic' }}>{s.notes}</p>}
                   </div>
                 </li>
               );
@@ -142,22 +149,22 @@ export default async function AgendaPage() {
 
       {/* Histórico */}
       {past.length > 0 && (
-        <div style={{ background: '#fff', border: '1px solid #D1EEEA', borderRadius: 12, overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px 14px', borderBottom: '1px solid #e8f4f2' }}>
-            <h2 style={{ fontWeight: 700, fontSize: 13, color: '#0D2926', letterSpacing: '-0.01em' }}>Histórico</h2>
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden' }}>
+          <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${C.border}` }}>
+            <h2 style={{ fontWeight: 700, fontSize: 13, color: C.text, letterSpacing: '-0.01em' }}>Histórico</h2>
           </div>
           <ul>
             {past.slice(0, 20).map((s: any, i: number) => {
               const cfg = STATUS_CONFIG[s.status as ScheduleStatus] ?? STATUS_CONFIG.done;
               const pets = (s.pet_ids ?? []).map((id: string) => petNames[id] ?? id);
               return (
-                <li key={s.id} style={{ padding: '12px 20px', borderTop: i > 0 ? '1px solid #e8f4f2' : 'none', display: 'flex', alignItems: 'center', gap: 14, opacity: s.status === 'cancelled' ? 0.55 : 1 }}>
+                <li key={s.id} style={{ padding: '12px 20px', borderTop: i > 0 ? `1px solid ${C.border}` : 'none', display: 'flex', alignItems: 'center', gap: 14, opacity: s.status === 'cancelled' ? 0.55 : 1 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className="flex items-center gap-2" style={{ marginBottom: 2 }}>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: '#0D2926' }}>{formatDateTime(s.scheduled_at)}</span>
+                    <div className="flex items-center gap-2" style={{ marginBottom: 2, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{formatDateTime(s.scheduled_at)}</span>
                       <span style={{ fontSize: 11, fontWeight: 600, color: cfg.color, background: cfg.bg, padding: '2px 8px', borderRadius: 20, flexShrink: 0 }}>{cfg.label}</span>
                     </div>
-                    <div style={{ fontSize: 12, color: '#6B7280', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    <div style={{ fontSize: 12, color: C.textSec, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                       {ownerNames[s.owner_id] && <span>👤 {ownerNames[s.owner_id]}</span>}
                       {pets.length > 0 && <span>🐶 {pets.join(', ')}</span>}
                     </div>

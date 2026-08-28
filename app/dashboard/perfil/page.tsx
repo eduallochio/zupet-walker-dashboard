@@ -23,8 +23,8 @@ export default async function PerfilPage() {
     .single();
 
   return (
-    <div style={{ maxWidth: 520 }}>
-      <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0D2926', letterSpacing: '-0.03em', marginBottom: 28 }}>Meu Perfil</h1>
+    <div style={{ maxWidth: 560, padding: '28px 24px' }}>
+      <h1 style={{ fontSize: 22, fontWeight: 800, color: '#E8F5F0', letterSpacing: '-0.03em', marginBottom: 28 }}>Meu Perfil</h1>
       <ProfileForm
         initialName={profile?.name ?? ''}
         initialBio={profile?.bio ?? ''}
