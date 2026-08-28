@@ -140,7 +140,7 @@ export default function WalkerSidebar({ profile }: Props) {
       {/* Link Público Pro */}
       {profile?.plan === 'pro' && profile.username && (
         <a
-          href={`https://walker.zupet.io/w/${profile.username}`}
+          href={`https://zupet-walker-dashboard-b9al.vercel.app/w/${profile.username}`}
           target="_blank"
           rel="noopener noreferrer"
           style={{
