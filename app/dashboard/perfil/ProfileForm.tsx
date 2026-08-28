@@ -126,7 +126,7 @@ export default function ProfileForm({
   const removeSummaryItem = (index: number) => setSummaryItems(prev => prev.filter((_, i) => i !== index));
 
   return (
-    <form onSubmit={save} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <form onSubmit={save} style={{ display: 'flex', flexDirection: 'column', gap: 20, color: '#E8F5F0' }}>
       {/* Plano badge */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: '#132219', borderRadius: 10, border: '1px solid rgba(0,200,167,0.12)' }}>
         <span style={{ fontSize: 22 }}>{plan === 'pro' ? '✦' : '○'}</span>
@@ -241,8 +241,8 @@ export default function ProfileForm({
       <div style={sectionStyle}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <p style={{ fontWeight: 600, color: '#E8F5F0', fontSize: 14, marginBottom: 2 }}>Aceita agendamentos de última hora</p>
-            <p style={{ fontSize: 12, color: '#7FA898' }}>Tutores podem solicitar passeios com menos de 24h de antecedência</p>
+            <p style={{ fontWeight: 700, color: '#E8F5F0', fontSize: 14, marginBottom: 2, WebkitTextFillColor: '#E8F5F0' }}>Aceita agendamentos de última hora</p>
+            <p style={{ fontSize: 12, color: '#7FA898', WebkitTextFillColor: '#7FA898' }}>Tutores podem solicitar passeios com menos de 24h de antecedência</p>
           </div>
           <button
             type="button"
