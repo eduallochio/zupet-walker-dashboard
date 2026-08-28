@@ -15,7 +15,7 @@ const NAV = [
   { href: '/dashboard/pro',        label: 'Plano Pro',   icon: SparklesIcon },
 ];
 
-type Props = { profile: { name: string; plan: string; avatar_url: string | null } | null };
+type Props = { profile: { name: string; plan: string; avatar_url: string | null; username?: string | null } | null };
 
 export default function WalkerSidebar({ profile }: Props) {
   const pathname = usePathname();
@@ -136,6 +136,44 @@ export default function WalkerSidebar({ profile }: Props) {
           );
         })}
       </nav>
+
+      {/* Link Público Pro */}
+      {profile?.plan === 'pro' && profile.username && (
+        <a
+          href={`https://walker.zupet.io/w/${profile.username}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            margin: '0 0 8px', padding: '9px 12px',
+            borderRadius: 9, textDecoration: 'none',
+            background: 'rgba(0,198,167,0.12)',
+            border: '1px solid rgba(0,198,167,0.25)',
+            fontSize: 12, fontWeight: 600, color: '#00C6A7',
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00C6A7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+          </svg>
+          Meu link público ↗
+        </a>
+      )}
+      {profile?.plan === 'pro' && !profile.username && (
+        <a
+          href="/dashboard/perfil"
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            margin: '0 0 8px', padding: '9px 12px',
+            borderRadius: 9, textDecoration: 'none',
+            background: 'rgba(0,198,167,0.06)',
+            border: '1px dashed rgba(0,198,167,0.2)',
+            fontSize: 12, fontWeight: 500, color: 'rgba(0,198,167,0.6)',
+          }}
+        >
+          + Definir username Pro
+        </a>
+      )}
 
       {/* Logout */}
       <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 12, marginTop: 12 }}>
