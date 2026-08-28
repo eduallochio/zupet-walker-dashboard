@@ -95,11 +95,22 @@ export default async function WalkerProfilePage({ params }: { params: Promise<{ 
       .order('sort_order', { ascending: true }),
     supabaseAdmin
       .from('walker_ratings')
-      .select('rating, comment, created_at, user_id')
+      .select('rating, comment, created_at, owner_id, service_type')
       .eq('walker_id', walker.id)
       .order('created_at', { ascending: false })
-      .limit(5),
+      .limit(8),
   ]);
+
+  // Buscar nomes dos tutores
+  const ownerIds = [...new Set((ratings ?? []).map((r: any) => r.owner_id).filter(Boolean))];
+  let ownerNames: Record<string, string> = {};
+  if (ownerIds.length > 0) {
+    const { data: ownerProfiles } = await supabaseAdmin
+      .from('user_profiles')
+      .select('user_id, name')
+      .in('user_id', ownerIds);
+    (ownerProfiles ?? []).forEach((p: any) => { ownerNames[p.user_id] = p.name; });
+  }
 
   const social = (walker.social_links ?? {}) as Record<string, string>;
   const availDays = (walker.available_days ?? []) as number[];
@@ -256,27 +267,33 @@ export default async function WalkerProfilePage({ params }: { params: Promise<{ 
           <div style={{ marginBottom: 28 }}>
             <h2 style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#4A6B60', marginBottom: 14 }}>Avaliações</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {(ratings ?? []).map((r: any) => (
-                <div key={r.user_id + r.created_at} style={{ background: '#0D1F18', border: '1px solid rgba(0,198,167,0.14)', borderRadius: 14, padding: '14px 16px', display: 'flex', gap: 12 }}>
-                  {/* Inicial do tutor */}
-                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(0,198,167,0.12)', border: '1px solid rgba(0,198,167,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#00C6A7', flexShrink: 0 }}>
-                    🐾
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
-                      <div style={{ display: 'flex', gap: 2 }}>
-                        {[1,2,3,4,5].map(i => (
-                          <span key={i} style={{ fontSize: 14, color: i <= r.rating ? '#F59E0B' : 'rgba(0,198,167,0.15)' }}>★</span>
-                        ))}
-                      </div>
-                      <span style={{ fontSize: 11, color: '#4A6B60' }}>
-                        {new Date(r.created_at).toLocaleDateString('pt-BR', { day:'2-digit', month:'short', year:'2-digit' })}
-                      </span>
+              {(ratings ?? []).map((r: any) => {
+                const ownerName = ownerNames[r.owner_id] ?? null;
+                const initial = ownerName ? ownerName.trim()[0].toUpperCase() : '?';
+                return (
+                  <div key={r.owner_id + r.created_at} style={{ background: '#0D1F18', border: '1px solid rgba(0,198,167,0.14)', borderRadius: 14, padding: '14px 16px', display: 'flex', gap: 12 }}>
+                    {/* Inicial do tutor */}
+                    <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'rgba(0,198,167,0.12)', border: '1px solid rgba(0,198,167,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 800, color: '#00C6A7', flexShrink: 0 }}>
+                      {initial}
                     </div>
-                    {r.comment && <p style={{ fontSize: 13, color: '#C8E8DF', lineHeight: 1.55, margin: 0 }}>{r.comment}</p>}
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+                        {ownerName && <span style={{ fontSize: 13, fontWeight: 700, color: '#E8F5F0' }}>{ownerName.split(' ')[0]}</span>}
+                        <div style={{ display: 'flex', gap: 2 }}>
+                          {[1,2,3,4,5].map(i => (
+                            <span key={i} style={{ fontSize: 14, color: i <= r.rating ? '#F59E0B' : 'rgba(0,198,167,0.15)' }}>★</span>
+                          ))}
+                        </div>
+                        <span style={{ fontSize: 11, color: '#4A6B60' }}>
+                          {new Date(r.created_at).toLocaleDateString('pt-BR', { day:'2-digit', month:'short', year:'2-digit' })}
+                        </span>
+                      </div>
+                      {r.comment && <p style={{ fontSize: 13, color: '#C8E8DF', lineHeight: 1.55, margin: 0 }}>{r.comment}</p>}
+                      {!r.comment && <p style={{ fontSize: 12, color: '#4A6B60', fontStyle: 'italic', margin: 0 }}>Avaliação sem comentário</p>}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
