@@ -11,6 +11,7 @@ export async function CitiesSection() {
     .from('walker_profiles')
     .select('city, state')
     .eq('active', true)
+    .eq('is_test_profile', false)
     .not('city', 'is', null);
 
   if (!data || data.length === 0) return null;

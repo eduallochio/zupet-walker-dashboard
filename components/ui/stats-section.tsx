@@ -13,11 +13,13 @@ export async function StatsSection() {
         .from('walker_profiles')
         .select('*', { count: 'exact', head: true })
         .eq('active', true)
+        .eq('is_test_profile', false)
         .then((r) => ({ count: r.count ?? 0 })),
       supabaseAdmin
         .from('walker_profiles')
         .select('city', { count: 'exact', head: false })
         .eq('active', true)
+        .eq('is_test_profile', false)
         .not('city', 'is', null)
         .then((r) => {
           const unique = new Set((r.data ?? []).map((x: { city: string }) => x.city));

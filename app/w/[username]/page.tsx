@@ -53,6 +53,7 @@ export async function generateMetadata({ params }: { params: Promise<{ username:
     .eq('username', username)
     .eq('plan', 'pro')
     .eq('active', true)
+    .eq('is_test_profile', false)
     .single();
 
   if (!walker) return { title: 'Walker não encontrado' };
@@ -82,6 +83,7 @@ export default async function WalkerProfilePage({ params }: { params: Promise<{ 
     .eq('username', username)
     .eq('plan', 'pro')
     .eq('active', true)
+    .eq('is_test_profile', false)
     .single();
 
   if (!walker) notFound();
