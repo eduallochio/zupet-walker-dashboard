@@ -7,16 +7,29 @@ const supabaseAdmin = createClient(
 );
 
 export async function ActivityStatsSection() {
+  // Obtém IDs de walkers que NÃO são perfis de teste
+  const { data: realWalkers } = await supabaseAdmin
+    .from('walker_profiles')
+    .select('id')
+    .eq('is_test_profile', false);
+  const realWalkerIds = (realWalkers ?? []).map((w: { id: string }) => w.id);
+
   const [sessionsResult, distanceResult] = await Promise.all([
-    supabaseAdmin
-      .from('walk_sessions')
-      .select('*', { count: 'exact', head: true })
-      .not('ended_at', 'is', null),
-    supabaseAdmin
-      .from('walk_sessions')
-      .select('distance_meters')
-      .not('ended_at', 'is', null)
-      .not('distance_meters', 'is', null),
+    realWalkerIds.length === 0
+      ? Promise.resolve({ count: 0 })
+      : supabaseAdmin
+          .from('walk_sessions')
+          .select('*', { count: 'exact', head: true })
+          .not('ended_at', 'is', null)
+          .in('walker_id', realWalkerIds),
+    realWalkerIds.length === 0
+      ? Promise.resolve({ data: [] })
+      : supabaseAdmin
+          .from('walk_sessions')
+          .select('distance_meters')
+          .not('ended_at', 'is', null)
+          .not('distance_meters', 'is', null)
+          .in('walker_id', realWalkerIds),
   ]);
 
   const totalSessions = sessionsResult.count ?? 0;
