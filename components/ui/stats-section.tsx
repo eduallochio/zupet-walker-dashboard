@@ -13,13 +13,13 @@ export async function StatsSection() {
         .from('walker_profiles')
         .select('*', { count: 'exact', head: true })
         .eq('active', true)
-        .eq('is_test_profile', false)
+        .$call((q) => process.env.NODE_ENV === 'production' ? q.eq('is_test_profile', false) : q)
         .then((r) => ({ count: r.count ?? 0 })),
       supabaseAdmin
         .from('walker_profiles')
         .select('city', { count: 'exact', head: false })
         .eq('active', true)
-        .eq('is_test_profile', false)
+        .$call((q) => process.env.NODE_ENV === 'production' ? q.eq('is_test_profile', false) : q)
         .not('city', 'is', null)
         .then((r) => {
           const unique = new Set((r.data ?? []).map((x: { city: string }) => x.city));
@@ -28,7 +28,7 @@ export async function StatsSection() {
       supabaseAdmin
         .from('walker_ratings')
         .select('walker_id, walker_profiles!inner(is_test_profile)', { count: 'exact', head: true })
-        .eq('walker_profiles.is_test_profile', false)
+        .$call((q) => process.env.NODE_ENV === 'production' ? q.eq('walker_profiles.is_test_profile', false) : q)
         .then((r) => ({ count: r.count ?? 0 })),
     ]);
 

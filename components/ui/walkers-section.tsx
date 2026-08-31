@@ -38,7 +38,7 @@ export async function WalkersSection() {
     .from('walker_profiles')
     .select('id, name, city, state, bio, avatar_url, rating, social_links, show_prices')
     .eq('active', true)
-    .eq('is_test_profile', false)
+    .$call((q) => process.env.NODE_ENV === 'production' ? q.eq('is_test_profile', false) : q)
     .order('rating', { ascending: false, nullsFirst: false })
     .limit(6);
 

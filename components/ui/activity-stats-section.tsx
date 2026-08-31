@@ -7,11 +7,11 @@ const supabaseAdmin = createClient(
 );
 
 export async function ActivityStatsSection() {
-  // Obtém IDs de walkers que NÃO são perfis de teste
+  // Em produção filtra perfis de teste; em dev mostra todos
   const { data: realWalkers } = await supabaseAdmin
     .from('walker_profiles')
     .select('id')
-    .eq('is_test_profile', false);
+    .$call((q) => process.env.NODE_ENV === 'production' ? q.eq('is_test_profile', false) : q);
   const realWalkerIds = (realWalkers ?? []).map((w: { id: string }) => w.id);
 
   const [sessionsResult, distanceResult] = await Promise.all([

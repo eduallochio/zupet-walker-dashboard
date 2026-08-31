@@ -11,7 +11,7 @@ export async function CitiesSection() {
     .from('walker_profiles')
     .select('city, state')
     .eq('active', true)
-    .eq('is_test_profile', false)
+    .$call((q) => process.env.NODE_ENV === 'production' ? q.eq('is_test_profile', false) : q)
     .not('city', 'is', null);
 
   if (!data || data.length === 0) return null;
