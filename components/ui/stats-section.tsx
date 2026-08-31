@@ -27,7 +27,8 @@ export async function StatsSection() {
         }),
       supabaseAdmin
         .from('walker_ratings')
-        .select('*', { count: 'exact', head: true })
+        .select('walker_id, walker_profiles!inner(is_test_profile)', { count: 'exact', head: true })
+        .eq('walker_profiles.is_test_profile', false)
         .then((r) => ({ count: r.count ?? 0 })),
     ]);
 
