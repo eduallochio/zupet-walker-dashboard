@@ -33,14 +33,15 @@ function buildInitialsImage(name: string): string {
   return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
 }
 
+const isProd = process.env.NODE_ENV === 'production';
+
 export async function WalkersSection() {
-  const { data: walkers } = await supabaseAdmin
+  let q = supabaseAdmin
     .from('walker_profiles')
     .select('id, name, city, state, bio, avatar_url, rating, social_links, show_prices')
-    .eq('active', true)
-    .$call((q) => process.env.NODE_ENV === 'production' ? q.eq('is_test_profile', false) : q)
-    .order('rating', { ascending: false, nullsFirst: false })
-    .limit(6);
+    .eq('active', true);
+  if (isProd) q = q.eq('is_test_profile', false);
+  const { data: walkers } = await q.order('rating', { ascending: false, nullsFirst: false }).limit(6);
 
   if (!walkers || walkers.length === 0) return null;
 

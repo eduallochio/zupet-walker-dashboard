@@ -6,13 +6,12 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+const isProd = process.env.NODE_ENV === 'production';
+
 export async function CitiesSection() {
-  const { data } = await supabaseAdmin
-    .from('walker_profiles')
-    .select('city, state')
-    .eq('active', true)
-    .$call((q) => process.env.NODE_ENV === 'production' ? q.eq('is_test_profile', false) : q)
-    .not('city', 'is', null);
+  let q = supabaseAdmin.from('walker_profiles').select('city, state').eq('active', true);
+  if (isProd) q = q.eq('is_test_profile', false);
+  const { data } = await q.not('city', 'is', null);
 
   if (!data || data.length === 0) return null;
 

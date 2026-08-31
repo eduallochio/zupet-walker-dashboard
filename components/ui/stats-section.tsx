@@ -6,30 +6,26 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+const isProd = process.env.NODE_ENV === 'production';
+
 export async function StatsSection() {
+  let wq = supabaseAdmin.from('walker_profiles').select('*', { count: 'exact', head: true }).eq('active', true);
+  if (isProd) wq = wq.eq('is_test_profile', false);
+
+  let cq = supabaseAdmin.from('walker_profiles').select('city', { count: 'exact', head: false }).eq('active', true);
+  if (isProd) cq = cq.eq('is_test_profile', false);
+
+  let rq = supabaseAdmin.from('walker_ratings').select('walker_id, walker_profiles!inner(is_test_profile)', { count: 'exact', head: true });
+  if (isProd) rq = rq.eq('walker_profiles.is_test_profile', false);
+
   const [{ count: walkersCount }, { count: citiesCount }, { count: ratingsCount }] =
     await Promise.all([
-      supabaseAdmin
-        .from('walker_profiles')
-        .select('*', { count: 'exact', head: true })
-        .eq('active', true)
-        .$call((q) => process.env.NODE_ENV === 'production' ? q.eq('is_test_profile', false) : q)
-        .then((r) => ({ count: r.count ?? 0 })),
-      supabaseAdmin
-        .from('walker_profiles')
-        .select('city', { count: 'exact', head: false })
-        .eq('active', true)
-        .$call((q) => process.env.NODE_ENV === 'production' ? q.eq('is_test_profile', false) : q)
-        .not('city', 'is', null)
-        .then((r) => {
-          const unique = new Set((r.data ?? []).map((x: { city: string }) => x.city));
-          return { count: unique.size };
-        }),
-      supabaseAdmin
-        .from('walker_ratings')
-        .select('walker_id, walker_profiles!inner(is_test_profile)', { count: 'exact', head: true })
-        .$call((q) => process.env.NODE_ENV === 'production' ? q.eq('walker_profiles.is_test_profile', false) : q)
-        .then((r) => ({ count: r.count ?? 0 })),
+      wq.then((r) => ({ count: r.count ?? 0 })),
+      cq.not('city', 'is', null).then((r) => {
+        const unique = new Set((r.data ?? []).map((x: { city: string }) => x.city));
+        return { count: unique.size };
+      }),
+      rq.then((r) => ({ count: r.count ?? 0 })),
     ]);
 
   const stats = [

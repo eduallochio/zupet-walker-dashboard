@@ -27,13 +27,15 @@ function Stars({ n }: { n: number }) {
 }
 
 export async function TestimonialsSection() {
-  const { data: ratings } = await supabaseAdmin
+  const isProd = process.env.NODE_ENV === 'production';
+  let ratingsQuery = supabaseAdmin
     .from('walker_ratings')
     .select('id, rating, comment, created_at, walker_profiles!inner(name, avatar_url, is_test_profile)')
-    .$call((q) => process.env.NODE_ENV === 'production' ? q.eq('walker_profiles.is_test_profile', false) : q)
     .not('comment', 'is', null)
     .order('rating', { ascending: false })
     .limit(6);
+  if (isProd) ratingsQuery = ratingsQuery.eq('walker_profiles.is_test_profile', false);
+  const { data: ratings } = await ratingsQuery;
 
   if (!ratings || ratings.length === 0) return null;
 

@@ -8,10 +8,9 @@ const supabaseAdmin = createClient(
 
 export async function ActivityStatsSection() {
   // Em produção filtra perfis de teste; em dev mostra todos
-  const { data: realWalkers } = await supabaseAdmin
-    .from('walker_profiles')
-    .select('id')
-    .$call((q) => process.env.NODE_ENV === 'production' ? q.eq('is_test_profile', false) : q);
+  let wq = supabaseAdmin.from('walker_profiles').select('id');
+  if (process.env.NODE_ENV === 'production') wq = wq.eq('is_test_profile', false);
+  const { data: realWalkers } = await wq;
   const realWalkerIds = (realWalkers ?? []).map((w: { id: string }) => w.id);
 
   const [sessionsResult, distanceResult] = await Promise.all([
