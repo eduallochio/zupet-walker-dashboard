@@ -29,7 +29,8 @@ function Stars({ n }: { n: number }) {
 export async function TestimonialsSection() {
   const { data: ratings } = await supabaseAdmin
     .from('walker_ratings')
-    .select('id, rating, comment, created_at, walker_profiles(name, avatar_url)')
+    .select('id, rating, comment, created_at, walker_profiles!inner(name, avatar_url, is_test_profile)')
+    .eq('walker_profiles.is_test_profile', false)
     .not('comment', 'is', null)
     .order('rating', { ascending: false })
     .limit(6);
