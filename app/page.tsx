@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import { ParallaxHero } from '@/components/ui/parallax-hero';
 import { WalkersSection } from '@/components/ui/walkers-section';
 import { WalkersSkeleton } from '@/components/ui/walkers-skeleton';
@@ -68,7 +69,17 @@ const PLAN_COMPARISON = [
 ];
 
 
-export default function LandingPage() {
+const DEFAULT_PLAN = { price_full: 79.9, price_promo: 49.9, promo_active: true, promo_label: 'Tempo limitado' };
+
+export default async function LandingPage() {
+  const { data: configRow } = await supabaseAdmin
+    .from('app_config')
+    .select('value')
+    .eq('key', 'walker_pro_plan')
+    .maybeSingle();
+  const planConfig = (configRow?.value as typeof DEFAULT_PLAN) ?? DEFAULT_PLAN;
+  const displayPrice = planConfig.promo_active ? planConfig.price_promo : planConfig.price_full;
+
   return (
     <main>
       <ScrollNav />
@@ -203,8 +214,17 @@ export default function LandingPage() {
                 <th className="lp-pt-plan-col lp-pt-pro">
                   <div className="lp-pt-plan-badge">Recomendado</div>
                   <div className="lp-pt-plan-label">Pro</div>
-                  <div className="lp-pt-plan-price">R$ 29<span>/mês</span></div>
-                  <div className="lp-pt-plan-sub">cancele quando quiser</div>
+                  <div className="lp-pt-plan-price">
+                    {planConfig.promo_active && (
+                      <span style={{ fontSize: '0.6em', fontWeight: 500, opacity: 0.5, textDecoration: 'line-through', marginRight: 6 }}>
+                        R$ {planConfig.price_full.toFixed(2).replace('.', ',')}
+                      </span>
+                    )}
+                    R$ {displayPrice.toFixed(2).replace('.', ',')}<span>/mês</span>
+                  </div>
+                  <div className="lp-pt-plan-sub">
+                    {planConfig.promo_active ? planConfig.promo_label : 'cancele quando quiser'}
+                  </div>
                 </th>
               </tr>
             </thead>

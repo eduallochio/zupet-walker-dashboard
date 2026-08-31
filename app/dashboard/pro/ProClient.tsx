@@ -2,7 +2,13 @@
 
 import { useState } from 'react';
 
-const BASE_PRICE = 29;
+type PlanConfig = {
+  price_full: number;
+  price_promo: number;
+  promo_active: boolean;
+  promo_label: string;
+  currency: string;
+};
 
 type Pricing = {
   original: number;
@@ -17,13 +23,14 @@ type CouponResult = {
   pricing: Pricing;
 };
 
-export default function ProClient({ isPro, email, pixKey }: { isPro: boolean; email: string; pixKey: string }) {
+export default function ProClient({ isPro, email, pixKey, planConfig }: { isPro: boolean; email: string; pixKey: string; planConfig: PlanConfig }) {
   const [couponCode, setCouponCode] = useState('');
   const [couponResult, setCouponResult] = useState<CouponResult | null>(null);
   const [couponError, setCouponError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const pricing = couponResult?.pricing ?? { original: BASE_PRICE, discount: 0, final: BASE_PRICE, isFree: false };
+  const basePrice = planConfig.promo_active ? planConfig.price_promo : planConfig.price_full;
+  const pricing = couponResult?.pricing ?? { original: basePrice, discount: 0, final: basePrice, isFree: false };
 
   async function handleValidar() {
     if (!couponCode.trim()) return;
@@ -142,10 +149,16 @@ export default function ProClient({ isPro, email, pixKey }: { isPro: boolean; em
         <div style={{ background: '#0A1A14', border: `1px solid ${C.border}`, borderRadius: 14, padding: 24, color: C.text, display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div>
             <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: C.textSec, marginBottom: 4 }}>Investimento</p>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-              {couponResult && pricing.discount > 0 && (
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+              {/* Preço cheio riscado: quando promoção ativa (sem cupom) ou quando cupom dá desconto */}
+              {(!couponResult && planConfig.promo_active) && (
                 <p style={{ fontSize: 18, fontWeight: 500, color: C.textSec, textDecoration: 'line-through' }}>
-                  R$ {pricing.original}
+                  R$ {planConfig.price_full.toFixed(2).replace('.', ',')}
+                </p>
+              )}
+              {(couponResult && pricing.discount > 0) && (
+                <p style={{ fontSize: 18, fontWeight: 500, color: C.textSec, textDecoration: 'line-through' }}>
+                  R$ {pricing.original.toFixed(2).replace('.', ',')}
                 </p>
               )}
               <p style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.03em', color: pricing.isFree ? C.success : C.text }}>
@@ -153,6 +166,11 @@ export default function ProClient({ isPro, email, pixKey }: { isPro: boolean; em
                 {!pricing.isFree && <span style={{ fontSize: 14, fontWeight: 500, color: C.textSec }}>/mês</span>}
               </p>
             </div>
+            {!couponResult && planConfig.promo_active && (
+              <p style={{ fontSize: 11, color: C.success, marginTop: 4 }}>
+                {planConfig.promo_label}
+              </p>
+            )}
             {couponResult && pricing.discount > 0 && (
               <p style={{ fontSize: 11, color: C.success, marginTop: 4 }}>
                 Economia de R$ {pricing.discount.toFixed(2).replace('.', ',')} com o cupom {couponResult.coupon.code}
