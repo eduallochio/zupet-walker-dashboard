@@ -14,6 +14,7 @@ import { ScrollAnimations } from '@/components/ui/scroll-animations';
 import { TestimonialsSection } from '@/components/ui/testimonials-section';
 import { ActivityStatsSection } from '@/components/ui/activity-stats-section';
 import { LeadForm } from '@/components/ui/lead-form';
+import { PageTracker } from '@/components/ui/page-tracker';
 
 const HOW_STEPS = [
   { emoji: '📲', title: 'Baixe o app', desc: 'Disponível para Android e iOS, gratuito para começar.' },
@@ -85,6 +86,7 @@ export default async function LandingPage() {
 
   return (
     <main>
+      <PageTracker />
       <ScrollNav />
       <ScrollAnimations />
 
