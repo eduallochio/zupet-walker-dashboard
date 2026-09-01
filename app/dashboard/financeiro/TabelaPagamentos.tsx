@@ -67,9 +67,9 @@ function PaymentRow({ p, ownerName }: { p: Payment; ownerName: string }) {
 
   return (
     <tr style={{ borderTop: '1px solid #e8f4f2', opacity: isPending ? 0.6 : 1 }}>
-      <td style={{ padding: '12px 20px', color: '#4a6b65', fontSize: 13 }}>{formatDate(p.created_at)}</td>
-      <td style={{ padding: '12px 20px', color: '#1a3330', fontSize: 13, fontWeight: 500 }}>{ownerName}</td>
-      <td style={{ padding: '12px 20px', color: '#4a6b65', fontSize: 13 }}>
+      <td style={{ padding: '12px 20px', color: '#b0cdc9', fontSize: 13 }}>{formatDate(p.created_at)}</td>
+      <td style={{ padding: '12px 20px', color: '#e0f2ef', fontSize: 13, fontWeight: 500 }}>{ownerName}</td>
+      <td style={{ padding: '12px 20px', color: '#b0cdc9', fontSize: 13 }}>
         <div>{BILLING_TYPE_LABEL[p.service_type ?? p.billing_type] ?? p.description ?? '—'}</div>
         {p.payment_method && (
           <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
@@ -173,7 +173,7 @@ export function TabelaPagamentos({ payments, ownerNames }: {
         </div>
 
         {/* Stats rápidos */}
-        <div style={{ display: 'flex', gap: 16, fontSize: 12, color: '#4a6b65' }}>
+        <div style={{ display: 'flex', gap: 16, fontSize: 12, color: '#b0cdc9' }}>
           <span>Recebido: <strong style={{ color: '#00A88E' }}>{formatCurrency(totalPaid)}</strong></span>
           <span>Pendente: <strong style={{ color: '#d97706' }}>{formatCurrency(totalPending)}</strong></span>
         </div>
