@@ -95,8 +95,10 @@ export default async function FinanceiroPage({ searchParams }: { searchParams?: 
   const now = new Date();
   const viewMonth = sp.mes !== undefined ? parseInt(sp.mes) : now.getMonth();
   const viewYear  = sp.ano !== undefined ? parseInt(sp.ano) : now.getFullYear();
-  const filterStart = new Date(viewYear, viewMonth, 1).toISOString();
-  const filterEnd   = new Date(viewYear, viewMonth + 1, 0, 23, 59, 59, 999).toISOString();
+  // Usar datas UTC explícitas para evitar deslocamento de fuso
+  const filterStart = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-01T00:00:00.000Z`;
+  const lastDay = new Date(Date.UTC(viewYear, viewMonth + 1, 0)).getUTCDate();
+  const filterEnd   = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}T23:59:59.999Z`;
 
   const jar = await cookies();
   const accessToken = jar.get('sb-access-token')?.value!;
