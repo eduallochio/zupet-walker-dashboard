@@ -301,7 +301,7 @@ export default async function LandingPage() {
         </div>
         <div className="lp-lead-box">
           <p className="lp-lead-title">Quer ser avisado no lançamento?</p>
-          <p className="lp-lead-sub">Deixe seu contato e entraremos em touch assim que o app estiver disponível.</p>
+          <p className="lp-lead-sub">Deixe seu contato e avisaremos assim que o app estiver disponível.</p>
           <LeadForm />
         </div>
       </section>
