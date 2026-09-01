@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
 import { atualizarStatusPagamento } from './actions';
 
 const MONTHS_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
@@ -134,26 +133,7 @@ export function TabelaPagamentos({ payments, ownerNames, viewMonth, viewYear }: 
   viewMonth: number;
   viewYear: number;
 }) {
-  const router = useRouter();
   const [statusFilter, setStatusFilter] = useState<'todos' | 'paid' | 'pending' | 'cancelled'>('todos');
-
-  const now = new Date();
-  const isCurrentMonth = viewYear === now.getFullYear() && viewMonth === now.getMonth();
-
-  function navigate(month: number, year: number) {
-    router.push(`/dashboard/financeiro?mes=${month}&ano=${year}`);
-  }
-
-  function prevMonth() {
-    if (viewMonth === 0) navigate(11, viewYear - 1);
-    else navigate(viewMonth - 1, viewYear);
-  }
-
-  function nextMonth() {
-    if (isCurrentMonth) return;
-    if (viewMonth === 11) navigate(0, viewYear + 1);
-    else navigate(viewMonth + 1, viewYear);
-  }
 
   const filtered = statusFilter === 'todos' ? payments : payments.filter(p => p.status === statusFilter);
 
@@ -162,17 +142,8 @@ export function TabelaPagamentos({ payments, ownerNames, viewMonth, viewYear }: 
 
   return (
     <div>
-      {/* Month nav + stats + status filter */}
+      {/* Stats + filtro de status */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, padding: '12px 20px', borderBottom: '1px solid rgba(0,200,167,0.12)' }}>
-        {/* Seletor de mês */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(0,198,167,0.08)', borderRadius: 10, padding: '4px 6px', border: '1px solid rgba(0,200,167,0.2)' }}>
-          <button onClick={prevMonth} style={navBtn}>‹</button>
-          <span style={{ minWidth: 110, textAlign: 'center', fontSize: 13, fontWeight: 700, color: '#E8F5F0' }}>
-            {MONTHS_PT[viewMonth]} {viewYear}
-          </span>
-          <button onClick={nextMonth} disabled={isCurrentMonth} style={{ ...navBtn, opacity: isCurrentMonth ? 0.3 : 1 }}>›</button>
-        </div>
-
         {/* Stats rápidos */}
         <div style={{ display: 'flex', gap: 16, fontSize: 12, color: '#7FA898' }}>
           <span>Recebido: <strong style={{ color: '#22D3A5' }}>{formatCurrency(totalPaid)}</strong></span>
@@ -230,9 +201,3 @@ export function TabelaPagamentos({ payments, ownerNames, viewMonth, viewYear }: 
   );
 }
 
-const navBtn: React.CSSProperties = {
-  width: 28, height: 28, borderRadius: 7, border: 'none',
-  background: 'transparent', cursor: 'pointer', fontSize: 18,
-  display: 'flex', alignItems: 'center', justifyContent: 'center',
-  color: '#E8F5F0', fontWeight: 700, lineHeight: 1,
-};

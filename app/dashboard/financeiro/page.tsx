@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { formatCurrency } from '@/lib/utils';
 import { NovoLancamentoModal } from './NovoLancamentoModal';
 import { TabelaPagamentos } from './TabelaPagamentos';
+import { MonthNav } from './MonthNav';
 
 const C = {
   card: '#132219', border: 'rgba(0,200,167,0.12)',
@@ -288,8 +289,11 @@ export default async function FinanceiroPage({ searchParams }: { searchParams?: 
 
   return (
     <div style={{ padding: '28px 24px', maxWidth: 1100, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, letterSpacing: '-0.03em' }}>Financeiro</h1>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, letterSpacing: '-0.03em' }}>Financeiro</h1>
+          <MonthNav viewMonth={viewMonth} viewYear={viewYear} />
+        </div>
         <NovoLancamentoModal owners={allOwnerIds.map(id => ({ user_id: id, name: ownerNames[id] ?? id }))} />
       </div>
 
