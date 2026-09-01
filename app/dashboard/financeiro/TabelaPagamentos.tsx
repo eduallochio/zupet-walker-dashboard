@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { atualizarStatusPagamento } from './actions';
 
 const MONTHS_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
@@ -11,9 +12,9 @@ const STATUS_LABEL: Record<string, string> = {
   cancelled: 'Cancelado',
 };
 const STATUS_COLOR: Record<string, { color: string; bg: string }> = {
-  paid:      { color: '#fff',     bg: '#00A88E' },
-  pending:   { color: '#92400e',  bg: '#fef3c7' },
-  cancelled: { color: '#6B7280',  bg: '#f3f4f6' },
+  paid:      { color: '#fff',    bg: '#00A88E' },
+  pending:   { color: '#92400e', bg: '#fef3c7' },
+  cancelled: { color: '#6B7280', bg: '#f3f4f6' },
 };
 
 const BILLING_TYPE_LABEL: Record<string, string> = {
@@ -66,18 +67,18 @@ function PaymentRow({ p, ownerName }: { p: Payment; ownerName: string }) {
   }
 
   return (
-    <tr style={{ borderTop: '1px solid #e8f4f2', opacity: isPending ? 0.6 : 1 }}>
+    <tr style={{ borderTop: '1px solid rgba(0,200,167,0.12)', opacity: isPending ? 0.6 : 1 }}>
       <td style={{ padding: '12px 20px', color: '#b0cdc9', fontSize: 13 }}>{formatDate(p.created_at)}</td>
       <td style={{ padding: '12px 20px', color: '#e0f2ef', fontSize: 13, fontWeight: 500 }}>{ownerName}</td>
       <td style={{ padding: '12px 20px', color: '#b0cdc9', fontSize: 13 }}>
         <div>{BILLING_TYPE_LABEL[p.service_type ?? p.billing_type] ?? p.description ?? '—'}</div>
         {p.payment_method && (
-          <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
+          <div style={{ fontSize: 11, color: '#4A6B60', marginTop: 2 }}>
             {PAYMENT_METHOD_LABEL[p.payment_method] ?? p.payment_method}
           </div>
         )}
         {!p.payment_method && p.description && (
-          <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>{p.description}</div>
+          <div style={{ fontSize: 11, color: '#4A6B60', marginTop: 2 }}>{p.description}</div>
         )}
       </td>
       <td style={{ padding: '12px 20px', textAlign: 'right', fontWeight: 700, color: '#00A88E', fontVariantNumeric: 'tabular-nums', fontSize: 13 }}>
@@ -98,7 +99,6 @@ function PaymentRow({ p, ownerName }: { p: Payment; ownerName: string }) {
             <button
               onClick={() => atualizar('paid')}
               disabled={isPending}
-              title="Marcar como pago"
               style={{
                 padding: '4px 10px', borderRadius: 6, border: '1px solid #00A88E',
                 background: '#00A88E', color: '#fff', fontSize: 11, fontWeight: 700,
@@ -110,7 +110,6 @@ function PaymentRow({ p, ownerName }: { p: Payment; ownerName: string }) {
             <button
               onClick={() => atualizar('cancelled')}
               disabled={isPending}
-              title="Cancelar"
               style={{
                 padding: '4px 10px', borderRadius: 6, border: '1px solid #fecaca',
                 background: '#fee2e2', color: '#991b1b', fontSize: 11, fontWeight: 700,
@@ -122,60 +121,62 @@ function PaymentRow({ p, ownerName }: { p: Payment; ownerName: string }) {
           </div>
         )}
         {(p.status === 'paid' || p.status === 'cancelled') && (
-          <span style={{ fontSize: 11, color: '#9CA3AF' }}>—</span>
+          <span style={{ fontSize: 11, color: '#4A6B60' }}>—</span>
         )}
       </td>
     </tr>
   );
 }
 
-export function TabelaPagamentos({ payments, ownerNames }: {
+export function TabelaPagamentos({ payments, ownerNames, viewMonth, viewYear }: {
   payments: Payment[];
   ownerNames: Record<string, string>;
+  viewMonth: number;
+  viewYear: number;
 }) {
-  const now = new Date();
-  const [viewYear, setViewYear]   = useState(now.getFullYear());
-  const [viewMonth, setViewMonth] = useState(now.getMonth());
+  const router = useRouter();
   const [statusFilter, setStatusFilter] = useState<'todos' | 'paid' | 'pending' | 'cancelled'>('todos');
 
+  const now = new Date();
   const isCurrentMonth = viewYear === now.getFullYear() && viewMonth === now.getMonth();
 
-  function prevMonth() {
-    if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11); }
-    else setViewMonth(m => m - 1);
+  function navigate(month: number, year: number) {
+    router.push(`/dashboard/financeiro?mes=${month}&ano=${year}`);
   }
+
+  function prevMonth() {
+    if (viewMonth === 0) navigate(11, viewYear - 1);
+    else navigate(viewMonth - 1, viewYear);
+  }
+
   function nextMonth() {
     if (isCurrentMonth) return;
-    if (viewMonth === 11) { setViewYear(y => y + 1); setViewMonth(0); }
-    else setViewMonth(m => m + 1);
+    if (viewMonth === 11) navigate(0, viewYear + 1);
+    else navigate(viewMonth + 1, viewYear);
   }
 
-  const monthStart = new Date(viewYear, viewMonth, 1).toISOString();
-  const monthEnd   = new Date(viewYear, viewMonth + 1, 0, 23, 59, 59, 999).toISOString();
+  const filtered = statusFilter === 'todos' ? payments : payments.filter(p => p.status === statusFilter);
 
-  const monthPayments = payments.filter(p => p.created_at >= monthStart && p.created_at <= monthEnd);
-  const filtered = statusFilter === 'todos' ? monthPayments : monthPayments.filter(p => p.status === statusFilter);
-
-  const totalPaid    = monthPayments.filter(p => p.status === 'paid').reduce((a, p) => a + (p.amount ?? 0), 0);
-  const totalPending = monthPayments.filter(p => p.status === 'pending').reduce((a, p) => a + (p.amount ?? 0), 0);
+  const totalPaid    = payments.filter(p => p.status === 'paid').reduce((a, p) => a + (p.amount ?? 0), 0);
+  const totalPending = payments.filter(p => p.status === 'pending').reduce((a, p) => a + (p.amount ?? 0), 0);
 
   return (
     <div>
-      {/* Month nav + status filter */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
-        {/* Mês */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#F5FAFA', borderRadius: 10, padding: '4px 6px', border: '1px solid #D1EEEA' }}>
+      {/* Month nav + stats + status filter */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, padding: '12px 20px', borderBottom: '1px solid rgba(0,200,167,0.12)' }}>
+        {/* Seletor de mês */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(0,198,167,0.08)', borderRadius: 10, padding: '4px 6px', border: '1px solid rgba(0,200,167,0.2)' }}>
           <button onClick={prevMonth} style={navBtn}>‹</button>
-          <span style={{ minWidth: 110, textAlign: 'center', fontSize: 13, fontWeight: 700, color: '#1a3330' }}>
+          <span style={{ minWidth: 110, textAlign: 'center', fontSize: 13, fontWeight: 700, color: '#E8F5F0' }}>
             {MONTHS_PT[viewMonth]} {viewYear}
           </span>
           <button onClick={nextMonth} disabled={isCurrentMonth} style={{ ...navBtn, opacity: isCurrentMonth ? 0.3 : 1 }}>›</button>
         </div>
 
         {/* Stats rápidos */}
-        <div style={{ display: 'flex', gap: 16, fontSize: 12, color: '#b0cdc9' }}>
-          <span>Recebido: <strong style={{ color: '#00A88E' }}>{formatCurrency(totalPaid)}</strong></span>
-          <span>Pendente: <strong style={{ color: '#d97706' }}>{formatCurrency(totalPending)}</strong></span>
+        <div style={{ display: 'flex', gap: 16, fontSize: 12, color: '#7FA898' }}>
+          <span>Recebido: <strong style={{ color: '#22D3A5' }}>{formatCurrency(totalPaid)}</strong></span>
+          <span>Pendente: <strong style={{ color: '#F59E0B' }}>{formatCurrency(totalPending)}</strong></span>
         </div>
 
         {/* Filtro status */}
@@ -186,8 +187,8 @@ export function TabelaPagamentos({ payments, ownerNames }: {
               onClick={() => setStatusFilter(f)}
               style={{
                 padding: '5px 12px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 600,
-                background: statusFilter === f ? '#00A88E' : '#F5FAFA',
-                color: statusFilter === f ? '#fff' : '#4a6b65',
+                background: statusFilter === f ? '#00A88E' : 'rgba(0,198,167,0.08)',
+                color: statusFilter === f ? '#fff' : '#7FA898',
                 transition: 'all 0.15s',
               }}
             >
@@ -198,21 +199,21 @@ export function TabelaPagamentos({ payments, ownerNames }: {
       </div>
 
       {filtered.length === 0 ? (
-        <div style={{ padding: '36px 20px', textAlign: 'center', color: '#6B7280', fontSize: 13 }}>
+        <div style={{ padding: '36px 20px', textAlign: 'center', color: '#7FA898', fontSize: 13 }}>
           Nenhum pagamento em {MONTHS_PT[viewMonth]} {viewYear}.
         </div>
       ) : (
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: '#F5FAFA' }}>
+              <tr style={{ background: 'rgba(0,198,167,0.06)' }}>
                 {['Data', 'Tutor', 'Tipo / Descrição', 'Valor', 'Status', 'Ações'].map((h, i) => (
                   <th key={h} style={{
                     padding: '10px 20px',
                     textAlign: i === 3 ? 'right' : i === 4 || i === 5 ? 'center' : 'left',
                     fontSize: 11, fontWeight: 600, letterSpacing: '0.05em',
-                    textTransform: 'uppercase', color: '#6B7280',
-                    borderBottom: '1px solid #D1EEEA',
+                    textTransform: 'uppercase', color: '#7FA898',
+                    borderBottom: '1px solid rgba(0,200,167,0.12)',
                   }}>{h}</th>
                 ))}
               </tr>
@@ -233,5 +234,5 @@ const navBtn: React.CSSProperties = {
   width: 28, height: 28, borderRadius: 7, border: 'none',
   background: 'transparent', cursor: 'pointer', fontSize: 18,
   display: 'flex', alignItems: 'center', justifyContent: 'center',
-  color: '#1a3330', fontWeight: 700, lineHeight: 1,
+  color: '#E8F5F0', fontWeight: 700, lineHeight: 1,
 };

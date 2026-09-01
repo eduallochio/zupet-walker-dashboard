@@ -88,7 +88,14 @@ function BarChart({ data }: { data: { label: string; paid: number; pending: numb
   );
 }
 
-export default async function FinanceiroPage() {
+export default async function FinanceiroPage({ searchParams }: { searchParams?: Promise<{ mes?: string; ano?: string }> }) {
+  const sp  = await (searchParams ?? Promise.resolve({}));
+  const now = new Date();
+  const viewMonth = sp.mes !== undefined ? parseInt(sp.mes) : now.getMonth();
+  const viewYear  = sp.ano !== undefined ? parseInt(sp.ano) : now.getFullYear();
+  const filterStart = new Date(viewYear, viewMonth, 1).toISOString();
+  const filterEnd   = new Date(viewYear, viewMonth + 1, 0, 23, 59, 59, 999).toISOString();
+
   const jar = await cookies();
   const accessToken = jar.get('sb-access-token')?.value!;
   const supabase = createClient(
@@ -117,6 +124,8 @@ export default async function FinanceiroPage() {
       ? supabase.from('walker_payments')
           .select('id, amount, status, billing_type, service_type, payment_method, description, created_at, notes, owner_id, walk_session_id, schedule_id')
           .eq('walker_id', profile.id)
+          .gte('created_at', filterStart)
+          .lte('created_at', filterEnd)
           .order('created_at', { ascending: false })
       : Promise.resolve({ data: [] }),
     profile?.id
@@ -192,7 +201,6 @@ export default async function FinanceiroPage() {
   const totalDist    = reportsRows.reduce((s: number, r: any) => s + (r.distance_meters ?? 0), 0);
 
   // ── Item 5: Projeção do mês atual ──────────────────────────────
-  const now   = new Date();
   const mesAtualStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const mesAtualEnd   = new Date(now.getFullYear(), now.getMonth() + 1, 0);
   const diasNoMes     = mesAtualEnd.getDate();
@@ -541,7 +549,7 @@ export default async function FinanceiroPage() {
         <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${C.border}` }}>
           <h2 style={{ fontWeight: 700, fontSize: 13, color: C.text, letterSpacing: '-0.01em' }}>Histórico de pagamentos</h2>
         </div>
-        <TabelaPagamentos payments={paymentsRows} ownerNames={ownerNames} />
+        <TabelaPagamentos payments={paymentsRows} ownerNames={ownerNames} viewMonth={viewMonth} viewYear={viewYear} />
       </div>
     </div>
   );
