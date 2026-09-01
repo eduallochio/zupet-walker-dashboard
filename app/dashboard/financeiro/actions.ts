@@ -62,7 +62,7 @@ export async function criarLancamento(formData: FormData) {
   return { error: null };
 }
 
-export async function registrarPagamentoDinheiro(scheduleId: string, ownerId: string, serviceType: string, amount: number, paymentMethod = 'cash') {
+export async function registrarPagamentoDinheiro(scheduleId: string, ownerId: string, serviceType: string, amount: number, paymentMethod = 'cash', scheduledAt?: string) {
   const supabase = await getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: 'Não autenticado' };
@@ -92,6 +92,7 @@ export async function registrarPagamentoDinheiro(scheduleId: string, ownerId: st
       payment_method: paymentMethod,
       paid_at:        new Date().toISOString(),
       schedule_id:    scheduleId,
+      created_at:     scheduledAt ?? new Date().toISOString(),
     });
     if (error) return { error: error.message };
   }

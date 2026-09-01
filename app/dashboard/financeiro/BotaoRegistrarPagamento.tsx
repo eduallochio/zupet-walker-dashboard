@@ -10,12 +10,13 @@ const METODOS = [
 ];
 
 export function BotaoRegistrarPagamento({
-  scheduleId, ownerId, serviceType, amount,
+  scheduleId, ownerId, serviceType, amount, scheduledAt,
 }: {
   scheduleId: string;
   ownerId: string;
   serviceType: string;
   amount: number;
+  scheduledAt?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, right: 0 });
@@ -32,7 +33,7 @@ export function BotaoRegistrarPagamento({
   function registrar(method: string) {
     setOpen(false);
     startTransition(async () => {
-      const result = await registrarPagamentoDinheiro(scheduleId, ownerId, serviceType, amount, method);
+      const result = await registrarPagamentoDinheiro(scheduleId, ownerId, serviceType, amount, method, scheduledAt);
       if (result.error) alert('Erro: ' + result.error);
     });
   }

@@ -538,6 +538,7 @@ export default async function FinanceiroPage({ searchParams }: { searchParams?: 
                             ownerId={s.owner_id}
                             serviceType={svc?.type ?? 'walk'}
                             amount={price}
+                            scheduledAt={s.scheduled_at}
                           />
                         ) : pmtStatus === 'paid' ? (
                           <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, color: C.success, background: 'rgba(34,211,165,0.15)' }}>
