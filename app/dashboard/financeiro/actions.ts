@@ -62,7 +62,7 @@ export async function criarLancamento(formData: FormData) {
   return { error: null };
 }
 
-export async function registrarPagamentoDinheiro(scheduleId: string, ownerId: string, serviceType: string, amount: number) {
+export async function registrarPagamentoDinheiro(scheduleId: string, ownerId: string, serviceType: string, amount: number, paymentMethod = 'cash') {
   const supabase = await getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: 'Não autenticado' };
@@ -78,7 +78,7 @@ export async function registrarPagamentoDinheiro(scheduleId: string, ownerId: st
   if (existing) {
     // Atualiza o existente para pago em dinheiro
     const { error } = await supabase.from('walker_payments')
-      .update({ status: 'paid', payment_method: 'cash', paid_at: new Date().toISOString() })
+      .update({ status: 'paid', payment_method: paymentMethod, paid_at: new Date().toISOString() })
       .eq('id', existing.id);
     if (error) return { error: error.message };
   } else {
@@ -89,7 +89,7 @@ export async function registrarPagamentoDinheiro(scheduleId: string, ownerId: st
       billing_type:   'per_session',
       service_type:   serviceType,
       status:         'paid',
-      payment_method: 'cash',
+      payment_method: paymentMethod,
       paid_at:        new Date().toISOString(),
       schedule_id:    scheduleId,
     });
