@@ -98,7 +98,7 @@ function BarChart({ data }: { data: { label: string; paid: number; pending: numb
 }
 
 export default async function FinanceiroPage({ searchParams }: { searchParams?: Promise<{ mes?: string; ano?: string }> }) {
-  const sp  = await (searchParams ?? Promise.resolve({}));
+  const sp  = await (searchParams ?? Promise.resolve({} as { mes?: string; ano?: string }));
   const now = new Date();
   // URL usa mês 1-based (1=Jan … 12=Dez); internamente 0-based
   const viewMonth = sp.mes !== undefined ? parseInt(sp.mes) - 1 : now.getMonth();

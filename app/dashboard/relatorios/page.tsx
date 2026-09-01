@@ -11,7 +11,7 @@ const C = {
 };
 
 export default async function RelatoriosPage({ searchParams }: { searchParams?: Promise<{ mes?: string; ano?: string }> }) {
-  const sp = await (searchParams ?? Promise.resolve({}));
+  const sp = await (searchParams ?? Promise.resolve({} as { mes?: string; ano?: string }));
   const now = new Date();
   // URL usa mês 1-based; internamente 0-based
   const viewMonth = sp.mes !== undefined ? parseInt(sp.mes) - 1 : now.getMonth();
