@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 import { MonthNav } from '../financeiro/MonthNav';
+import { BotoesAgendamento } from './BotoesAgendamento';
 
 type ScheduleStatus = 'proposed' | 'confirmed' | 'cancelled' | 'done';
 
@@ -168,6 +169,11 @@ export default async function AgendaPage({ searchParams }: { searchParams?: Prom
                       <span>⏱ {formatDuration(s.duration_minutes)}</span>
                     </div>
                     {s.notes && <p style={{ fontSize: 12, color: C.textMuted, marginTop: 4, fontStyle: 'italic' }}>{s.notes}</p>}
+                    {s.status === 'proposed' && (
+                      <div style={{ marginTop: 10 }}>
+                        <BotoesAgendamento scheduleId={s.id} />
+                      </div>
+                    )}
                   </div>
                 </li>
               );
