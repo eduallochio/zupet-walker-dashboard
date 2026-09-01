@@ -58,7 +58,7 @@ export async function criarLancamento(formData: FormData) {
     });
   }
 
-  revalidatePath('/dashboard/financeiro');
+  revalidatePath('/dashboard/financeiro', 'layout');
   return { error: null };
 }
 
@@ -96,7 +96,7 @@ export async function registrarPagamentoDinheiro(scheduleId: string, ownerId: st
     if (error) return { error: error.message };
   }
 
-  revalidatePath('/dashboard/financeiro');
+  revalidatePath('/dashboard/financeiro', 'layout');
   return { error: null };
 }
 
@@ -129,6 +129,6 @@ export async function atualizarStatusPagamento(paymentId: string, novoStatus: 'p
     });
   }
 
-  revalidatePath('/dashboard/financeiro');
+  revalidatePath('/dashboard/financeiro', 'layout');
   return { error: null };
 }
