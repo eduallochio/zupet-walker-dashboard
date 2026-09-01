@@ -4,6 +4,7 @@ import { formatCurrency } from '@/lib/utils';
 import { NovoLancamentoModal } from './NovoLancamentoModal';
 import { TabelaPagamentos } from './TabelaPagamentos';
 import { MonthNav } from './MonthNav';
+import { BotaoRegistrarPagamento } from './BotaoRegistrarPagamento';
 
 const C = {
   card: '#132219', border: 'rgba(0,200,167,0.12)',
@@ -530,9 +531,12 @@ export default async function FinanceiroPage({ searchParams }: { searchParams?: 
                       </td>
                       <td style={{ padding: '12px 20px', textAlign: 'center' }}>
                         {!pmt ? (
-                          <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, color: C.textMuted, background: 'rgba(127,168,152,0.12)' }}>
-                            Sem registro
-                          </span>
+                          <BotaoRegistrarPagamento
+                            scheduleId={s.id}
+                            ownerId={s.owner_id}
+                            serviceType={svc?.type ?? 'walk'}
+                            amount={price}
+                          />
                         ) : pmtStatus === 'paid' ? (
                           <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, color: C.success, background: 'rgba(34,211,165,0.15)' }}>
                             {pmtMethod ? PAYMENT_METHOD_LABEL[pmtMethod] ?? pmtMethod : 'Pago'}

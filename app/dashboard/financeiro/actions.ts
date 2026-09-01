@@ -62,6 +62,33 @@ export async function criarLancamento(formData: FormData) {
   return { error: null };
 }
 
+export async function registrarPagamentoDinheiro(scheduleId: string, ownerId: string, serviceType: string, amount: number) {
+  const supabase = await getSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'Não autenticado' };
+
+  const { data: profile } = await supabase
+    .from('walker_profiles').select('id').eq('user_id', user.id).single();
+  if (!profile) return { error: 'Perfil não encontrado' };
+
+  const { error } = await supabase.from('walker_payments').insert({
+    walker_id:      profile.id,
+    owner_id:       ownerId,
+    amount,
+    billing_type:   'per_session',
+    service_type:   serviceType,
+    status:         'paid',
+    payment_method: 'cash',
+    paid_at:        new Date().toISOString(),
+    schedule_id:    scheduleId,
+  });
+
+  if (error) return { error: error.message };
+
+  revalidatePath('/dashboard/financeiro');
+  return { error: null };
+}
+
 export async function atualizarStatusPagamento(paymentId: string, novoStatus: 'paid' | 'cancelled') {
   const supabase = await getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
