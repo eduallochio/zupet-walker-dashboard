@@ -199,7 +199,12 @@ export default async function FinanceiroPage({ searchParams }: { searchParams?: 
   }
 
   // Reports filtrados pelo mês selecionado (para stats e por-pet do mês)
-  const reportsDoMes = reportsRows.filter((r: any) => r.created_at >= filterStart && r.created_at <= filterEnd);
+  const fsDate = new Date(filterStart);
+  const feDate = new Date(filterEnd);
+  const reportsDoMes = reportsRows.filter((r: any) => {
+    const d = new Date(r.created_at);
+    return d >= fsDate && d <= feDate;
+  });
 
   // ── Totais do mês selecionado ──────────────────────────────────
   const totalPaid    = paymentsRows.filter((p: any) => p.status === 'paid').reduce((s: number, p: any) => s + (p.amount ?? 0), 0);
