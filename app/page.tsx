@@ -11,6 +11,7 @@ import { ScrollNav } from '@/components/ui/scroll-nav';
 import { ScrollAnimations } from '@/components/ui/scroll-animations';
 import { TestimonialsSection } from '@/components/ui/testimonials-section';
 import { ActivityStatsSection } from '@/components/ui/activity-stats-section';
+import { LeadForm } from '@/components/ui/lead-form';
 
 const HOW_STEPS = [
   { emoji: '📲', title: 'Baixe o app', desc: 'Disponível para Android e iOS, gratuito para começar.' },
@@ -272,31 +273,36 @@ export default async function LandingPage() {
       {/* DOWNLOAD */}
       <section className="lp-download">
         <div>
-          <p className="lp-section-label">Baixe agora</p>
-          <h2 className="lp-download-title">Seu negócio de passeios<br />começa <em>hoje.</em></h2>
+          <p className="lp-section-label">Em breve</p>
+          <h2 className="lp-download-title">O app está nos<br />estágios finais. <em>Quase lá!</em></h2>
           <p className="lp-download-sub">
-            Gratuito para começar. Disponível para Android e iOS. Cadastre-se em minutos e já comece a receber tutores.
+            O Zupet Walker está em desenvolvimento e será lançado em breve. Enquanto isso, conheça o <a href="https://zupet.io/download" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline', fontWeight: 600 }}>Zupet para tutores</a>.
           </p>
+          <div className="lp-download-badges">
+            <a href="https://zupet.io/download" target="_blank" rel="noopener noreferrer" className="lp-badge lp-badge-soon">
+              <span className="lp-badge-icon">
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.7 9.05 7.4c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.39-1.32 2.76-2.53 3.99zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
+              </span>
+              <span className="lp-badge-text">
+                <span className="lp-badge-label">Em breve na</span>
+                <span className="lp-badge-store">App Store</span>
+              </span>
+            </a>
+            <a href="https://zupet.io/download" target="_blank" rel="noopener noreferrer" className="lp-badge lp-badge-soon">
+              <span className="lp-badge-icon">
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M6 18c0 .55.45 1 1 1h1v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h2v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v7c0 .83.67 1.5 1.5 1.5S5 17.33 5 16.5v-7C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v7c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-7c0-.83-.67-1.5-1.5-1.5zm-4.97-5.84l1.3-1.3c.2-.2.2-.51 0-.71-.2-.2-.51-.2-.71 0l-1.48 1.48A5.84 5.84 0 0 0 12 1.5c-.96 0-1.86.23-2.66.63L7.85.65c-.2-.2-.51-.2-.71 0-.2.2-.2.51 0 .71l1.31 1.31A5.983 5.983 0 0 0 6 7h12a5.98 5.98 0 0 0-2.47-4.84zM10 5H9V4h1v1zm5 0h-1V4h1v1z"/></svg>
+              </span>
+              <span className="lp-badge-text">
+                <span className="lp-badge-label">Em breve no</span>
+                <span className="lp-badge-store">Google Play</span>
+              </span>
+            </a>
+          </div>
         </div>
-        <div className="lp-download-badges">
-          <a href="https://zupet.io/download" target="_blank" rel="noopener noreferrer" className="lp-badge">
-            <span className="lp-badge-icon">
-              <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.7 9.05 7.4c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.39-1.32 2.76-2.53 3.99zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
-            </span>
-            <span className="lp-badge-text">
-              <span className="lp-badge-label">Disponível na</span>
-              <span className="lp-badge-store">App Store</span>
-            </span>
-          </a>
-          <a href="https://zupet.io/download" target="_blank" rel="noopener noreferrer" className="lp-badge">
-            <span className="lp-badge-icon">
-              <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M6 18c0 .55.45 1 1 1h1v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h2v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v7c0 .83.67 1.5 1.5 1.5S5 17.33 5 16.5v-7C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v7c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-7c0-.83-.67-1.5-1.5-1.5zm-4.97-5.84l1.3-1.3c.2-.2.2-.51 0-.71-.2-.2-.51-.2-.71 0l-1.48 1.48A5.84 5.84 0 0 0 12 1.5c-.96 0-1.86.23-2.66.63L7.85.65c-.2-.2-.51-.2-.71 0-.2.2-.2.51 0 .71l1.31 1.31A5.983 5.983 0 0 0 6 7h12a5.98 5.98 0 0 0-2.47-4.84zM10 5H9V4h1v1zm5 0h-1V4h1v1z"/></svg>
-            </span>
-            <span className="lp-badge-text">
-              <span className="lp-badge-label">Disponível no</span>
-              <span className="lp-badge-store">Google Play</span>
-            </span>
-          </a>
+        <div className="lp-lead-box">
+          <p className="lp-lead-title">Quer ser avisado no lançamento?</p>
+          <p className="lp-lead-sub">Deixe seu contato e entraremos em touch assim que o app estiver disponível.</p>
+          <LeadForm />
         </div>
       </section>
 
@@ -321,13 +327,13 @@ export default async function LandingPage() {
           </p>
           {/* app badges */}
           <div className="lp-footer-badges">
-            <a href="https://zupet.io/download" target="_blank" rel="noopener noreferrer" className="lp-footer-badge">
+            <a href="https://zupet.io/download" target="_blank" rel="noopener noreferrer" className="lp-footer-badge lp-footer-badge-soon" title="Em breve — enquanto isso, conheça o Zupet para tutores">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.7 9.05 7.4c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.39-1.32 2.76-2.53 3.99zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
-              App Store
+              App Store <span style={{ fontSize: '.65rem', opacity: .7 }}>(em breve)</span>
             </a>
-            <a href="https://zupet.io/download" target="_blank" rel="noopener noreferrer" className="lp-footer-badge">
+            <a href="https://zupet.io/download" target="_blank" rel="noopener noreferrer" className="lp-footer-badge lp-footer-badge-soon" title="Em breve — enquanto isso, conheça o Zupet para tutores">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M6 18c0 .55.45 1 1 1h1v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h2v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v7c0 .83.67 1.5 1.5 1.5S5 17.33 5 16.5v-7C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v7c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-7c0-.83-.67-1.5-1.5-1.5zm-4.97-5.84l1.3-1.3c.2-.2.2-.51 0-.71-.2-.2-.51-.2-.71 0l-1.48 1.48A5.84 5.84 0 0 0 12 1.5c-.96 0-1.86.23-2.66.63L7.85.65c-.2-.2-.51-.2-.71 0-.2.2-.2.51 0 .71l1.31 1.31A5.983 5.983 0 0 0 6 7h12a5.98 5.98 0 0 0-2.47-4.84zM10 5H9V4h1v1zm5 0h-1V4h1v1z"/></svg>
-              Google Play
+              Google Play <span style={{ fontSize: '.65rem', opacity: .7 }}>(em breve)</span>
             </a>
           </div>
         </div>
