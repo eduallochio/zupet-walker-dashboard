@@ -82,7 +82,6 @@ export default async function WalkerProfilePage({ params }: { params: Promise<{ 
     .eq('username', username)
     .eq('plan', 'pro')
     .eq('active', true);
-  if (process.env.NODE_ENV === 'production') walkerQuery = walkerQuery.eq('is_test_profile', false);
   const { data: walker } = await walkerQuery.single();
 
   if (!walker) notFound();
