@@ -1,5 +1,12 @@
 import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
+
+function createAdminClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+}
 import { formatCurrency } from '@/lib/utils';
 import { NovoLancamentoModal } from './NovoLancamentoModal';
 import { TabelaPagamentos } from './TabelaPagamentos';
@@ -123,6 +130,8 @@ export default async function FinanceiroPage({ searchParams }: { searchParams?: 
   sixMonthsAgo.setDate(1);
   sixMonthsAgo.setHours(0, 0, 0, 0);
 
+  const admin = createAdminClient();
+
   const [{ data: payments }, { data: reports }, { data: sessions }, { data: doneSchedules }] = await Promise.all([
     profile?.id
       ? supabase.from('walker_payments')
@@ -133,7 +142,7 @@ export default async function FinanceiroPage({ searchParams }: { searchParams?: 
           .order('created_at', { ascending: false })
       : Promise.resolve({ data: [] }),
     profile?.id
-      ? supabase.from('walk_reports')
+      ? admin.from('walk_reports')
           .select('id, owner_id, pet_ids, duration_minutes, distance_meters, created_at, walk_session_id')
           .eq('walker_id', profile.id)
           .gte('created_at', filterStart)
@@ -141,7 +150,7 @@ export default async function FinanceiroPage({ searchParams }: { searchParams?: 
           .order('created_at', { ascending: false })
       : Promise.resolve({ data: [] }),
     profile?.id
-      ? supabase.from('walk_sessions')
+      ? admin.from('walk_sessions')
           .select('id, started_at, ended_at, owner_id, pet_ids, walker_service_id')
           .eq('walker_id', profile.id)
           .not('ended_at', 'is', null)
