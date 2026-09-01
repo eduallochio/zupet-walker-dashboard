@@ -136,9 +136,9 @@ export default async function FinanceiroPage({ searchParams }: { searchParams?: 
       : Promise.resolve({ data: [] }),
     profile?.id
       ? supabase.from('walk_sessions')
-          .select('id, status, started_at, ended_at, owner_id, pet_ids, walker_service_id')
+          .select('id, started_at, ended_at, owner_id, pet_ids, walker_service_id')
           .eq('walker_id', profile.id)
-          .eq('status', 'done')
+          .not('ended_at', 'is', null)
           .gte('ended_at', sixMonthsAgo.toISOString())
           .order('ended_at', { ascending: false })
       : Promise.resolve({ data: [] }),
@@ -184,7 +184,7 @@ export default async function FinanceiroPage({ searchParams }: { searchParams?: 
     (owners ?? []).forEach((o: any) => { ownerNames[o.user_id] = o.name; });
   }
 
-  // Buscar nomes dos pets
+  // Buscar nomes dos pets (de todos os reports para usar em uncoveredSessions também)
   const allPetIds = [...new Set(reportsRows.flatMap((r: any) => r.pet_ids ?? []))];
   let petNames: Record<string, string> = {};
   if (allPetIds.length > 0) {
@@ -193,25 +193,26 @@ export default async function FinanceiroPage({ searchParams }: { searchParams?: 
     (petsData ?? []).forEach((p: any) => { petNames[p.id] = p.name; });
   }
 
-  // ── Totais gerais ──────────────────────────────────────────────
+  // Reports filtrados pelo mês selecionado (para stats e por-pet do mês)
+  const reportsDoMes = reportsRows.filter((r: any) => r.created_at >= filterStart && r.created_at <= filterEnd);
+
+  // ── Totais do mês selecionado ──────────────────────────────────
   const totalPaid    = paymentsRows.filter((p: any) => p.status === 'paid').reduce((s: number, p: any) => s + (p.amount ?? 0), 0);
   const totalPending = paymentsRows.filter((p: any) => p.status === 'pending').reduce((s: number, p: any) => s + (p.amount ?? 0), 0);
-  const totalWalks   = reportsRows.length;
-  const totalMin     = reportsRows.reduce((s: number, r: any) => s + (r.duration_minutes ?? 0), 0);
-  const totalDist    = reportsRows.reduce((s: number, r: any) => s + (r.distance_meters ?? 0), 0);
+  const totalWalks   = reportsDoMes.length;
+  const totalMin     = reportsDoMes.reduce((s: number, r: any) => s + (r.duration_minutes ?? 0), 0);
+  const totalDist    = reportsDoMes.reduce((s: number, r: any) => s + (r.distance_meters ?? 0), 0);
 
-  // ── Item 5: Projeção do mês atual ──────────────────────────────
-  const mesAtualStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const mesAtualEnd   = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  // ── Item 5: Projeção do mês selecionado ───────────────────────
+  const mesAtualStart = new Date(viewYear, viewMonth, 1);
+  const mesAtualEnd   = new Date(viewYear, viewMonth + 1, 0);
   const diasNoMes     = mesAtualEnd.getDate();
-  const diaAtual      = now.getDate();
+  const isCurrentMonth = viewYear === now.getFullYear() && viewMonth === now.getMonth();
+  const diaAtual      = isCurrentMonth ? now.getDate() : diasNoMes;
 
-  const pagMes = paymentsRows.filter((p: any) => {
-    const d = new Date(p.created_at);
-    return d >= mesAtualStart && d <= mesAtualEnd;
-  });
-  const paidMes    = pagMes.filter((p: any) => p.status === 'paid').reduce((s: number, p: any) => s + (p.amount ?? 0), 0);
-  const pendingMes = pagMes.filter((p: any) => p.status === 'pending').reduce((s: number, p: any) => s + (p.amount ?? 0), 0);
+  // payments já estão filtrados pelo mês selecionado
+  const paidMes    = paymentsRows.filter((p: any) => p.status === 'paid').reduce((s: number, p: any) => s + (p.amount ?? 0), 0);
+  const pendingMes = paymentsRows.filter((p: any) => p.status === 'pending').reduce((s: number, p: any) => s + (p.amount ?? 0), 0);
   const projecaoMes = diaAtual > 0
     ? (paidMes / diaAtual) * diasNoMes
     : 0;
@@ -252,7 +253,10 @@ export default async function FinanceiroPage({ searchParams }: { searchParams?: 
   // ── Itens 1 e 2: Passeios não cobrados ────────────────────────
   // Walk sessions 'done' que não têm um walker_payment associado
   const paidSessionIds = new Set(paymentsRows.map((p: any) => p.walk_session_id).filter(Boolean));
-  const uncoveredSessions = sessionsRows.filter((s: any) => !paidSessionIds.has(s.id));
+  const uncoveredSessions = sessionsRows.filter((s: any) =>
+    !paidSessionIds.has(s.id) &&
+    s.ended_at >= filterStart && s.ended_at <= filterEnd
+  );
 
   // Receita por tutor (combinando payments + reports)
   const byOwner: Record<string, { name: string; paid: number; pending: number; walks: number; minutes: number }> = {};
@@ -262,7 +266,7 @@ export default async function FinanceiroPage({ searchParams }: { searchParams?: 
     if (p.status === 'paid')    byOwner[p.owner_id].paid    += p.amount ?? 0;
     if (p.status === 'pending') byOwner[p.owner_id].pending += p.amount ?? 0;
   });
-  reportsRows.forEach((r: any) => {
+  reportsDoMes.forEach((r: any) => {
     if (!r.owner_id) return;
     if (!byOwner[r.owner_id]) byOwner[r.owner_id] = { name: ownerNames[r.owner_id] ?? '—', paid: 0, pending: 0, walks: 0, minutes: 0 };
     byOwner[r.owner_id].walks   += 1;
@@ -270,9 +274,9 @@ export default async function FinanceiroPage({ searchParams }: { searchParams?: 
   });
   const ownerRows = Object.entries(byOwner).sort((a, b) => b[1].walks - a[1].walks);
 
-  // Receita por pet
+  // Receita por pet (mês selecionado)
   const byPet: Record<string, { name: string; walks: number; minutes: number; distance: number }> = {};
-  reportsRows.forEach((r: any) => {
+  reportsDoMes.forEach((r: any) => {
     (r.pet_ids ?? []).forEach((pid: string) => {
       if (!byPet[pid]) byPet[pid] = { name: petNames[pid] ?? pid, walks: 0, minutes: 0, distance: 0 };
       byPet[pid].walks    += 1;
