@@ -33,6 +33,9 @@ export const metadata: Metadata = {
     description: 'GPS, relatórios com fotos e agenda integrada para passeadores, banhistas, adestradores e cuidadores. Gratuito para começar.',
     images: ['/og'],
   },
+  verification: {
+    google: '-ovGHfU3QXPS-Vb2dKgozcIHuZnp9ibbBTe-crd0qMU',
+  },
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
