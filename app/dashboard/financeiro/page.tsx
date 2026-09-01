@@ -136,6 +136,8 @@ export default async function FinanceiroPage({ searchParams }: { searchParams?: 
       ? supabase.from('walk_reports')
           .select('id, owner_id, pet_ids, duration_minutes, distance_meters, created_at, walk_session_id')
           .eq('walker_id', profile.id)
+          .gte('created_at', filterStart)
+          .lte('created_at', filterEnd)
           .order('created_at', { ascending: false })
       : Promise.resolve({ data: [] }),
     profile?.id
@@ -198,13 +200,8 @@ export default async function FinanceiroPage({ searchParams }: { searchParams?: 
     (petsData ?? []).forEach((p: any) => { petNames[p.id] = p.name; });
   }
 
-  // Reports filtrados pelo mês selecionado (para stats e por-pet do mês)
-  const fsDate = new Date(filterStart);
-  const feDate = new Date(filterEnd);
-  const reportsDoMes = reportsRows.filter((r: any) => {
-    const d = new Date(r.created_at);
-    return d >= fsDate && d <= feDate;
-  });
+  // Reports já vêm filtrados pelo mês selecionado
+  const reportsDoMes = reportsRows;
 
   // ── Totais do mês selecionado ──────────────────────────────────
   const totalPaid    = paymentsRows.filter((p: any) => p.status === 'paid').reduce((s: number, p: any) => s + (p.amount ?? 0), 0);
