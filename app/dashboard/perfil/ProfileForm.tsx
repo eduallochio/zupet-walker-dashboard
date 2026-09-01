@@ -236,7 +236,7 @@ export default function ProfileForm({
           {usernameError && <p style={{ fontSize: 12, color: '#F87171', marginTop: -8 }}>{usernameError}</p>}
           {usernameSuccess && !usernameError && (
             <p style={{ fontSize: 12, color: '#22D3A5', fontWeight: 600, marginTop: -8 }}>
-              ✓ Link salvo! Acesse: <a href={`https://zupet-walker-dashboard-b9al.vercel.app/w/${username}`} target="_blank" rel="noopener noreferrer" style={{ color: '#00C6A7' }}>zupet-walker-dashboard-b9al.vercel.app/w/{username}</a>
+              ✓ Link salvo! Acesse: <a href={`https://walker.zupet.io/w/${username}`} target="_blank" rel="noopener noreferrer" style={{ color: '#00C6A7' }}>walker.zupet.io/w/{username}</a>
             </p>
           )}
 
