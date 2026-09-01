@@ -151,7 +151,8 @@ export default async function FinanceiroPage({ searchParams }: { searchParams?: 
           .select('id, scheduled_at, duration_minutes, status, owner_id, pet_ids, service_id, walker_services(type, label, price)')
           .eq('walker_id', profile.id)
           .eq('status', 'done')
-          .gte('scheduled_at', sixMonthsAgo.toISOString())
+          .gte('scheduled_at', filterStart)
+          .lte('scheduled_at', filterEnd)
           .order('scheduled_at', { ascending: false })
       : Promise.resolve({ data: [] }),
   ]);
