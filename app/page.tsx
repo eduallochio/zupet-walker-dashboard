@@ -171,7 +171,7 @@ export default async function LandingPage() {
               <li>⭐ Avaliações dos tutores visíveis publicamente</li>
               <li>💬 Botão direto para WhatsApp e Instagram</li>
             </ul>
-            <Link href="/cadastro" className="lp-pro-profile-cta">Criar minha página grátis</Link>
+            <Link href="/cadastro" className="lp-pro-profile-cta">Assinar Pro e criar minha página</Link>
           </div>
           <div className="lp-pro-profile-mockup">
             <div className="lp-ppm-card">
