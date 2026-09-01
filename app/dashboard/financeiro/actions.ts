@@ -71,19 +71,30 @@ export async function registrarPagamentoDinheiro(scheduleId: string, ownerId: st
     .from('walker_profiles').select('id').eq('user_id', user.id).single();
   if (!profile) return { error: 'Perfil não encontrado' };
 
-  const { error } = await supabase.from('walker_payments').insert({
-    walker_id:      profile.id,
-    owner_id:       ownerId,
-    amount,
-    billing_type:   'per_session',
-    service_type:   serviceType,
-    status:         'paid',
-    payment_method: 'cash',
-    paid_at:        new Date().toISOString(),
-    schedule_id:    scheduleId,
-  });
+  // Verifica se já existe payment para esse schedule
+  const { data: existing } = await supabase
+    .from('walker_payments').select('id').eq('schedule_id', scheduleId).maybeSingle();
 
-  if (error) return { error: error.message };
+  if (existing) {
+    // Atualiza o existente para pago em dinheiro
+    const { error } = await supabase.from('walker_payments')
+      .update({ status: 'paid', payment_method: 'cash', paid_at: new Date().toISOString() })
+      .eq('id', existing.id);
+    if (error) return { error: error.message };
+  } else {
+    const { error } = await supabase.from('walker_payments').insert({
+      walker_id:      profile.id,
+      owner_id:       ownerId,
+      amount,
+      billing_type:   'per_session',
+      service_type:   serviceType,
+      status:         'paid',
+      payment_method: 'cash',
+      paid_at:        new Date().toISOString(),
+      schedule_id:    scheduleId,
+    });
+    if (error) return { error: error.message };
+  }
 
   revalidatePath('/dashboard/financeiro');
   return { error: null };
