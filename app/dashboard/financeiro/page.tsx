@@ -100,7 +100,8 @@ function BarChart({ data }: { data: { label: string; paid: number; pending: numb
 export default async function FinanceiroPage({ searchParams }: { searchParams?: Promise<{ mes?: string; ano?: string }> }) {
   const sp  = await (searchParams ?? Promise.resolve({}));
   const now = new Date();
-  const viewMonth = sp.mes !== undefined ? parseInt(sp.mes) : now.getMonth();
+  // URL usa mês 1-based (1=Jan … 12=Dez); internamente 0-based
+  const viewMonth = sp.mes !== undefined ? parseInt(sp.mes) - 1 : now.getMonth();
   const viewYear  = sp.ano !== undefined ? parseInt(sp.ano) : now.getFullYear();
   // Usar datas UTC explícitas para evitar deslocamento de fuso
   const filterStart = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-01T00:00:00.000Z`;
@@ -130,8 +131,6 @@ export default async function FinanceiroPage({ searchParams }: { searchParams?: 
   sixMonthsAgo.setDate(1);
   sixMonthsAgo.setHours(0, 0, 0, 0);
 
-  const admin = createAdminClient();
-
   const [{ data: payments }, { data: reports }, { data: sessions }, { data: doneSchedules }] = await Promise.all([
     profile?.id
       ? supabase.from('walker_payments')
@@ -142,15 +141,15 @@ export default async function FinanceiroPage({ searchParams }: { searchParams?: 
           .order('created_at', { ascending: false })
       : Promise.resolve({ data: [] }),
     profile?.id
-      ? admin.from('walk_reports')
-          .select('id, owner_id, pet_ids, duration_minutes, distance_meters, created_at, walk_session_id')
+      ? createAdminClient().from('walk_reports')
+          .select('id, owner_id, pet_ids, duration_minutes, distance_meters, created_at, session_id')
           .eq('walker_id', profile.id)
           .gte('created_at', filterStart)
           .lte('created_at', filterEnd)
           .order('created_at', { ascending: false })
       : Promise.resolve({ data: [] }),
     profile?.id
-      ? admin.from('walk_sessions')
+      ? createAdminClient().from('walk_sessions')
           .select('id, started_at, ended_at, owner_id, pet_ids, walker_service_id')
           .eq('walker_id', profile.id)
           .not('ended_at', 'is', null)
@@ -209,7 +208,6 @@ export default async function FinanceiroPage({ searchParams }: { searchParams?: 
     (petsData ?? []).forEach((p: any) => { petNames[p.id] = p.name; });
   }
 
-  // Reports já vêm filtrados pelo mês selecionado
   const reportsDoMes = reportsRows;
 
   // ── Totais do mês selecionado ──────────────────────────────────
