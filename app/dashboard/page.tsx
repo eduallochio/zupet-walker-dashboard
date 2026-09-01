@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 import { formatCurrency } from '@/lib/utils';
+import { MonthNav } from './financeiro/MonthNav';
 
 function formatRelative(dateStr: string) {
   const d = new Date(dateStr);
@@ -34,7 +35,22 @@ const SERVICE_ICON: Record<string, string> = {
   walk: '🦮', bath: '🛁', boarding: '🌙', daycare: '🏠', vet_visit: '🏥', training: '🎯',
 };
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams?: Promise<{ mes?: string; ano?: string }> }) {
+  const sp = await (searchParams ?? Promise.resolve({}));
+  const now = new Date();
+  // URL usa mês 1-based; internamente 0-based
+  const viewMonth = sp.mes !== undefined ? parseInt(sp.mes) - 1 : now.getMonth();
+  const viewYear  = sp.ano !== undefined ? parseInt(sp.ano)     : now.getFullYear();
+
+  const filterStart = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-01T00:00:00.000Z`;
+  const lastDay = new Date(Date.UTC(viewYear, viewMonth + 1, 0)).getUTCDate();
+  const filterEnd   = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}T23:59:59.999Z`;
+  // Mês anterior para comparação de faturamento
+  const prevMonth = viewMonth === 0 ? 11 : viewMonth - 1;
+  const prevYear  = viewMonth === 0 ? viewYear - 1 : viewYear;
+  const prevFilterStart = `${prevYear}-${String(prevMonth + 1).padStart(2, '0')}-01T00:00:00.000Z`;
+  const prevFilterEnd   = filterStart;
+
   const jar = await cookies();
   const accessToken = jar.get('sb-access-token')?.value!;
   const supabase = createClient(
@@ -54,11 +70,7 @@ export default async function DashboardPage() {
 
   const profileId = profile?.id;
 
-  const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-  const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
   const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
-  const todayEnd = new Date(); todayEnd.setHours(23, 59, 59, 999);
   const next7days = new Date(); next7days.setDate(next7days.getDate() + 7);
 
   const [
@@ -78,13 +90,13 @@ export default async function DashboardPage() {
       ? supabase.from('walker_pet_links').select('id, pet_id, status, linked_at').eq('walker_id', profileId).eq('status', 'active')
       : Promise.resolve({ data: [] }),
     profileId
-      ? supabase.from('walker_payments').select('amount, status, created_at').eq('walker_id', profileId).gte('created_at', monthStart)
+      ? supabase.from('walker_payments').select('amount, status, created_at').eq('walker_id', profileId).gte('created_at', filterStart).lte('created_at', filterEnd)
       : Promise.resolve({ data: [] }),
     profileId
-      ? supabase.from('walker_payments').select('amount, status').eq('walker_id', profileId).gte('created_at', prevMonthStart).lt('created_at', monthStart)
+      ? supabase.from('walker_payments').select('amount, status').eq('walker_id', profileId).gte('created_at', prevFilterStart).lt('created_at', prevFilterEnd)
       : Promise.resolve({ data: [] }),
     profileId
-      ? supabase.from('walk_reports').select('id, created_at, duration_minutes, distance_meters, pee_count, poop_count, photos').eq('walker_id', profileId).order('created_at', { ascending: false }).limit(4)
+      ? supabase.from('walk_reports').select('id, created_at, duration_minutes, distance_meters, pee_count, poop_count, photos').eq('walker_id', profileId).gte('created_at', filterStart).lte('created_at', filterEnd).order('created_at', { ascending: false }).limit(4)
       : Promise.resolve({ data: [] }),
     profileId
       ? supabase.from('walker_ratings').select('rating').eq('walker_id', profileId)
@@ -133,6 +145,8 @@ export default async function DashboardPage() {
   const firstName = profile?.name?.split(' ')[0] ?? 'Walker';
   const initials = profile?.name?.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase() ?? '?';
 
+  const MONTHS_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
   // Estrelas para avaliação
   const starFull = Math.floor(avgRating ?? 0);
   const starHalf = avgRating ? ((avgRating % 1) >= 0.5 ? 1 : 0) : 0;
@@ -161,7 +175,7 @@ export default async function DashboardPage() {
 
       {/* ── HEADER ── */}
       <div className="db-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
           {/* Avatar */}
           <div style={{
             width: 52, height: 52, borderRadius: '50%', flexShrink: 0,
@@ -188,6 +202,7 @@ export default async function DashboardPage() {
               )}
             </h1>
           </div>
+          <MonthNav viewMonth={viewMonth} viewYear={viewYear} basePath="/dashboard" />
         </div>
 
         <div className="db-header-actions">
@@ -251,11 +266,11 @@ export default async function DashboardPage() {
           accent={C.gold} accentDim="rgba(255,184,0,0.12)" C={C}
         />
         <StatCard
-          icon="💰" label="Faturamento (mês)"
+          icon="💰" label={`Faturamento — ${MONTHS_PT[viewMonth]}`}
           value={formatCurrency(thisMonthEarned)}
           sub={earningTrend !== null
             ? earningTrend >= 0 ? `▲ ${earningTrend}% vs. mês anterior` : `▼ ${Math.abs(earningTrend)}% vs. mês anterior`
-            : 'este mês'}
+            : `${MONTHS_PT[viewMonth]} ${viewYear}`}
           subColor={earningTrend !== null ? (earningTrend >= 0 ? C.success : C.danger) : undefined}
           accent={C.success} accentDim="rgba(34,211,165,0.12)" C={C}
         />
