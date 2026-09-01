@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 import { formatDate, formatDuration } from '@/lib/utils';
+import { MonthNav } from '../financeiro/MonthNav';
 
 const C = {
   card: '#132219', border: 'rgba(0,200,167,0.12)',
@@ -9,7 +10,17 @@ const C = {
   success: '#22D3A5',
 };
 
-export default async function RelatoriosPage() {
+export default async function RelatoriosPage({ searchParams }: { searchParams?: Promise<{ mes?: string; ano?: string }> }) {
+  const sp = await (searchParams ?? Promise.resolve({}));
+  const now = new Date();
+  // URL usa mês 1-based; internamente 0-based
+  const viewMonth = sp.mes !== undefined ? parseInt(sp.mes) - 1 : now.getMonth();
+  const viewYear  = sp.ano !== undefined ? parseInt(sp.ano)     : now.getFullYear();
+
+  const filterStart = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-01T00:00:00.000Z`;
+  const lastDay = new Date(Date.UTC(viewYear, viewMonth + 1, 0)).getUTCDate();
+  const filterEnd   = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}T23:59:59.999Z`;
+
   const jar = await cookies();
   const accessToken = jar.get('sb-access-token')?.value!;
   const supabase = createClient(
@@ -24,27 +35,24 @@ export default async function RelatoriosPage() {
     .from('walker_profiles').select('id, plan').eq('user_id', user.id).single();
 
   const isPro = profile?.plan === 'pro';
-  const cutoff = isPro ? null : (() => {
-    const d = new Date(); d.setDate(d.getDate() - 7); return d.toISOString();
-  })();
 
   const [{ data: reports }, { data: doneSchedules }] = await Promise.all([
     profile?.id
       ? supabase.from('walk_reports')
           .select('id, created_at, duration_minutes, distance_meters, pee_count, poop_count, note_count, photos, notes, pet_ids, owner_id')
           .eq('walker_id', profile.id)
+          .gte('created_at', filterStart)
+          .lte('created_at', filterEnd)
           .order('created_at', { ascending: false })
-          .limit(50)
-          .then(res => cutoff ? { data: (res.data ?? []).filter((r: any) => r.created_at >= cutoff!) } : res)
       : Promise.resolve({ data: [] }),
     profile?.id
       ? supabase.from('walk_schedules')
           .select('id, scheduled_at, duration_minutes, pet_ids, owner_id, walker_services(type, label)')
           .eq('walker_id', profile.id)
           .eq('status', 'done')
+          .gte('scheduled_at', filterStart)
+          .lte('scheduled_at', filterEnd)
           .order('scheduled_at', { ascending: false })
-          .limit(50)
-          .then(res => cutoff ? { data: (res.data ?? []).filter((r: any) => r.scheduled_at >= cutoff!) } : res)
       : Promise.resolve({ data: [] }),
   ]);
 
@@ -75,24 +83,30 @@ export default async function RelatoriosPage() {
     (owners ?? []).forEach((o: any) => { ownerNames[o.user_id] = o.name; });
   }
 
-  // Totais gerais
+  // Totais do mês
   const totalDist = rows.reduce((s: number, r: any) => s + (r.distance_meters ?? 0), 0);
   const totalMin  = rows.reduce((s: number, r: any) => s + (r.duration_minutes ?? 0), 0);
 
+  const MONTHS_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
   return (
     <div style={{ padding: '28px 24px', maxWidth: 900, margin: '0 auto' }}>
-      <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, letterSpacing: '-0.03em', marginBottom: isPro ? 28 : 12 }}>
-        Relatórios e Atendimentos
-      </h1>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: isPro ? 28 : 12, flexWrap: 'wrap' }}>
+        <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, letterSpacing: '-0.03em' }}>
+          Relatórios e Atendimentos
+        </h1>
+        <MonthNav viewMonth={viewMonth} viewYear={viewYear} basePath="/dashboard/relatorios" />
+      </div>
+
       {!isPro && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 10, padding: '10px 14px', marginBottom: 24, fontSize: 13, color: '#F59E0B' }}>
           <span>🔒</span>
-          <span>Plano Free: exibindo apenas os últimos 7 dias. <a href="/dashboard/pro" style={{ color: '#F59E0B', fontWeight: 700, textDecoration: 'underline' }}>Faça upgrade para ver o histórico completo.</a></span>
+          <span>Plano Free: histórico limitado. <a href="/dashboard/pro" style={{ color: '#F59E0B', fontWeight: 700, textDecoration: 'underline' }}>Faça upgrade para ver tudo.</a></span>
         </div>
       )}
 
-      {/* Resumo geral */}
-      {rows.length > 0 && (
+      {/* Resumo do mês */}
+      {(rows.length > 0 || scheduleRows.length > 0) ? (
         <div className="db-stat-grid" style={{ marginBottom: 24 }}>
           {[
             { label: 'Passeios', value: String(rows.length) },
@@ -106,11 +120,9 @@ export default async function RelatoriosPage() {
             </div>
           ))}
         </div>
-      )}
-
-      {!rows.length && !scheduleRows.length && (
-        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: '48px 20px', textAlign: 'center', color: C.textSec, fontSize: 14 }}>
-          Nenhum relatório ainda.
+      ) : (
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: '48px 20px', textAlign: 'center', color: C.textSec, fontSize: 14, marginBottom: 24 }}>
+          Nenhum relatório em {MONTHS_PT[viewMonth]} {viewYear}.
         </div>
       )}
 
@@ -164,68 +176,68 @@ export default async function RelatoriosPage() {
         </div>
       )}
 
-      {/* Lista de passeios com GPS */}
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden' }}>
-        {rows.length > 0 && (
+      {/* Relatórios de passeio com GPS */}
+      {rows.length > 0 && (
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden' }}>
           <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${C.border}` }}>
             <h2 style={{ fontWeight: 700, fontSize: 13, color: C.text, letterSpacing: '-0.01em' }}>Relatórios de passeio</h2>
           </div>
-        )}
-        <ul>
-          {rows.map((r: any, i: number) => {
-            const pets = (r.pet_ids ?? []).map((id: string) => petNames[id] ?? id);
-            const owner = ownerNames[r.owner_id];
-            return (
-              <li key={r.id} style={{ padding: '16px 20px', borderTop: i > 0 ? `1px solid ${C.border}` : 'none' }}>
-                <div className="flex items-center justify-between" style={{ marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
-                  <div>
-                    <p style={{ fontWeight: 700, color: C.text, fontSize: 14 }}>{formatDate(r.created_at)}</p>
-                    {owner && <p style={{ fontSize: 12, color: C.textSec, marginTop: 1 }}>👤 {owner}</p>}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: 12, color: C.textSec, background: 'rgba(0,198,167,0.08)', border: `1px solid ${C.border}`, padding: '3px 10px', borderRadius: 20 }}>
-                      {formatDuration(r.duration_minutes)}
-                    </span>
-                    <a href={`/dashboard/relatorios/${r.id}`} style={{ fontSize: 12, fontWeight: 600, color: C.accent, textDecoration: 'none', whiteSpace: 'nowrap' }}>
-                      Ver detalhes →
-                    </a>
-                  </div>
-                </div>
-
-                {pets.length > 0 && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
-                    {pets.map((name: string, j: number) => (
-                      <span key={j} style={{ fontSize: 12, fontWeight: 600, color: C.accent, background: C.accentDim, padding: '2px 10px', borderRadius: 20 }}>
-                        🐾 {name}
+          <ul>
+            {rows.map((r: any, i: number) => {
+              const pets = (r.pet_ids ?? []).map((id: string) => petNames[id] ?? id);
+              const owner = ownerNames[r.owner_id];
+              return (
+                <li key={r.id} style={{ padding: '16px 20px', borderTop: i > 0 ? `1px solid ${C.border}` : 'none' }}>
+                  <div className="flex items-center justify-between" style={{ marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
+                    <div>
+                      <p style={{ fontWeight: 700, color: C.text, fontSize: 14 }}>{formatDate(r.created_at)}</p>
+                      {owner && <p style={{ fontSize: 12, color: C.textSec, marginTop: 1 }}>👤 {owner}</p>}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 12, color: C.textSec, background: 'rgba(0,198,167,0.08)', border: `1px solid ${C.border}`, padding: '3px 10px', borderRadius: 20 }}>
+                        {formatDuration(r.duration_minutes)}
                       </span>
-                    ))}
+                      <a href={`/dashboard/relatorios/${r.id}`} style={{ fontSize: 12, fontWeight: 600, color: C.accent, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                        Ver detalhes →
+                      </a>
+                    </div>
                   </div>
-                )}
 
-                <div className="flex gap-4 flex-wrap" style={{ fontSize: 13, color: C.textMuted }}>
-                  {r.distance_meters > 0  && <span>📍 {(r.distance_meters / 1000).toFixed(1)} km</span>}
-                  {r.pee_count > 0        && <span>💧 {r.pee_count} xixi</span>}
-                  {r.poop_count > 0       && <span>💩 {r.poop_count} cocô</span>}
-                  {r.note_count > 0       && <span>📝 {r.note_count} nota{r.note_count > 1 ? 's' : ''}</span>}
-                </div>
+                  {pets.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                      {pets.map((name: string, j: number) => (
+                        <span key={j} style={{ fontSize: 12, fontWeight: 600, color: C.accent, background: C.accentDim, padding: '2px 10px', borderRadius: 20 }}>
+                          🐾 {name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
 
-                {r.notes && (
-                  <p style={{ marginTop: 8, fontSize: 13, color: C.textSec, fontStyle: 'italic' }}>{r.notes}</p>
-                )}
-
-                {r.photos?.length > 0 && (
-                  <div className="flex gap-2 mt-3 flex-wrap">
-                    {r.photos.map((url: string, j: number) => (
-                      <img key={j} src={url} alt="foto do passeio"
-                        style={{ width: 76, height: 76, objectFit: 'cover', borderRadius: 8, border: `1px solid ${C.border}` }} />
-                    ))}
+                  <div className="flex gap-4 flex-wrap" style={{ fontSize: 13, color: C.textMuted }}>
+                    {r.distance_meters > 0  && <span>📍 {(r.distance_meters / 1000).toFixed(1)} km</span>}
+                    {r.pee_count > 0        && <span>💧 {r.pee_count} xixi</span>}
+                    {r.poop_count > 0       && <span>💩 {r.poop_count} cocô</span>}
+                    {r.note_count > 0       && <span>📝 {r.note_count} nota{r.note_count > 1 ? 's' : ''}</span>}
                   </div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      </div>
+
+                  {r.notes && (
+                    <p style={{ marginTop: 8, fontSize: 13, color: C.textSec, fontStyle: 'italic' }}>{r.notes}</p>
+                  )}
+
+                  {r.photos?.length > 0 && (
+                    <div className="flex gap-2 mt-3 flex-wrap">
+                      {r.photos.map((url: string, j: number) => (
+                        <img key={j} src={url} alt="foto do passeio"
+                          style={{ width: 76, height: 76, objectFit: 'cover', borderRadius: 8, border: `1px solid ${C.border}` }} />
+                      ))}
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

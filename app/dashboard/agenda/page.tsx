@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
+import { MonthNav } from '../financeiro/MonthNav';
 
 type ScheduleStatus = 'proposed' | 'confirmed' | 'cancelled' | 'done';
 
@@ -30,7 +31,17 @@ function formatDuration(min: number | null) {
   return `${Math.floor(min / 60)}h${min % 60 ? (min % 60) + 'min' : ''}`;
 }
 
-export default async function AgendaPage() {
+export default async function AgendaPage({ searchParams }: { searchParams?: Promise<{ mes?: string; ano?: string }> }) {
+  const sp = await (searchParams ?? Promise.resolve({}));
+  const now = new Date();
+  // URL usa mês 1-based; internamente 0-based
+  const viewMonth = sp.mes !== undefined ? parseInt(sp.mes) - 1 : now.getMonth();
+  const viewYear  = sp.ano !== undefined ? parseInt(sp.ano)     : now.getFullYear();
+
+  const filterStart = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-01T00:00:00.000Z`;
+  const lastDay = new Date(Date.UTC(viewYear, viewMonth + 1, 0)).getUTCDate();
+  const filterEnd   = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}T23:59:59.999Z`;
+
   const jar = await cookies();
   const accessToken = jar.get('sb-access-token')?.value!;
   const supabase = createClient(
@@ -45,16 +56,33 @@ export default async function AgendaPage() {
   const { data: profile } = await supabase
     .from('walker_profiles').select('id').eq('user_id', user.id).single();
 
-  const { data: schedules } = profile?.id ? await supabase
-    .from('walk_schedules')
-    .select('id, scheduled_at, duration_minutes, pet_ids, status, notes, owner_id')
-    .eq('walker_id', profile.id)
-    .order('scheduled_at', { ascending: true }) : { data: [] };
+  // Próximos: sem filtro de mês (são futuros)
+  // Histórico: filtrado pelo mês selecionado
+  const [{ data: upcoming }, { data: pastSchedules }] = await Promise.all([
+    profile?.id
+      ? supabase.from('walk_schedules')
+          .select('id, scheduled_at, duration_minutes, pet_ids, status, notes, owner_id')
+          .eq('walker_id', profile.id)
+          .in('status', ['proposed', 'confirmed'])
+          .order('scheduled_at', { ascending: true })
+      : Promise.resolve({ data: [] }),
+    profile?.id
+      ? supabase.from('walk_schedules')
+          .select('id, scheduled_at, duration_minutes, pet_ids, status, notes, owner_id')
+          .eq('walker_id', profile.id)
+          .in('status', ['done', 'cancelled'])
+          .gte('scheduled_at', filterStart)
+          .lte('scheduled_at', filterEnd)
+          .order('scheduled_at', { ascending: false })
+      : Promise.resolve({ data: [] }),
+  ]);
 
-  const rows = (schedules ?? []) as any[];
+  const upcomingRows = (upcoming ?? []) as any[];
+  const pastRows     = (pastSchedules ?? []) as any[];
+  const allRows      = [...upcomingRows, ...pastRows];
 
   // Buscar nomes dos pets
-  const allPetIds = [...new Set(rows.flatMap((s: any) => s.pet_ids ?? []))];
+  const allPetIds = [...new Set(allRows.flatMap((s: any) => s.pet_ids ?? []))];
   let petNames: Record<string, string> = {};
   if (allPetIds.length > 0) {
     const { data: petsData } = await supabase
@@ -63,7 +91,7 @@ export default async function AgendaPage() {
   }
 
   // Buscar nomes dos tutores
-  const ownerIds = [...new Set(rows.map((s: any) => s.owner_id).filter(Boolean))];
+  const ownerIds = [...new Set(allRows.map((s: any) => s.owner_id).filter(Boolean))];
   let ownerNames: Record<string, string> = {};
   if (ownerIds.length > 0) {
     const { data: owners } = await supabase
@@ -71,12 +99,8 @@ export default async function AgendaPage() {
     (owners ?? []).forEach((o: any) => { ownerNames[o.user_id] = o.name; });
   }
 
-  // Agrupar por status
-  const upcoming = rows.filter((s: any) => ['proposed', 'confirmed'].includes(s.status));
-  const past     = rows.filter((s: any) => ['done', 'cancelled'].includes(s.status));
-
   const today = new Date();
-  const confirmedToday = upcoming.filter((s: any) => {
+  const confirmedToday = upcomingRows.filter((s: any) => {
     const d = new Date(s.scheduled_at);
     return s.status === 'confirmed' &&
       d.getFullYear() === today.getFullYear() &&
@@ -84,21 +108,26 @@ export default async function AgendaPage() {
       d.getDate() === today.getDate();
   });
 
+  const MONTHS_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
   return (
     <div style={{ padding: '28px 24px', maxWidth: 900, margin: '0 auto' }}>
-      {/* Header + stats */}
+      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, letterSpacing: '-0.03em' }}>Agenda</h1>
-          <p style={{ fontSize: 13, color: C.textSec, marginTop: 3 }}>
-            {confirmedToday.length > 0
-              ? `${confirmedToday.length} passeio${confirmedToday.length > 1 ? 's' : ''} confirmado${confirmedToday.length > 1 ? 's' : ''} hoje`
-              : 'Nenhum passeio confirmado para hoje'}
-          </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div>
+            <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, letterSpacing: '-0.03em' }}>Agenda</h1>
+            <p style={{ fontSize: 13, color: C.textSec, marginTop: 3 }}>
+              {confirmedToday.length > 0
+                ? `${confirmedToday.length} passeio${confirmedToday.length > 1 ? 's' : ''} confirmado${confirmedToday.length > 1 ? 's' : ''} hoje`
+                : 'Nenhum passeio confirmado para hoje'}
+            </p>
+          </div>
+          <MonthNav viewMonth={viewMonth} viewYear={viewYear} basePath="/dashboard/agenda" />
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {(['proposed', 'confirmed'] as ScheduleStatus[]).map((st) => {
-            const count = upcoming.filter((s: any) => s.status === st).length;
+            const count = upcomingRows.filter((s: any) => s.status === st).length;
             const cfg = STATUS_CONFIG[st];
             return count > 0 ? (
               <div key={st} style={{ fontSize: 12, fontWeight: 600, color: cfg.color, background: cfg.bg, padding: '4px 12px', borderRadius: 20 }}>
@@ -114,13 +143,13 @@ export default async function AgendaPage() {
         <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${C.border}` }}>
           <h2 style={{ fontWeight: 700, fontSize: 13, color: C.text, letterSpacing: '-0.01em' }}>Próximos agendamentos</h2>
         </div>
-        {upcoming.length === 0 ? (
+        {upcomingRows.length === 0 ? (
           <div style={{ padding: '36px 20px', textAlign: 'center', fontSize: 13, color: C.textSec }}>
             Nenhum agendamento pendente ou confirmado.
           </div>
         ) : (
           <ul>
-            {upcoming.map((s: any, i: number) => {
+            {upcomingRows.map((s: any, i: number) => {
               const cfg = STATUS_CONFIG[s.status as ScheduleStatus] ?? STATUS_CONFIG.proposed;
               const pets = (s.pet_ids ?? []).map((id: string) => petNames[id] ?? id);
               return (
@@ -147,14 +176,20 @@ export default async function AgendaPage() {
         )}
       </div>
 
-      {/* Histórico */}
-      {past.length > 0 && (
-        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${C.border}` }}>
-            <h2 style={{ fontWeight: 700, fontSize: 13, color: C.text, letterSpacing: '-0.01em' }}>Histórico</h2>
+      {/* Histórico filtrado pelo mês */}
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden' }}>
+        <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${C.border}` }}>
+          <h2 style={{ fontWeight: 700, fontSize: 13, color: C.text, letterSpacing: '-0.01em' }}>
+            Histórico — {MONTHS_PT[viewMonth]} {viewYear}
+          </h2>
+        </div>
+        {pastRows.length === 0 ? (
+          <div style={{ padding: '36px 20px', textAlign: 'center', fontSize: 13, color: C.textSec }}>
+            Nenhum atendimento em {MONTHS_PT[viewMonth]} {viewYear}.
           </div>
+        ) : (
           <ul>
-            {past.slice(0, 20).map((s: any, i: number) => {
+            {pastRows.map((s: any, i: number) => {
               const cfg = STATUS_CONFIG[s.status as ScheduleStatus] ?? STATUS_CONFIG.done;
               const pets = (s.pet_ids ?? []).map((id: string) => petNames[id] ?? id);
               return (
@@ -173,8 +208,8 @@ export default async function AgendaPage() {
               );
             })}
           </ul>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

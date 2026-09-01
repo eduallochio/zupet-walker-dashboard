@@ -4,14 +4,14 @@ import { useRouter } from 'next/navigation';
 
 const MONTHS_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
-export function MonthNav({ viewMonth, viewYear }: { viewMonth: number; viewYear: number }) {
+export function MonthNav({ viewMonth, viewYear, basePath = '/dashboard/financeiro' }: { viewMonth: number; viewYear: number; basePath?: string }) {
   const router = useRouter();
   const now = new Date();
   const isCurrentMonth = viewYear === now.getFullYear() && viewMonth === now.getMonth();
 
   // URL usa mês 1-based (1=Jan … 12=Dez) para ser legível
   function navigate(month: number, year: number) {
-    router.push(`/dashboard/financeiro?mes=${month + 1}&ano=${year}`);
+    router.push(`${basePath}?mes=${month + 1}&ano=${year}`);
   }
 
   function prev() {
