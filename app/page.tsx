@@ -317,6 +317,33 @@ export default async function LandingPage() {
         <FaqTabs />
       </section>
 
+      {/* BANNER TUTOR */}
+      <section style={{ background: "#f8f5f0", borderTop: "1px solid #e8e0d5" }}>
+        <div style={{ maxWidth: 960, margin: "0 auto", padding: "2.5rem 1.5rem", display: "flex", flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "1.5rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+            <div style={{ width: 48, height: 48, borderRadius: 16, background: "#fff3eb", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: "1.5rem" }}>
+              🐾
+            </div>
+            <div>
+              <p style={{ fontWeight: 700, fontSize: "0.9rem", color: "#1a1a1a", margin: 0 }}>
+                Você tem um pet e quer encontrar profissionais?
+              </p>
+              <p style={{ fontSize: "0.78rem", color: "#6b6b6b", margin: "0.2rem 0 0" }}>
+                O Zupet é o app para tutores — gerencie a saúde, vacinas e passeios do seu pet.
+              </p>
+            </div>
+          </div>
+          <a
+            href="https://zupet.io"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ flexShrink: 0, padding: "0.6rem 1.25rem", borderRadius: 12, background: "#e87c3a", color: "#fff", fontWeight: 600, fontSize: "0.85rem", textDecoration: "none", transition: "opacity .2s" }}
+          >
+            Conheça o Zupet →
+          </a>
+        </div>
+      </section>
+
       {/* FOOTER */}
       <footer className="lp-footer">
         {/* brand col */}
@@ -327,7 +354,7 @@ export default async function LandingPage() {
             Zupet Walker
           </div>
           <p className="lp-footer-brand-desc">
-            O app para passeadores profissionais que querem crescer com organização, GPS e relatórios automáticos.
+            O app para profissionais de pets — passeadores, banhistas, hospedeiros e adestradores — que querem crescer com organização e relatórios automáticos.
           </p>
           {/* app badges */}
           <div className="lp-footer-badges">
@@ -358,16 +385,17 @@ export default async function LandingPage() {
         <div>
           <p className="lp-footer-col-title">Legal & Contato</p>
           <div className="lp-footer-col-links">
-            <a href="https://zupet.io" target="_blank" rel="noopener noreferrer">zupet.io</a>
+            <a href="https://zupet.io" target="_blank" rel="noopener noreferrer">zupet.io — app para tutores</a>
             <a href="mailto:contato@zupet.io">contato@zupet.io</a>
             <Link href="/privacidade">Política de Privacidade</Link>
+            <Link href="/excluir-conta">Excluir conta</Link>
           </div>
         </div>
 
         {/* bottom bar */}
         <div className="lp-footer-bottom">
           <span>© {new Date().getFullYear()} Zupet. Todos os direitos reservados.</span>
-          <span>Feito com 🐾 para passeadores profissionais</span>
+          <span>Feito com 🐾 para profissionais de pets</span>
         </div>
       </footer>
     </main>
