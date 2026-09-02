@@ -321,8 +321,9 @@ export default async function LandingPage() {
       <section style={{ background: "#f8f5f0", borderTop: "1px solid #e8e0d5" }}>
         <div style={{ maxWidth: 960, margin: "0 auto", padding: "2.5rem 1.5rem", display: "flex", flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "1.5rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-            <div style={{ width: 48, height: 48, borderRadius: 16, background: "#fff3eb", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: "1.5rem" }}>
-              🐾
+            <div style={{ width: 48, height: 48, borderRadius: 16, overflow: "hidden", flexShrink: 0 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/zupet-icon.png" alt="Zupet" width={48} height={48} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </div>
             <div>
               <p style={{ fontWeight: 700, fontSize: "0.9rem", color: "#1a1a1a", margin: 0 }}>
