@@ -19,7 +19,7 @@ import { PageTracker } from '@/components/ui/page-tracker';
 const HOW_STEPS = [
   { emoji: '📲', title: 'Baixe o app', desc: 'Disponível para Android e iOS, gratuito para começar.' },
   { emoji: '🐾', title: 'Monte seu perfil', desc: 'Defina seus serviços, preços, área de atendimento e agenda de disponibilidade.' },
-  { emoji: '🗺️', title: 'Realize seus atendimentos', desc: 'GPS registra a rota nos passeios. Relatórios automáticos para o tutor ao final de cada serviço.' },
+  { emoji: '🗺️', title: 'Realize seus atendimentos', desc: 'GPS registra a rota durante passeios. Relatórios automáticos para o tutor ao final de cada serviço.' },
   { emoji: '💰', title: 'Controle financeiro', desc: 'Acompanhe seus ganhos e histórico de recebimentos direto no app.' },
 ];
 
@@ -36,13 +36,13 @@ const HERO_PHOTO = '/hero.jpg';
 
 const FEATURES = [
   {
-    title: 'GPS durante o passeio',
+    title: 'GPS durante o atendimento',
     desc: 'O app registra a rota percorrida automaticamente. Distância, duração e eventos ficam salvos no relatório.',
     icon: <svg viewBox="0 0 24 24" width="20" height="20" stroke="#22c55e" fill="none" strokeWidth="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
   },
   {
     title: 'Relatórios com fotos',
-    desc: 'Ao final de cada passeio, envie um relatório automático com fotos e eventos ao tutor.',
+    desc: 'Ao final de cada atendimento, envie um relatório automático com fotos e eventos ao tutor.',
     icon: <svg viewBox="0 0 24 24" width="20" height="20" stroke="#22c55e" fill="none" strokeWidth="1.8"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>,
   },
   {
@@ -71,7 +71,7 @@ const PLAN_COMPARISON = [
   { feature: 'Pets vinculados por tutores',   free: 'Até 7',      pro: 'Ilimitado' },
   { feature: 'Pets cadastrados pelo walker',  free: 'Até 7',      pro: 'Ilimitado' },
   { feature: 'Serviços criados',              free: '1 serviço',  pro: 'Ilimitado' },
-  { feature: 'Pets por passeio',              free: 'Até 2',      pro: 'Ilimitado' },
+  { feature: 'Pets por atendimento',           free: 'Até 2',      pro: 'Ilimitado' },
   { feature: 'Histórico de relatórios',       free: '7 dias',     pro: 'Completo'  },
   { feature: 'Dashboard web',                 free: true,         pro: true        },
   { feature: 'Código de convite para tutores',free: true,         pro: true        },
