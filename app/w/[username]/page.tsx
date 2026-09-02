@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
+import { ShareButton } from './ShareButton';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -178,7 +179,7 @@ export default async function WalkerProfilePage({ params }: { params: Promise<{ 
 
         {/* Redes sociais */}
         {(social.instagram || social.tiktok) && (
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 4 }}>
             {social.instagram && (
               <a href={`https://instagram.com/${social.instagram.replace('@','')}`} target="_blank" rel="noopener noreferrer"
                 style={{ fontSize: 13, color: '#E8F5F0', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6, background: 'linear-gradient(45deg,#833ab4,#fd1d1d,#fcb045)', borderRadius: 20, padding: '6px 16px', fontWeight: 600 }}>
@@ -193,6 +194,11 @@ export default async function WalkerProfilePage({ params }: { params: Promise<{ 
             )}
           </div>
         )}
+
+        {/* Botão compartilhar */}
+        <div style={{ marginTop: 16 }}>
+          <ShareButton name={walker.name} username={username} />
+        </div>
       </div>
 
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '32px 20px 120px' }}>
