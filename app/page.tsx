@@ -18,9 +18,18 @@ import { PageTracker } from '@/components/ui/page-tracker';
 
 const HOW_STEPS = [
   { emoji: '📲', title: 'Baixe o app', desc: 'Disponível para Android e iOS, gratuito para começar.' },
-  { emoji: '🐾', title: 'Monte seu perfil', desc: 'Defina serviços, preços, área de atendimento e agenda.' },
-  { emoji: '🗺️', title: 'Realize passeios', desc: 'GPS registra distância e rota. Fotos e eventos salvos automaticamente.' },
+  { emoji: '🐾', title: 'Monte seu perfil', desc: 'Defina seus serviços, preços, área de atendimento e agenda de disponibilidade.' },
+  { emoji: '🗺️', title: 'Realize seus atendimentos', desc: 'GPS registra a rota nos passeios. Relatórios automáticos para o tutor ao final de cada serviço.' },
   { emoji: '💰', title: 'Controle financeiro', desc: 'Acompanhe seus ganhos e histórico de recebimentos direto no app.' },
+];
+
+const SERVICES = [
+  { emoji: '🦮', label: 'Passeio' },
+  { emoji: '🛁', label: 'Banho e Tosa' },
+  { emoji: '🌙', label: 'Hospedagem' },
+  { emoji: '🏠', label: 'Day Care' },
+  { emoji: '🎯', label: 'Adestramento' },
+  { emoji: '🩺', label: 'Visita Veterinária' },
 ];
 
 const HERO_PHOTO = '/hero.jpg';
@@ -53,7 +62,7 @@ const FEATURES = [
   },
   {
     title: 'Avaliações e reputação',
-    desc: 'Construa sua reputação com avaliações após cada passeio. Apareça em destaque no Pro.',
+    desc: 'Construa sua reputação com avaliações após cada atendimento. Apareça em destaque no Pro.',
     icon: <svg viewBox="0 0 24 24" width="20" height="20" stroke="#22c55e" fill="none" strokeWidth="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
   },
 ];
@@ -101,14 +110,29 @@ export default async function LandingPage() {
           <a href="#recursos"     className="lp-nav-text">Recursos</a>
           <a href="#como-funciona" className="lp-nav-text">Como funciona</a>
           <a href="#planos"       className="lp-nav-text">Planos</a>
-          <Link href="/cadastro"  className="lp-nav-text">Ser walker</Link>
-          <Link href="/cadastro"  className="lp-nav-cta-cadastro">Ser walker</Link>
+          <Link href="/cadastro"  className="lp-nav-text">Cadastrar</Link>
+          <Link href="/cadastro"  className="lp-nav-cta-cadastro">Cadastrar</Link>
           <Link href="/login" className="lp-nav-cta">Entrar</Link>
         </div>
       </nav>
 
       {/* HERO */}
       <ParallaxHero photoUrl={HERO_PHOTO} photoPosition="center 55%" />
+
+      {/* SERVICES STRIP */}
+      <section style={{ background: '#f8fffe', borderBottom: '1px solid #e0f5f1', padding: '1.5rem 1.5rem' }}>
+        <p style={{ textAlign: 'center', fontSize: '0.72rem', fontWeight: 700, color: '#00C6A7', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '1rem' }}>
+          Para todos os profissionais de pets
+        </p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '0.75rem', maxWidth: 700, margin: '0 auto' }}>
+          {SERVICES.map((s) => (
+            <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#fff', border: '1px solid #c8ede9', borderRadius: 999, padding: '0.4rem 1rem', fontSize: '0.82rem', fontWeight: 600, color: '#0D4D45' }}>
+              <span>{s.emoji}</span>
+              <span>{s.label}</span>
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* FEATURES */}
       <section id="recursos" className="lp-features">
@@ -167,7 +191,7 @@ export default async function LandingPage() {
             <span className="lp-pro-profile-badge">⭐ Exclusivo Pro</span>
             <h2 className="lp-pro-profile-title">Sua página profissional na internet</h2>
             <p className="lp-pro-profile-desc">
-              Walkers Pro ganham uma página personalizada para divulgar seus serviços nas redes sociais.
+              Profissionais Pro ganham uma página personalizada para divulgar todos os seus serviços nas redes sociais.
               Compartilhe seu link, mostre avaliações reais e conquiste mais clientes.
             </p>
             <ul className="lp-pro-profile-list">
