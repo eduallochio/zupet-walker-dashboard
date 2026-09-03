@@ -24,12 +24,12 @@ const HOW_STEPS = [
 ];
 
 const SERVICES = [
-  { emoji: '🦮', label: 'Passeio' },
-  { emoji: '🛁', label: 'Banho e Tosa' },
-  { emoji: '🌙', label: 'Hospedagem' },
-  { emoji: '🏠', label: 'Day Care' },
-  { emoji: '🎯', label: 'Adestramento' },
-  { emoji: '🩺', label: 'Visita Veterinária' },
+  { emoji: '🦮', label: 'Passeio', desc: 'Caminhadas seguras e monitoradas para cães de todos os portes', color: '#00C6A7', bg: 'rgba(0,198,167,0.08)', border: 'rgba(0,198,167,0.22)' },
+  { emoji: '🛁', label: 'Banho e Tosa', desc: 'Higiene e bem-estar com produtos de qualidade para o seu pet', color: '#3B82F6', bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.22)' },
+  { emoji: '🌙', label: 'Hospedagem', desc: 'Seu pet acolhido em ambiente seguro enquanto você viaja', color: '#8B5CF6', bg: 'rgba(139,92,246,0.08)', border: 'rgba(139,92,246,0.22)' },
+  { emoji: '🏠', label: 'Day Care', desc: 'Companhia e atividades durante o dia para pets que ficam sozinhos', color: '#F59E0B', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.22)' },
+  { emoji: '🎯', label: 'Adestramento', desc: 'Treinamento comportamental com métodos positivos e eficazes', color: '#EF4444', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.22)' },
+  { emoji: '🩺', label: 'Visita Veterinária', desc: 'Acompanhamento domiciliar com profissionais veterinários', color: '#10B981', bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.22)' },
 ];
 
 const HERO_PHOTO = '/hero.jpg';
@@ -119,17 +119,31 @@ export default async function LandingPage() {
       {/* HERO */}
       <ParallaxHero photoUrl={HERO_PHOTO} photoPosition="center 55%" />
 
-      {/* SERVICES STRIP */}
-      <section style={{ background: '#f8fffe', borderBottom: '1px solid #e0f5f1', padding: '1.5rem 1.5rem' }}>
-        <p style={{ textAlign: 'center', fontSize: '0.72rem', fontWeight: 700, color: '#00C6A7', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '1rem' }}>
+      {/* SERVICES GRID */}
+      <section aria-labelledby="services-title" style={{ background: '#f8fffe', borderBottom: '1px solid #e0f5f1', padding: '3rem 1.5rem' }}>
+        <p style={{ textAlign: 'center', fontSize: '0.72rem', fontWeight: 700, color: '#00C6A7', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.6rem' }}>
           Para todos os profissionais de pets
         </p>
-        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '0.75rem', maxWidth: 700, margin: '0 auto' }}>
+        <h2 id="services-title" style={{ textAlign: 'center', fontSize: '1.45rem', fontWeight: 800, color: '#0D2922', letterSpacing: '-0.02em', marginBottom: '2rem' }}>
+          Gerencie qualquer tipo de atendimento
+        </h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem', maxWidth: 780, margin: '0 auto' }}>
           {SERVICES.map((s) => (
-            <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#fff', border: '1px solid #c8ede9', borderRadius: 999, padding: '0.4rem 1rem', fontSize: '0.82rem', fontWeight: 600, color: '#0D4D45' }}>
-              <span>{s.emoji}</span>
-              <span>{s.label}</span>
-            </div>
+            <article key={s.label} aria-label={s.label} style={{
+              background: s.bg,
+              border: `1.5px solid ${s.border}`,
+              borderRadius: 16,
+              padding: '1.25rem 1.1rem',
+              display: 'flex', flexDirection: 'column', gap: '0.5rem',
+              transition: 'transform 0.15s, box-shadow 0.15s',
+            }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-3px)'; (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 24px ${s.border}`; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = ''; }}
+            >
+              <span style={{ fontSize: '2rem', lineHeight: 1 }} role="img" aria-hidden="true">{s.emoji}</span>
+              <strong style={{ fontSize: '0.95rem', fontWeight: 800, color: s.color }}>{s.label}</strong>
+              <p style={{ fontSize: '0.78rem', color: '#4A6B60', lineHeight: 1.5, margin: 0 }}>{s.desc}</p>
+            </article>
           ))}
         </div>
       </section>

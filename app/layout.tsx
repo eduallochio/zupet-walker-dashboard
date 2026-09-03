@@ -129,6 +129,21 @@ const jsonLdFaq = {
   ],
 };
 
+const jsonLdServices = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'Serviços para profissionais de pets — Zupet Walker',
+  description: 'Tipos de atendimento gerenciados pelo app Zupet Walker',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Passeio de cães', description: 'Caminhadas seguras e monitoradas para cães de todos os portes', url: 'https://walker.zupet.io' },
+    { '@type': 'ListItem', position: 2, name: 'Banho e Tosa', description: 'Higiene e bem-estar com produtos de qualidade para o seu pet', url: 'https://walker.zupet.io' },
+    { '@type': 'ListItem', position: 3, name: 'Hospedagem de pets', description: 'Seu pet acolhido em ambiente seguro enquanto você viaja', url: 'https://walker.zupet.io' },
+    { '@type': 'ListItem', position: 4, name: 'Day Care para pets', description: 'Companhia e atividades durante o dia para pets que ficam sozinhos', url: 'https://walker.zupet.io' },
+    { '@type': 'ListItem', position: 5, name: 'Adestramento de cães', description: 'Treinamento comportamental com métodos positivos e eficazes', url: 'https://walker.zupet.io' },
+    { '@type': 'ListItem', position: 6, name: 'Visita Veterinária domiciliar', description: 'Acompanhamento domiciliar com profissionais veterinários', url: 'https://walker.zupet.io' },
+  ],
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR" data-scroll-behavior="smooth">
@@ -136,6 +151,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdApp) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdOrg) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdFaq) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdServices) }} />
       </head>
       <body className={jakarta.variable} style={{ fontFamily: 'var(--font-jakarta), system-ui, sans-serif' }}>
         {children}
