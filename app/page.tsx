@@ -420,7 +420,7 @@ export default async function LandingPage() {
         {/* bottom bar */}
         <div className="lp-footer-bottom">
           <span>© {new Date().getFullYear()} Zupet. Todos os direitos reservados.</span>
-          <span>Feito com 🐾 para profissionais de pets</span>
+          <span>Feito com 🐾 para profissionais de pets · desenvolvido por <a href="https://www.instagram.com/eduallochio/" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>Eduardo Allochio</a></span>
         </div>
       </footer>
     </main>
