@@ -127,19 +127,20 @@ export default async function LandingPage() {
         <h2 id="services-title" style={{ textAlign: 'center', fontSize: '1.45rem', fontWeight: 800, color: '#0D2922', letterSpacing: '-0.02em', marginBottom: '2rem' }}>
           Gerencie qualquer tipo de atendimento
         </h2>
+        <style>{`
+          .svc-card { transition: transform 0.15s, box-shadow 0.15s; }
+          .svc-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px var(--svc-border); }
+        `}</style>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem', maxWidth: 780, margin: '0 auto' }}>
           {SERVICES.map((s) => (
-            <article key={s.label} aria-label={s.label} style={{
+            <article key={s.label} aria-label={s.label} className="svc-card" style={{
+              '--svc-border': s.border,
               background: s.bg,
               border: `1.5px solid ${s.border}`,
               borderRadius: 16,
               padding: '1.25rem 1.1rem',
               display: 'flex', flexDirection: 'column', gap: '0.5rem',
-              transition: 'transform 0.15s, box-shadow 0.15s',
-            }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-3px)'; (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 24px ${s.border}`; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = ''; }}
-            >
+            } as React.CSSProperties}>
               <span style={{ fontSize: '2rem', lineHeight: 1 }} role="img" aria-hidden="true">{s.emoji}</span>
               <strong style={{ fontSize: '0.95rem', fontWeight: 800, color: s.color }}>{s.label}</strong>
               <p style={{ fontSize: '0.78rem', color: '#4A6B60', lineHeight: 1.5, margin: 0 }}>{s.desc}</p>
