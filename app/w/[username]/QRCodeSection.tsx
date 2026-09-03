@@ -3,22 +3,19 @@
 import { useEffect, useRef, useState } from 'react';
 
 export function QRCodeSection({ username }: { username: string }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const url = `https://walker.zupet.io/w/${username}`;
 
   useEffect(() => {
-    if (!open || !canvasRef.current) return;
-    // Carrega qrcode.js dinamicamente apenas quando o painel abre
-    const script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
-    script.onload = () => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      // limpa antes de regenerar
-      canvas.innerHTML = '';
+    if (!open || !containerRef.current) return;
+    const container = containerRef.current;
+
+    const generate = () => {
+      // Limpa conteúdo anterior
+      container.innerHTML = '';
       // @ts-ignore
-      new window.QRCode(canvas, {
+      new window.QRCode(container, {
         text: url,
         width: 200,
         height: 200,
@@ -27,10 +24,18 @@ export function QRCodeSection({ username }: { username: string }) {
         correctLevel: (window as any).QRCode?.CorrectLevel?.H,
       });
     };
-    if (!document.querySelector(`script[src="${script.src}"]`)) {
-      document.head.appendChild(script);
+
+    const src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+    const existing = document.querySelector(`script[src="${src}"]`);
+    if (existing) {
+      // Lib já carregada
+      if ((window as any).QRCode) generate();
+      else existing.addEventListener('load', generate, { once: true });
     } else {
-      script.onload?.(new Event('load'));
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = generate;
+      document.head.appendChild(script);
     }
   }, [open, url]);
 
@@ -55,7 +60,7 @@ export function QRCodeSection({ username }: { username: string }) {
       {open && (
         <div style={{ marginTop: 16, display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 10,
           background: '#0D1F18', border: '1px solid rgba(0,198,167,0.18)', borderRadius: 16, padding: '20px 24px' }}>
-          <div ref={canvasRef} style={{ borderRadius: 8, overflow: 'hidden' }} />
+          <div ref={containerRef} style={{ borderRadius: 8, overflow: 'hidden' }} />
           <p style={{ fontSize: 11, color: '#4A6B60', margin: 0 }}>
             Escaneie para acessar este perfil
           </p>
