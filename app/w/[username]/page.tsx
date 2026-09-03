@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { ShareButton } from './ShareButton';
+import { QRCodeSection } from './QRCodeSection';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -195,9 +196,10 @@ export default async function WalkerProfilePage({ params }: { params: Promise<{ 
           </div>
         )}
 
-        {/* Botão compartilhar */}
-        <div style={{ marginTop: 16 }}>
+        {/* Botão compartilhar + QR Code */}
+        <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0 }}>
           <ShareButton name={walker.name} username={username} />
+          <QRCodeSection username={username} />
         </div>
       </div>
 
@@ -329,6 +331,20 @@ export default async function WalkerProfilePage({ params }: { params: Promise<{ 
         <p style={{ textAlign: 'center', marginTop: 32, fontSize: 11, color: '#2A4A40' }}>
           Perfil verificado · <a href="/" style={{ color: '#2A4A40', textDecoration: 'none' }}>Zupet Walker</a>
         </p>
+
+        {/* Banner "Baixar o Zupet" para tutores */}
+        <div style={{ marginTop: 24, background: '#0D1F18', border: '1px solid rgba(0,198,167,0.12)', borderRadius: 16, padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/zupet-icon.png" alt="Zupet" width={40} height={40} style={{ borderRadius: 10, flexShrink: 0, objectFit: 'cover' }} />
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: 13, fontWeight: 700, color: '#C8E8DF', margin: '0 0 2px' }}>Você é tutor de pet?</p>
+            <p style={{ fontSize: 12, color: '#4A6B60', margin: 0, lineHeight: 1.5 }}>Gerencie saúde, vacinas e serviços do seu pet com o app Zupet.</p>
+          </div>
+          <a href="https://zupet.io" target="_blank" rel="noopener noreferrer"
+            style={{ flexShrink: 0, fontSize: 12, fontWeight: 700, color: '#00C6A7', background: 'rgba(0,198,167,0.10)', border: '1px solid rgba(0,198,167,0.25)', borderRadius: 20, padding: '6px 14px', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+            Conheça →
+          </a>
+        </div>
       </div>
 
       {/* CTA FIXO NO MOBILE */}
