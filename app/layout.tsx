@@ -76,7 +76,7 @@ const jsonLdOrg = {
   sameAs: ['https://zupet.io'],
   contactPoint: {
     '@type': 'ContactPoint',
-    email: 'contato@zupet.io',
+    email: 'eduallochio2@outlook.com',
     contactType: 'customer service',
     availableLanguage: 'Portuguese',
   },

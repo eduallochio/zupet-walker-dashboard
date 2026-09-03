@@ -411,7 +411,7 @@ export default async function LandingPage() {
           <p className="lp-footer-col-title">Legal & Contato</p>
           <div className="lp-footer-col-links">
             <a href="https://zupet.io" target="_blank" rel="noopener noreferrer">zupet.io — app para tutores</a>
-            <a href="mailto:contato@zupet.io">contato@zupet.io</a>
+            <a href="mailto:eduallochio2@outlook.com">eduallochio2@outlook.com</a>
             <Link href="/privacidade">Política de Privacidade</Link>
             <Link href="/excluir-conta">Excluir conta</Link>
           </div>
