@@ -9,7 +9,7 @@ interface FaqItem {
 const FAQ_WALKER: FaqItem[] = [
   {
     q: 'Preciso pagar para usar o app?',
-    a: 'Não. O plano gratuito é permanente e já inclui GPS, relatórios e gestão de até 10 pets. O Pro desbloqueia recursos avançados por R$ 29/mês.',
+    a: 'Não. O plano gratuito é permanente e já inclui GPS, relatórios e gestão de até 10 pets. O Pro desbloqueia recursos avançados — consulte os planos para ver o preço atual.',
   },
   {
     q: 'Como os tutores me encontram?',

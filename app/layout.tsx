@@ -56,7 +56,7 @@ const jsonLdApp = {
     '@type': 'Offer',
     price: '0',
     priceCurrency: 'BRL',
-    description: 'Plano gratuito disponível. Pro por R$ 29/mês.',
+    description: 'Plano gratuito disponível. Pro por R$ 49,90/mês (promoção).',
   },
   description: 'App para profissionais de pets — passeadores, banhistas, adestradores e cuidadores. GPS em tempo real, relatórios com fotos, agenda integrada e controle financeiro.',
   url: 'https://walker.zupet.io',
@@ -91,7 +91,7 @@ const jsonLdFaq = {
       name: 'O app Zupet Walker é gratuito?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Sim. O plano gratuito é permanente e inclui GPS, relatórios e gestão de até 10 pets. O Pro desbloqueia recursos avançados por R$ 29/mês.',
+        text: 'Sim. O plano gratuito é permanente e inclui GPS, relatórios e gestão de até 10 pets. O Pro desbloqueia recursos avançados por R$ 49,90/mês (promoção).',
       },
     },
     {
