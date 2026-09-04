@@ -10,6 +10,7 @@ const SLIDES = [
   { src: '/screenshots/android-05-Passeio-Ativo.png',   label: 'Passeio Ativo',      desc: 'GPS em tempo real registrando a rota do passeio' },
   { src: '/screenshots/android-06-Resumo-Passeio.png',  label: 'Resumo do Passeio',  desc: 'Relatório automático com distância, fotos e eventos' },
   { src: '/screenshots/android-07-Historico.png',       label: 'Histórico',          desc: 'Todos os atendimentos e recebimentos registrados' },
+  { src: '/screenshots/android-08-Agenda.png',          label: 'Agenda',             desc: 'Organize sua disponibilidade e gerencie agendamentos' },
 ];
 
 export function ScreenshotsCarousel() {
