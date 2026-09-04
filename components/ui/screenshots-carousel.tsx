@@ -1,136 +1,146 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 const SLIDES = [
-  { src: '/screenshots/android-01-Home.png',            label: 'Home' },
-  { src: '/screenshots/android-02-Meus-Pets.png',       label: 'Meus Pets' },
-  { src: '/screenshots/android-03-Detalhe-Pet.png',     label: 'Detalhe do Pet' },
-  { src: '/screenshots/android-04-Perfil-Walker.png',   label: 'Perfil Walker' },
-  { src: '/screenshots/android-05-Passeio-Ativo.png',   label: 'Passeio Ativo' },
-  { src: '/screenshots/android-06-Resumo-Passeio.png',  label: 'Resumo do Passeio' },
-  { src: '/screenshots/android-07-Historico.png',       label: 'Histórico' },
+  { src: '/screenshots/android-01-Home.png',            label: 'Home',               desc: 'Visão geral dos seus atendimentos do dia' },
+  { src: '/screenshots/android-02-Meus-Pets.png',       label: 'Meus Pets',          desc: 'Todos os pets dos seus clientes em um só lugar' },
+  { src: '/screenshots/android-03-Detalhe-Pet.png',     label: 'Detalhe do Pet',     desc: 'Histórico completo, vacinas e observações do pet' },
+  { src: '/screenshots/android-04-Perfil-Walker.png',   label: 'Seu Perfil',         desc: 'Página pública com serviços, preços e avaliações' },
+  { src: '/screenshots/android-05-Passeio-Ativo.png',   label: 'Passeio Ativo',      desc: 'GPS em tempo real registrando a rota do passeio' },
+  { src: '/screenshots/android-06-Resumo-Passeio.png',  label: 'Resumo do Passeio',  desc: 'Relatório automático com distância, fotos e eventos' },
+  { src: '/screenshots/android-07-Historico.png',       label: 'Histórico',          desc: 'Todos os atendimentos e recebimentos registrados' },
 ];
 
 export function ScreenshotsCarousel() {
   const [active, setActive] = useState(0);
-  const [dragging, setDragging] = useState(false);
-  const dragStart = useRef(0);
-  const trackRef = useRef<HTMLDivElement>(null);
+  const [fading, setFading] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const dragStart = useRef(0);
 
-  const next = useCallback(() => setActive((i) => (i + 1) % SLIDES.length), []);
-  const prev = useCallback(() => setActive((i) => (i - 1 + SLIDES.length) % SLIDES.length), []);
+  const goTo = useCallback((idx: number) => {
+    setFading(true);
+    setTimeout(() => {
+      setActive(idx);
+      setFading(false);
+    }, 200);
+  }, []);
+
+  const next = useCallback(() => goTo((active + 1) % SLIDES.length), [active, goTo]);
+  const prev = useCallback(() => goTo((active - 1 + SLIDES.length) % SLIDES.length), [active, goTo]);
+
+  const resetTimer = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(next, 4000);
+  }, [next]);
 
   useEffect(() => {
-    timerRef.current = setInterval(next, 3500);
+    timerRef.current = setInterval(next, 4000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [next]);
 
-  function resetTimer() {
-    if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = setInterval(next, 3500);
-  }
-
-  function onPointerDown(e: React.PointerEvent) {
-    dragStart.current = e.clientX;
-    setDragging(true);
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-  }
-
-  function onPointerUp(e: React.PointerEvent) {
-    if (!dragging) return;
-    setDragging(false);
-    const dx = e.clientX - dragStart.current;
-    if (Math.abs(dx) > 40) { dx < 0 ? next() : prev(); resetTimer(); }
-  }
-
   return (
-    <section style={{ background: '#f0faf7', borderTop: '1px solid #d4efe8', borderBottom: '1px solid #d4efe8', padding: '3.5rem 1.5rem', overflow: 'hidden' }}>
-      <p style={{ textAlign: 'center', fontSize: '0.72rem', fontWeight: 700, color: '#00C6A7', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+    <section style={{ background: '#071a12', borderTop: '1px solid #0f2d1e', borderBottom: '1px solid #0f2d1e', padding: '4rem 1.5rem' }}>
+      <p style={{ textAlign: 'center', fontSize: '0.72rem', fontWeight: 700, color: '#00C6A7', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
         Veja o app por dentro
       </p>
-      <h2 style={{ textAlign: 'center', fontSize: '1.45rem', fontWeight: 800, color: '#0D2922', letterSpacing: '-0.02em', marginBottom: '2.5rem' }}>
+      <h2 style={{ textAlign: 'center', fontSize: '1.5rem', fontWeight: 800, color: '#E8F5F0', letterSpacing: '-0.025em', marginBottom: '0.5rem' }}>
         Tudo na palma da sua mão
       </h2>
+      <p style={{ textAlign: 'center', fontSize: '0.85rem', color: '#5a9080', marginBottom: '3rem' }}>
+        {SLIDES[active].desc}
+      </p>
 
-      <div style={{ position: 'relative', maxWidth: 440, margin: '0 auto', userSelect: 'none' }}>
-        {/* track */}
-        <div
-          ref={trackRef}
-          onPointerDown={onPointerDown}
-          onPointerUp={onPointerUp}
-          style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 20, cursor: dragging ? 'grabbing' : 'grab', touchAction: 'pan-y' }}
-        >
-          {/* prev ghost */}
-          {[-1, 0, 1].map((offset) => {
-            const idx = (active + offset + SLIDES.length) % SLIDES.length;
-            const isCurrent = offset === 0;
-            return (
-              <div
-                key={offset}
-                onClick={() => { if (offset !== 0) { offset > 0 ? next() : prev(); resetTimer(); } }}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 32 }}>
+
+        {/* Phone mockup */}
+        <div style={{ position: 'relative', width: 220 }}>
+          {/* outer shell */}
+          <div style={{
+            borderRadius: 40,
+            background: 'linear-gradient(160deg, #1c2e28 0%, #0a1a12 100%)',
+            padding: 10,
+            boxShadow: '0 40px 100px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.07)',
+          }}>
+            {/* notch bar */}
+            <div style={{ background: '#000', borderRadius: '32px 32px 0 0', height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 0 }}>
+              <div style={{ width: 60, height: 8, borderRadius: 4, background: '#111' }} />
+            </div>
+            {/* screen */}
+            <div style={{
+              borderRadius: '0 0 26px 26px',
+              overflow: 'hidden',
+              background: '#000',
+              aspectRatio: '9/19',
+              position: 'relative',
+            }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                key={active}
+                src={SLIDES[active].src}
+                alt={SLIDES[active].label}
+                draggable={false}
                 style={{
-                  flexShrink: 0,
-                  width: isCurrent ? 200 : 140,
-                  transition: 'width 0.3s ease, opacity 0.3s ease, transform 0.3s ease',
-                  opacity: isCurrent ? 1 : 0.45,
-                  transform: isCurrent ? 'scale(1)' : 'scale(0.92)',
-                  cursor: offset !== 0 ? 'pointer' : 'grab',
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  display: 'block',
+                  opacity: fading ? 0 : 1,
+                  transition: 'opacity 0.2s ease',
                 }}
-              >
-                {/* phone shell */}
-                <div style={{
-                  borderRadius: isCurrent ? 36 : 28,
-                  overflow: 'hidden',
-                  boxShadow: isCurrent
-                    ? '0 24px 64px rgba(0,0,0,0.22), 0 0 0 6px #fff, 0 0 0 8px rgba(0,198,167,0.25)'
-                    : '0 8px 24px rgba(0,0,0,0.12), 0 0 0 4px #fff',
-                  aspectRatio: '9/19.5',
-                  background: '#000',
-                  transition: 'border-radius 0.3s ease, box-shadow 0.3s ease',
-                }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={SLIDES[idx].src}
-                    alt={SLIDES[idx].label}
-                    draggable={false}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', pointerEvents: 'none' }}
-                  />
-                </div>
-              </div>
-            );
-          })}
+              />
+              {/* screen glare */}
+              <div style={{
+                position: 'absolute', inset: 0, pointerEvents: 'none',
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 50%)',
+              }} />
+            </div>
+          </div>
+          {/* side buttons */}
+          <div style={{ position: 'absolute', right: -4, top: 80, width: 4, height: 40, background: '#1c2e28', borderRadius: '0 3px 3px 0', boxShadow: 'inset -1px 0 0 rgba(255,255,255,0.05)' }} />
+          <div style={{ position: 'absolute', left: -4, top: 72, width: 4, height: 28, background: '#1c2e28', borderRadius: '3px 0 0 3px', boxShadow: 'inset 1px 0 0 rgba(255,255,255,0.05)' }} />
+          <div style={{ position: 'absolute', left: -4, top: 110, width: 4, height: 28, background: '#1c2e28', borderRadius: '3px 0 0 3px', boxShadow: 'inset 1px 0 0 rgba(255,255,255,0.05)' }} />
         </div>
 
-        {/* label */}
-        <p style={{ textAlign: 'center', marginTop: 20, fontSize: '0.82rem', fontWeight: 600, color: '#2E7060', letterSpacing: '0.01em', height: 20 }}>
-          {SLIDES[active].label}
-        </p>
-
-        {/* nav arrows */}
-        <button
-          aria-label="Anterior"
-          onClick={() => { prev(); resetTimer(); }}
-          style={{ position: 'absolute', left: -8, top: '45%', transform: 'translateY(-50%)', background: '#fff', border: '1px solid #c8e8df', borderRadius: '50%', width: 36, height: 36, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', color: '#00C6A7', fontSize: 16 }}
-        >‹</button>
-        <button
-          aria-label="Próximo"
-          onClick={() => { next(); resetTimer(); }}
-          style={{ position: 'absolute', right: -8, top: '45%', transform: 'translateY(-50%)', background: '#fff', border: '1px solid #c8e8df', borderRadius: '50%', width: 36, height: 36, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', color: '#00C6A7', fontSize: 16 }}
-        >›</button>
-      </div>
-
-      {/* dots */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 7, marginTop: 20 }}>
-        {SLIDES.map((_, i) => (
+        {/* Label + nav */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
           <button
-            key={i}
-            aria-label={`Ir para ${SLIDES[i].label}`}
-            onClick={() => { setActive(i); resetTimer(); }}
-            style={{ width: i === active ? 20 : 7, height: 7, borderRadius: 4, border: 'none', cursor: 'pointer', background: i === active ? '#00C6A7' : '#b0d8ce', transition: 'width 0.25s ease, background 0.25s ease', padding: 0 }}
-          />
-        ))}
+            aria-label="Anterior"
+            onClick={() => { prev(); resetTimer(); }}
+            style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid rgba(0,198,167,0.25)', background: 'rgba(0,198,167,0.08)', color: '#00C6A7', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.15s' }}
+          >‹</button>
+
+          <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#E8F5F0', letterSpacing: '-0.01em', minWidth: 140, textAlign: 'center' }}>
+            {SLIDES[active].label}
+          </span>
+
+          <button
+            aria-label="Próximo"
+            onClick={() => { next(); resetTimer(); }}
+            style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid rgba(0,198,167,0.25)', background: 'rgba(0,198,167,0.08)', color: '#00C6A7', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.15s' }}
+          >›</button>
+        </div>
+
+        {/* Dots */}
+        <div style={{ display: 'flex', gap: 8 }}>
+          {SLIDES.map((_, i) => (
+            <button
+              key={i}
+              aria-label={`Ir para ${SLIDES[i].label}`}
+              onClick={() => { goTo(i); resetTimer(); }}
+              style={{
+                width: i === active ? 24 : 8,
+                height: 8,
+                borderRadius: 4,
+                border: 'none',
+                cursor: 'pointer',
+                background: i === active ? '#00C6A7' : 'rgba(0,198,167,0.2)',
+                transition: 'width 0.3s ease, background 0.3s ease',
+                padding: 0,
+              }}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );
