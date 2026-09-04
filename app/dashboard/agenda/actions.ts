@@ -139,3 +139,81 @@ export async function atualizarStatusAgendamento(
   revalidatePath('/dashboard', 'layout');
   return { error: null };
 }
+
+export async function criarAgendamentoManual(payload: {
+  service_type: string;
+  scheduled_at: string;
+  duration_minutes: number;
+  amount: number | null;
+  pet_ids: string[];
+  notes: string | null;
+}) {
+  const supabase = await getSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'Não autenticado' };
+
+  const { data: profile } = await supabase
+    .from('walker_profiles').select('id, name').eq('user_id', user.id).single();
+  if (!profile) return { error: 'Perfil não encontrado' };
+
+  // Descobre owner_id se algum pet tem vínculo ativo com este walker
+  let ownerId: string | null = null;
+  if (payload.pet_ids.length > 0) {
+    const { data: links } = await supabase
+      .from('walker_pet_links')
+      .select('owner_id')
+      .eq('walker_id', (profile as any).id)
+      .eq('status', 'active')
+      .in('pet_id', payload.pet_ids);
+
+    const ownerIds = [...new Set((links ?? []).map((l: any) => l.owner_id).filter(Boolean))];
+    if (ownerIds.length === 1) ownerId = ownerIds[0];
+  }
+
+  const { error } = await supabase.from('walk_schedules').insert({
+    walker_id:        (profile as any).id,
+    owner_id:         ownerId,
+    service_type:     payload.service_type,
+    scheduled_at:     payload.scheduled_at,
+    duration_minutes: payload.duration_minutes,
+    pet_ids:          payload.pet_ids,
+    status:           'confirmed',
+    notes:            payload.notes,
+    amount:           payload.amount,
+    proposed_by:      'walker',
+  });
+
+  if (error) return { error: error.message };
+
+  // Notifica tutor se há owner_id
+  if (ownerId) {
+    const dateLabel = new Date(payload.scheduled_at).toLocaleDateString('pt-BR', {
+      day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
+    });
+    const svcLabels: Record<string, string> = {
+      walk: 'Passeio', bath: 'Banho e Tosa', boarding: 'Hospedagem',
+      daycare: 'Day Care', training: 'Adestramento', vet_visit: 'Visita Veterinária',
+    };
+    const svcLabel = svcLabels[payload.service_type] ?? 'Serviço';
+    const title = `📅 ${svcLabel} agendado`;
+    const body  = `${(profile as any).name} agendou um ${svcLabel.toLowerCase()} para ${dateLabel}.`;
+
+    await Promise.all([
+      supabase.from('notifications').insert({
+        user_id: ownerId,
+        type:    'schedule_confirmed',
+        title,
+        body,
+        data:    { walker_id: (profile as any).id, service_type: payload.service_type },
+      }),
+      sendPushToOwner(ownerId, title, body, {
+        type: 'schedule_confirmed',
+        walker_id: (profile as any).id,
+        service_type: payload.service_type,
+      }),
+    ]);
+  }
+
+  revalidatePath('/dashboard/agenda', 'layout');
+  return { error: null };
+}

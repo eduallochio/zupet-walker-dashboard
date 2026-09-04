@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 import { MonthNav } from '../financeiro/MonthNav';
 import { BotoesAgendamento } from './BotoesAgendamento';
+import { NovoAgendamentoBtn } from './NovoAgendamentoModal';
 
 type ScheduleStatus = 'proposed' | 'confirmed' | 'cancelled' | 'done';
 
@@ -100,6 +101,35 @@ export default async function AgendaPage({ searchParams }: { searchParams?: Prom
     (owners ?? []).forEach((o: any) => { ownerNames[o.user_id] = o.name; });
   }
 
+  // Busca pets vinculados ao walker para o modal de novo agendamento
+  let linkedPets: { pet_id: string; name: string; breed?: string; owner_name?: string }[] = [];
+  if (profile?.id) {
+    const { data: links } = await supabase
+      .from('walker_pet_links')
+      .select('pet_id, owner_id, pet:pets(id, name, breed)')
+      .eq('walker_id', profile.id)
+      .eq('status', 'active');
+
+    const linkRows = (links ?? []) as any[];
+    if (linkRows.length > 0) {
+      const linkOwnerIds = [...new Set(linkRows.map((r: any) => r.owner_id).filter(Boolean))];
+      let linkOwnerNames: Record<string, string> = {};
+      if (linkOwnerIds.length > 0) {
+        const { data: lo } = await supabase
+          .from('user_profiles').select('user_id, name').in('user_id', linkOwnerIds);
+        linkOwnerNames = Object.fromEntries((lo ?? []).map((o: any) => [o.user_id, o.name]));
+      }
+      linkedPets = linkRows
+        .filter((r: any) => r.pet)
+        .map((r: any) => ({
+          pet_id:     r.pet_id,
+          name:       r.pet.name,
+          breed:      r.pet.breed,
+          owner_name: r.owner_id ? linkOwnerNames[r.owner_id] : undefined,
+        }));
+    }
+  }
+
   const today = new Date();
   const confirmedToday = upcomingRows.filter((s: any) => {
     const d = new Date(s.scheduled_at);
@@ -120,13 +150,14 @@ export default async function AgendaPage({ searchParams }: { searchParams?: Prom
             <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, letterSpacing: '-0.03em' }}>Agenda</h1>
             <p style={{ fontSize: 13, color: C.textSec, marginTop: 3 }}>
               {confirmedToday.length > 0
-                ? `${confirmedToday.length} passeio${confirmedToday.length > 1 ? 's' : ''} confirmado${confirmedToday.length > 1 ? 's' : ''} hoje`
-                : 'Nenhum passeio confirmado para hoje'}
+                ? `${confirmedToday.length} atendimento${confirmedToday.length > 1 ? 's' : ''} confirmado${confirmedToday.length > 1 ? 's' : ''} hoje`
+                : 'Nenhum atendimento confirmado para hoje'}
             </p>
           </div>
           <MonthNav viewMonth={viewMonth} viewYear={viewYear} basePath="/dashboard/agenda" />
         </div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <NovoAgendamentoBtn linkedPets={linkedPets} />
           {(['proposed', 'confirmed'] as ScheduleStatus[]).map((st) => {
             const count = upcomingRows.filter((s: any) => s.status === st).length;
             const cfg = STATUS_CONFIG[st];
