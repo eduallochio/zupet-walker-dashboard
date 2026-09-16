@@ -46,10 +46,10 @@ export function ScrollAnimations() {
       }
     };
 
-    // requestAnimationFrame garante que o DOM está hidratado antes do GSAP tocar nele
-    const raf = requestAnimationFrame(init);
+    // setTimeout(0) garante que o DOM está hidratado antes do GSAP tocar nele
+    const timer = setTimeout(init, 0);
     return () => {
-      cancelAnimationFrame(raf);
+      clearTimeout(timer);
       ScrollTrigger.getAll().forEach((st) => st.kill());
     };
   }, []);
