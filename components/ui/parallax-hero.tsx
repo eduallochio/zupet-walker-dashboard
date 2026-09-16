@@ -18,6 +18,25 @@ export function ParallaxHero({ photoUrl, photoPosition = 'center 40%' }: Paralla
     gsap.registerPlugin(ScrollTrigger);
 
     const ctx = gsap.context(() => {
+      // Animação de entrada: palavras do h1 sobem com stagger
+      gsap.to('.hero-word', {
+        opacity: 1,
+        y: 0,
+        duration: 0.7,
+        ease: 'power3.out',
+        stagger: 0.08,
+        delay: 0.15,
+      });
+      // Eyebrow, subtítulo e botões aparecem após as palavras
+      gsap.to('.hero-fade-in', {
+        opacity: 1,
+        duration: 0.7,
+        ease: 'power2.out',
+        stagger: 0.15,
+        delay: 0.55,
+      });
+
+
       // photo moves at 40% of scroll speed → parallax depth
       gsap.to(bgRef.current, {
         yPercent: 22,
@@ -65,6 +84,9 @@ export function ParallaxHero({ photoUrl, photoPosition = 'center 40%' }: Paralla
     };
   }, []);
 
+  const words = ['Transforme', 'seu', 'amor', 'por', 'pets', 'em'];
+  const lastWord = 'profissão.';
+
   return (
     <div ref={wrapRef} className="parallax-hero-wrap">
       {/* photo layer — oversized to allow parallax travel */}
@@ -78,17 +100,31 @@ export function ParallaxHero({ photoUrl, photoPosition = 'center 40%' }: Paralla
       {/* content */}
       <div className="parallax-hero-content">
         <div ref={textRef} className="parallax-hero-text">
-          <div className="parallax-eyebrow">
+          <div className="parallax-eyebrow hero-fade-in" style={{ opacity: 0 }}>
             <span className="parallax-eyebrow-line" />
             Para passeadores profissionais
           </div>
-          <h1 className="parallax-h1">
-            Transforme seu<br />amor por pets<br />em <em>profissão.</em>
+          <h1 className="parallax-h1" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25em', alignItems: 'baseline' }}>
+            {words.map((word, i) => (
+              <span
+                key={i}
+                className="hero-word"
+                style={{ display: 'inline-block', opacity: 0, transform: 'translateY(40px)' }}
+              >
+                {word}
+              </span>
+            ))}
+            <em
+              className="hero-word"
+              style={{ display: 'inline-block', opacity: 0, transform: 'translateY(40px)' }}
+            >
+              {lastWord}
+            </em>
           </h1>
-          <p className="parallax-sub">
+          <p className="parallax-sub hero-fade-in" style={{ opacity: 0 }}>
             Registro de rota por GPS, relatórios com fotos e controle financeiro — tudo no app que os melhores walkers usam para crescer.
           </p>
-          <div className="parallax-actions">
+          <div className="parallax-actions hero-fade-in" style={{ opacity: 0 }}>
             <a href="/login" className="parallax-btn-p">Acessar minha conta</a>
             <a href="#recursos" className="parallax-btn-o">Conhecer o app</a>
           </div>
