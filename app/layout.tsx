@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
+import ProgressBar from '@/components/ui/ProgressBar';
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -154,6 +155,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdServices) }} />
       </head>
       <body className={jakarta.variable} style={{ fontFamily: 'var(--font-jakarta), system-ui, sans-serif' }}>
+        <ProgressBar />
         {children}
       </body>
     </html>
