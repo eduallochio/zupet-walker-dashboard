@@ -152,11 +152,12 @@ body {
   border: 1px solid var(--border);
   border-radius: 18px;
   padding: 28px 24px;
-  transition: border-color .25s, transform .25s;
+  transition: border-color .25s, transform .25s, box-shadow .25s;
 }
 .lp-feat-card:hover {
   border-color: rgba(34,197,94,.4);
-  transform: translateY(-3px);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0,198,167,.12);
 }
 .lp-feat-icon {
   width: 40px; height: 40px;
@@ -853,6 +854,14 @@ body {
   text-align: center;
   padding: 0 12px;
   position: relative;
+  transition: transform .25s ease;
+}
+.lp-how-step:hover {
+  transform: translateY(-4px);
+}
+.lp-how-step:hover .lp-how-num {
+  border-color: rgba(34,197,94,.5);
+  box-shadow: 0 0 0 4px rgba(34,197,94,.08);
 }
 .lp-how-num {
   width: 56px; height: 56px;

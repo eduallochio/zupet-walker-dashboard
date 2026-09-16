@@ -84,7 +84,7 @@ export function ParallaxHero({ photoUrl, photoPosition = 'center 40%' }: Paralla
     };
   }, []);
 
-  const words = ['Transforme', 'seu', 'amor', 'por', 'pets', 'em'];
+  const lines = ['Transforme seu amor', 'por pets em'];
   const lastWord = 'profissão.';
 
   return (
@@ -104,19 +104,19 @@ export function ParallaxHero({ photoUrl, photoPosition = 'center 40%' }: Paralla
             <span className="parallax-eyebrow-line" />
             Para passeadores profissionais
           </div>
-          <h1 className="parallax-h1" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25em', alignItems: 'baseline' }}>
-            {words.map((word, i) => (
+          <h1 className="parallax-h1" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+            {lines.map((line, i) => (
               <span
                 key={i}
                 className="hero-word"
-                style={{ display: 'inline-block', opacity: 0, transform: 'translateY(40px)' }}
+                style={{ display: 'block', opacity: 0, transform: 'translateY(40px)' }}
               >
-                {word}
+                {line}
               </span>
             ))}
             <em
               className="hero-word"
-              style={{ display: 'inline-block', opacity: 0, transform: 'translateY(40px)' }}
+              style={{ display: 'block', opacity: 0, transform: 'translateY(40px)' }}
             >
               {lastWord}
             </em>
