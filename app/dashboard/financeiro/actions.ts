@@ -71,6 +71,8 @@ export async function registrarPagamentoDinheiro(scheduleId: string, ownerId: st
     .from('walker_profiles').select('id').eq('user_id', user.id).single();
   if (!profile) return { error: 'Perfil não encontrado' };
 
+  if (!amount || amount <= 0) return { error: 'Valor do serviço não definido. Edite o agendamento e informe o valor antes de registrar o pagamento.' };
+
   // Verifica se já existe payment para esse schedule
   const { data: existing } = await supabase
     .from('walker_payments').select('id').eq('schedule_id', scheduleId).maybeSingle();

@@ -42,7 +42,7 @@ export async function atualizarStatusAgendamento(
   // Busca o agendamento
   const { data: schedule, error: schedErr } = await supabase
     .from('walk_schedules')
-    .select('id, scheduled_at, owner_id, service_id, pet_ids, status')
+    .select('id, scheduled_at, owner_id, service_id, pet_ids, status, amount, service_type')
     .eq('id', scheduleId)
     .single();
   if (schedErr || !schedule) return { error: 'Agendamento não encontrado' };
@@ -100,9 +100,9 @@ export async function atualizarStatusAgendamento(
             walker_id:    profile.id,
             owner_id:     (schedule as any).owner_id,
             schedule_id:  scheduleId,
-            service_type: (svcData as any).type ?? 'walk',
+            service_type: (svcData as any).type ?? (schedule as any).service_type ?? 'walk',
             description:  (svcData as any).label ?? 'Serviço',
-            amount:       (svcData as any).price ?? 0,
+            amount:       (svcData as any).price ?? (schedule as any).amount ?? 0,
             billing_type: 'per_session',
             status:       'pending',
           });
