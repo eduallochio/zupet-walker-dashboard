@@ -80,13 +80,16 @@ export default async function PetsPage({ searchParams }: { searchParams?: Promis
   type PetMetrics = {
     totalWalks: number;
     totalRevenue: number;
+    totalDistanceMeters: number;
+    totalMinutes: number;
+    serviceCount: Record<string, number>;
     lastActivity: string | null;
     walkHistory: Array<{ id: string; date: string; type: string; duration: number | null; distance: number | null; amount: number | null }>;
   };
 
   const metricsMap: Record<string, PetMetrics> = {};
   const ensureMetrics = (pid: string) => {
-    if (!metricsMap[pid]) metricsMap[pid] = { totalWalks: 0, totalRevenue: 0, lastActivity: null, walkHistory: [] };
+    if (!metricsMap[pid]) metricsMap[pid] = { totalWalks: 0, totalRevenue: 0, totalDistanceMeters: 0, totalMinutes: 0, serviceCount: {}, lastActivity: null, walkHistory: [] };
     return metricsMap[pid];
   };
 
@@ -95,6 +98,9 @@ export default async function PetsPage({ searchParams }: { searchParams?: Promis
       if (!petIds.includes(pid)) continue;
       const m = ensureMetrics(pid);
       m.totalWalks++;
+      m.totalDistanceMeters += r.distance_meters ?? 0;
+      m.totalMinutes += r.duration_minutes ?? 0;
+      m.serviceCount['walk'] = (m.serviceCount['walk'] ?? 0) + 1;
       m.walkHistory.push({ id: r.id, date: r.created_at, type: 'walk', duration: r.duration_minutes, distance: r.distance_meters, amount: null });
       if (!m.lastActivity || r.created_at > m.lastActivity) m.lastActivity = r.created_at;
     }
@@ -104,7 +110,9 @@ export default async function PetsPage({ searchParams }: { searchParams?: Promis
     for (const pid of s.pet_ids ?? []) {
       if (!petIds.includes(pid)) continue;
       const m = ensureMetrics(pid);
-      m.walkHistory.push({ id: s.id, date: s.scheduled_at, type: s.service_type ?? 'service', duration: null, distance: null, amount: s.amount });
+      const stype = s.service_type ?? 'service';
+      m.serviceCount[stype] = (m.serviceCount[stype] ?? 0) + 1;
+      m.walkHistory.push({ id: s.id, date: s.scheduled_at, type: stype, duration: null, distance: null, amount: s.amount });
       if (!m.lastActivity || s.scheduled_at > m.lastActivity) m.lastActivity = s.scheduled_at;
     }
   }
@@ -251,8 +259,10 @@ export default async function PetsPage({ searchParams }: { searchParams?: Promis
                 <div className="db-stat-grid">
                   {[
                     { label: 'Passeios', value: String(selectedMetrics.totalWalks) },
+                    { label: 'Distância total', value: selectedMetrics.totalDistanceMeters >= 1000 ? `${(selectedMetrics.totalDistanceMeters / 1000).toFixed(1)} km` : `${selectedMetrics.totalDistanceMeters} m` },
+                    { label: 'Tempo total', value: selectedMetrics.totalMinutes >= 60 ? `${Math.floor(selectedMetrics.totalMinutes / 60)}h ${selectedMetrics.totalMinutes % 60}min` : selectedMetrics.totalMinutes > 0 ? `${selectedMetrics.totalMinutes}min` : '—' },
                     { label: 'Receita gerada', value: selectedMetrics.totalRevenue > 0 ? `R$ ${selectedMetrics.totalRevenue.toFixed(2).replace('.', ',')}` : 'R$ 0,00' },
-                    { label: 'Último passeio', value: selectedMetrics.lastActivity ? formatDate(selectedMetrics.lastActivity) : '—' },
+                    { label: 'Último atendimento', value: selectedMetrics.lastActivity ? formatDate(selectedMetrics.lastActivity) : '—' },
                     { label: 'Vínculo desde', value: selectedLink?.linked_at ? formatDate(selectedLink.linked_at) : '—' },
                   ].map(({ label, value }) => (
                     <div key={label} style={{ background: '#0D1F18', border: `1px solid ${C.border}`, borderRadius: 10, padding: '12px 14px' }}>
@@ -261,6 +271,21 @@ export default async function PetsPage({ searchParams }: { searchParams?: Promis
                     </div>
                   ))}
                 </div>
+
+                {/* Serviços realizados */}
+                {Object.keys(selectedMetrics.serviceCount).length > 1 && (
+                  <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${C.border}` }}>
+                    <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: C.textSec, marginBottom: 10 }}>Serviços realizados</p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                      {Object.entries(selectedMetrics.serviceCount).map(([type, count]) => (
+                        <div key={type} style={{ background: C.accentDim, border: `1px solid rgba(0,198,167,0.18)`, borderRadius: 20, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ fontSize: 12 }}>{SERVICE_LABEL[type] ?? type}</span>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: C.accent }}>{count}×</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Histórico de passeios */}
