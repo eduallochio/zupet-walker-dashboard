@@ -9,6 +9,7 @@ const NAV = [
   { href: '/dashboard',            label: 'Início',      icon: HomeIcon },
   { href: '/dashboard/agenda',     label: 'Agenda',      icon: CalendarIcon },
   { href: '/dashboard/relatorios', label: 'Relatórios',  icon: ReportIcon },
+  { href: '/dashboard/pets',       label: 'Pets',        icon: PetsIcon },
   { href: '/dashboard/servicos',   label: 'Serviços',    icon: ServiceIcon },
   { href: '/dashboard/financeiro', label: 'Financeiro',  icon: FinanceIcon },
   { href: '/dashboard/perfil',     label: 'Perfil',      icon: ProfileIcon },
@@ -254,6 +255,14 @@ function ServiceIcon({ active }: { active?: boolean }) {
   return (
     <svg width="17" height="17" viewBox="0 0 24 24" fill={c}>
       <path fillRule="evenodd" d="M7.5 5.25a3 3 0 0 1 3-3h3a3 3 0 0 1 3 3v.205c.933.085 1.857.197 2.772.334 1.454.218 2.478 1.483 2.478 2.9v3.542a4.508 4.508 0 0 1-2.25 3.899l-1.96 1.125a4.5 4.5 0 0 1-2.25.607H9.25a4.5 4.5 0 0 1-2.25-.607l-1.96-1.125A4.508 4.508 0 0 1 2.79 12v-3.54c0-1.417 1.024-2.682 2.478-2.9.915-.137 1.839-.249 2.772-.334V5.25Zm4.5-1.5a1.5 1.5 0 0 0-1.5 1.5v.141l3 .002V5.25a1.5 1.5 0 0 0-1.5-1.5Zm-6.43 6.964A3.01 3.01 0 0 0 4.322 12a3.01 3.01 0 0 0 1.498 2.607l1.96 1.125a3 3 0 0 0 1.5.405h5.44a3 3 0 0 0 1.5-.405l1.96-1.125A3.01 3.01 0 0 0 19.678 12a3.01 3.01 0 0 0-1.25-1.286A51.964 51.964 0 0 0 12 9.75c-2.115 0-4.19.14-6.18.414A3.01 3.01 0 0 0 5.57 10.714ZM12 12.75a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-1.5 0V13.5a.75.75 0 0 1 .75-.75Z" clipRule="evenodd"/>
+    </svg>
+  );
+}
+function PetsIcon({ active }: { active?: boolean }) {
+  const c = active ? '#ffffff' : 'rgba(255,255,255,0.6)';
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill={c}>
+      <path d="M11.5 2.5c-1 0-1.8.8-1.8 1.8s.8 1.8 1.8 1.8 1.8-.8 1.8-1.8S12.5 2.5 11.5 2.5zm-5 1c-.9 0-1.6.7-1.6 1.6s.7 1.6 1.6 1.6 1.6-.7 1.6-1.6S7.4 3.5 6.5 3.5zm10 0c-.9 0-1.6.7-1.6 1.6s.7 1.6 1.6 1.6 1.6-.7 1.6-1.6S17.4 3.5 16.5 3.5zM4 7c-.8 0-1.5.7-1.5 1.5S3.2 10 4 10s1.5-.7 1.5-1.5S4.8 7 4 7zm15 0c-.8 0-1.5.7-1.5 1.5S18.2 10 19 10s1.5-.7 1.5-1.5S19.8 7 19 7zM11.5 10c-3.5 0-6 2.2-6 5 0 2.5 2 4 5 4h2c3 0 5-1.5 5-4 0-2.8-2.5-5-6-5z"/>
     </svg>
   );
 }
