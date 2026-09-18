@@ -158,7 +158,7 @@ export default async function FinanceiroPage({ searchParams }: { searchParams?: 
       : Promise.resolve({ data: [] }),
     profile?.id
       ? supabase.from('walk_schedules')
-          .select('id, scheduled_at, duration_minutes, status, owner_id, pet_ids, service_id, walker_services(type, label, price)')
+          .select('id, scheduled_at, duration_minutes, status, owner_id, pet_ids, service_id, amount, service_type, walker_services(type, label, price)')
           .eq('walker_id', profile.id)
           .eq('status', 'done')
           .gte('scheduled_at', filterStart)
@@ -526,8 +526,8 @@ export default async function FinanceiroPage({ searchParams }: { searchParams?: 
                 {doneSchedulesRows.map((s: any, i: number) => {
                   const svc = s.walker_services;
                   const pmt = paymentBySchedule[s.id];
-                  const serviceLabel = BILLING_TYPE_LABEL[svc?.type] ?? svc?.label ?? '—';
-                  const price = svc?.price ?? pmt?.amount ?? 0;
+                  const serviceLabel = BILLING_TYPE_LABEL[svc?.type ?? s.service_type] ?? svc?.label ?? '—';
+                  const price = svc?.price ?? s.amount ?? pmt?.amount ?? 0;
                   const pmtStatus = pmt?.status;
                   const pmtMethod = pmt?.payment_method;
                   const PAYMENT_METHOD_LABEL: Record<string, string> = { cash: '💵 Dinheiro', pix: '📲 PIX', card: '💳 Cartão' };
@@ -546,7 +546,7 @@ export default async function FinanceiroPage({ searchParams }: { searchParams?: 
                           <BotaoRegistrarPagamento
                             scheduleId={s.id}
                             ownerId={s.owner_id}
-                            serviceType={svc?.type ?? 'walk'}
+                            serviceType={svc?.type ?? s.service_type ?? 'walk'}
                             amount={price}
                             scheduledAt={s.scheduled_at}
                           />
