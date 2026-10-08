@@ -20,13 +20,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const { data: profile } = await supabase
     .from('walker_profiles')
-    .select('name, plan, avatar_url, username')
+    .select('id, name, plan, avatar_url, username')
     .eq('user_id', user.id)
     .single();
 
+  // Contador de pagamentos pendentes para o selo no menu "Financeiro"
+  const { count: pendingPayments } = profile?.id
+    ? await supabase.from('walker_payments').select('id', { count: 'exact', head: true }).eq('walker_id', profile.id).eq('status', 'pending')
+    : { count: 0 };
+
   return (
-    <div className="flex min-h-screen" style={{ background: '#0D1F18' }}>
-      <WalkerSidebar profile={profile} />
+    <div className="flex min-h-screen" style={{ background: '#0B1512' }}>
+      <WalkerSidebar profile={profile} pendingPayments={pendingPayments ?? 0} />
       <main className="flex-1 overflow-auto dashboard-main">{children}</main>
     </div>
   );
