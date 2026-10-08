@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { createPortal } from 'react-dom';
 import { desvincularPet } from './actions';
 
 const C = {
@@ -62,6 +63,7 @@ export function BotaoDesvincular({
         Desvincular
       </button>
 
+      {createPortal(
       <div style={overlay} onClick={() => setStep('idle')}>
         <div style={box} onClick={(e) => e.stopPropagation()}>
 
@@ -129,7 +131,9 @@ export function BotaoDesvincular({
           )}
 
         </div>
-      </div>
+      </div>,
+        document.body,
+      )}
     </>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
+import { createPortal } from 'react-dom';
 import { Check, Dog, Footprints, Bath, Home, Sun, GraduationCap, Stethoscope, Plus, X, User } from 'lucide-react';
 import { criarAgendamentoManual } from './actions';
 
@@ -33,8 +34,9 @@ export function NovoAgendamentoBtn({ linkedPets }: Props) {
         <Plus size={16} aria-hidden /> Novo agendamento
       </button>
 
-      {open && (
-        <NovoAgendamentoModal linkedPets={linkedPets} onClose={() => setOpen(false)} />
+      {open && createPortal(
+        <NovoAgendamentoModal linkedPets={linkedPets} onClose={() => setOpen(false)} />,
+        document.body,
       )}
     </>
   );
@@ -112,8 +114,8 @@ function NovoAgendamentoModal({ linkedPets, onClose }: { linkedPets: LinkedPet[]
         background: C.card,
         border: `1px solid ${C.border}`,
         borderRadius: 18,
-        width: '100%', maxWidth: 520,
-        maxHeight: '90vh', overflowY: 'auto',
+        width: 'calc(100% - 32px)', maxWidth: 520,
+        maxHeight: 'calc(100dvh - 32px)', overflowY: 'auto',
         padding: '24px 28px',
         boxShadow: '0 24px 60px rgba(0,0,0,0.5)',
       }}>

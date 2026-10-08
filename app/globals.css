@@ -1628,9 +1628,9 @@ body {
 .zw-day.hoje { background: rgba(34,197,94,.12); border-color: rgba(34,197,94,.35); color: #EEF6F1; }
 .zw-dots { display: flex; gap: 3px; height: 6px; }
 .zw-dots i { width: 6px; height: 6px; border-radius: 50%; background: #22C55E; }
-.zw-in { animation: zwIn .45s cubic-bezier(.16,1,.3,1) both; }
+.zw-in { animation: zwIn .45s cubic-bezier(.16,1,.3,1) backwards; }
 @keyframes zwIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-.zw-pop { animation: zwPop .4s cubic-bezier(.34,1.56,.64,1) both; }
+.zw-pop { animation: zwPop .4s cubic-bezier(.34,1.56,.64,1) backwards; }
 @keyframes zwPop { from { opacity: 0; transform: scale(.4); } to { opacity: 1; transform: none; } }
 .zw-nav { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; color: #A3BCB0; text-decoration: none; font-size: 14px; font-weight: 600; transition: background .15s, color .15s; }
 .zw-nav:hover { background: rgba(134,239,172,.06); color: #EEF6F1; }
