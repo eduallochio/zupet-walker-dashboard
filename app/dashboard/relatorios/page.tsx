@@ -1,14 +1,16 @@
 import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
-import { formatDate, formatDuration } from '@/lib/utils';
+import { Clock, MapPin, MapPinOff, Droplet, Camera, StickyNote, Lock } from 'lucide-react';
 import { MonthNav } from '../financeiro/MonthNav';
+import { T, Card, CardHeader, Kpi, Chip, EmptyState } from '@/components/walker/dash-ui';
+import { duracao, km, plural, dataCurta, hora } from '@/lib/format';
 
-const C = {
-  card: '#132219', border: 'rgba(0,200,167,0.12)',
-  accent: '#00C6A7', accentDim: 'rgba(0,198,167,0.12)',
-  text: '#E8F5F0', textSec: '#7FA898', textMuted: '#4A6B60',
-  success: '#22D3A5',
+const SERVICE_LABEL: Record<string, string> = {
+  walk: 'Passeio', bath: 'Banho e Tosa', boarding: 'Hospedagem',
+  daycare: 'Day Care', vet_visit: 'Visita Veterinária', training: 'Adestramento',
 };
+
+
 
 export default async function RelatoriosPage({ searchParams }: { searchParams?: Promise<{ mes?: string; ano?: string }> }) {
   const sp = await (searchParams ?? Promise.resolve({} as { mes?: string; ano?: string }));
@@ -87,156 +89,99 @@ export default async function RelatoriosPage({ searchParams }: { searchParams?: 
   const totalDist = rows.reduce((s: number, r: any) => s + (r.distance_meters ?? 0), 0);
   const totalMin  = rows.reduce((s: number, r: any) => s + (r.duration_minutes ?? 0), 0);
 
-  const MONTHS_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const NOMES_MES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  const semRota = rows.filter((r: any) => !r.distance_meters || r.distance_meters <= 0).length;
+  const nomesPets = (ids: string[] | null) => (ids ?? []).map((id) => petNames[id]).filter(Boolean).join(' e ') || 'Pet';
 
   return (
-    <div style={{ padding: '28px 24px', maxWidth: 900, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: isPro ? 28 : 12, flexWrap: 'wrap' }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, letterSpacing: '-0.03em' }}>
-          Relatórios e Atendimentos
-        </h1>
-        <MonthNav viewMonth={viewMonth} viewYear={viewYear} basePath="/dashboard/relatorios" />
+    <div className="zw-page">
+      <header style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+          <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em' }}>Relatórios</h1>
+          <MonthNav viewMonth={viewMonth} viewYear={viewYear} basePath="/dashboard/relatorios" />
+        </div>
+        {!isPro && (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, color: T.muted }}>
+            <Lock size={15} aria-hidden /> No plano grátis: últimos 7 dias.
+            <a href="/dashboard/pro" style={{ color: T.accentLt, fontWeight: 700, textDecoration: 'none' }}>Ver tudo com o Pro</a>
+          </span>
+        )}
+      </header>
+
+      <div className="zw-grid-kpi">
+        <Kpi label="Passeios" value={String(rows.length)} sub={rows.length ? `média de ${duracao(Math.round(totalMin / rows.length))}` : `em ${NOMES_MES[viewMonth]}`} />
+        <Kpi label="Outros atendimentos" value={String(scheduleRows.length)} sub="banho, adestramento e outros" />
+        <Kpi label="Tempo total" value={duracao(totalMin)} sub="somando os passeios" />
+        <Kpi label="Distância" value={km(totalDist) ?? '0,0 km'} sub={km(totalDist) ? 'percorridos com GPS' : 'nenhuma rota gravada'} />
       </div>
 
-      {!isPro && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 10, padding: '10px 14px', marginBottom: 24, fontSize: 13, color: '#F59E0B' }}>
-          <span>🔒</span>
-          <span>Plano Free: histórico limitado. <a href="/dashboard/pro" style={{ color: '#F59E0B', fontWeight: 700, textDecoration: 'underline' }}>Faça upgrade para ver tudo.</a></span>
-        </div>
-      )}
-
-      {/* Resumo do mês */}
-      {(rows.length > 0 || scheduleRows.length > 0) ? (
-        <div className="db-stat-grid" style={{ marginBottom: 24 }}>
-          {[
-            { label: 'Passeios', value: String(rows.length) },
-            { label: 'Atendimentos', value: String(scheduleRows.length) },
-            { label: 'Tempo total', value: totalMin >= 60 ? `${Math.floor(totalMin / 60)}h ${totalMin % 60}min` : `${totalMin}min` },
-            { label: 'Distância total', value: `${(totalDist / 1000).toFixed(1)} km` },
-          ].map(({ label, value }) => (
-            <div key={label} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: '16px 18px' }}>
-              <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: C.textSec, marginBottom: 10 }}>{label}</p>
-              <p style={{ fontSize: 26, fontWeight: 800, color: C.text, letterSpacing: '-0.04em', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{value}</p>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: '48px 20px', textAlign: 'center', color: C.textSec, fontSize: 14, marginBottom: 24 }}>
-          Nenhum relatório em {MONTHS_PT[viewMonth]} {viewYear}.
-        </div>
-      )}
-
-      {/* Atendimentos concluídos */}
-      {scheduleRows.length > 0 && (
-        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden', marginBottom: 16 }}>
-          <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${C.border}` }}>
-            <h2 style={{ fontWeight: 700, fontSize: 13, color: C.text, letterSpacing: '-0.01em' }}>Atendimentos concluídos</h2>
+      {semRota > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 14, padding: '14px 18px', borderRadius: 14, background: 'rgba(251,191,36,0.08)', border: `1px solid ${T.amberLine}` }}>
+          <MapPinOff size={22} color={T.amber} aria-hidden />
+          <div style={{ flex: '1 1 300px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <span style={{ fontSize: 15, fontWeight: 700 }}>{plural(semRota, 'passeio ficou', 'passeios ficaram')} sem rota registrada</span>
+            <span style={{ fontSize: 13, color: T.muted }}>O tutor recebe o relatório sem mapa. Confira se a localização do app está ativa durante o passeio.</span>
           </div>
-          <ul style={{ listStyle: 'none' }}>
-            {scheduleRows.map((s: any, i: number) => {
-              const svc = s.walker_services;
-              const SERVICE_LABEL: Record<string, string> = {
-                walk: '🦮 Passeio', bath: '🛁 Banho e Tosa', boarding: '🌙 Hospedagem',
-                daycare: '🏠 Creche', vet_visit: '🏥 Visita ao Vet', training: '🎯 Adestramento',
-              };
-              const pets = (s.pet_ids ?? []).map((id: string) => petNames[id] ?? id);
-              return (
-                <li key={s.id} style={{ padding: '14px 20px', borderTop: i > 0 ? `1px solid ${C.border}` : 'none', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                  <div style={{ flex: 1, minWidth: 200 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
-                      <p style={{ fontWeight: 700, color: C.text, fontSize: 14 }}>
-                        {new Date(s.scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: '2-digit' })}
-                      </p>
-                      <span style={{ fontSize: 11, fontWeight: 600, color: C.accent, background: C.accentDim, padding: '2px 8px', borderRadius: 20 }}>
-                        {SERVICE_LABEL[svc?.type] ?? svc?.label ?? '—'}
-                      </span>
-                    </div>
-                    {ownerNames[s.owner_id] && (
-                      <p style={{ fontSize: 12, color: C.textSec, marginBottom: 4 }}>👤 {ownerNames[s.owner_id]}</p>
-                    )}
-                    {pets.length > 0 && (
-                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                        {pets.map((name: string, j: number) => (
-                          <span key={j} style={{ fontSize: 11, fontWeight: 600, color: C.accent, background: C.accentDim, padding: '2px 8px', borderRadius: 20 }}>
-                            🐾 {name}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  {s.duration_minutes && (
-                    <span style={{ fontSize: 12, color: C.textSec, background: 'rgba(0,198,167,0.08)', border: `1px solid ${C.border}`, padding: '3px 10px', borderRadius: 20, flexShrink: 0 }}>
-                      {formatDuration(s.duration_minutes)}
-                    </span>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
         </div>
       )}
 
-      {/* Relatórios de passeio com GPS */}
+      {rows.length === 0 && scheduleRows.length === 0 && (
+        <Card><EmptyState icon={MapPin} title={`Nenhum relatório em ${NOMES_MES[viewMonth]}`} text="Os relatórios aparecem aqui quando você finaliza um passeio ou atendimento no app." /></Card>
+      )}
+
+      {/* Relatórios de passeio */}
       {rows.length > 0 && (
-        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${C.border}` }}>
-            <h2 style={{ fontWeight: 700, fontSize: 13, color: C.text, letterSpacing: '-0.01em' }}>Relatórios de passeio</h2>
-          </div>
-          <ul>
-            {rows.map((r: any, i: number) => {
-              const pets = (r.pet_ids ?? []).map((id: string) => petNames[id] ?? id);
-              const owner = ownerNames[r.owner_id];
-              return (
-                <li key={r.id} style={{ padding: '16px 20px', borderTop: i > 0 ? `1px solid ${C.border}` : 'none' }}>
-                  <div className="flex items-center justify-between" style={{ marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
-                    <div>
-                      <p style={{ fontWeight: 700, color: C.text, fontSize: 14 }}>{formatDate(r.created_at)}</p>
-                      {owner && <p style={{ fontSize: 12, color: C.textSec, marginTop: 1 }}>👤 {owner}</p>}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 12, color: C.textSec, background: 'rgba(0,198,167,0.08)', border: `1px solid ${C.border}`, padding: '3px 10px', borderRadius: 20 }}>
-                        {formatDuration(r.duration_minutes)}
-                      </span>
-                      <a href={`/dashboard/relatorios/${r.id}`} style={{ fontSize: 12, fontWeight: 600, color: C.accent, textDecoration: 'none', whiteSpace: 'nowrap' }}>
-                        Ver detalhes →
-                      </a>
-                    </div>
-                  </div>
-
-                  {pets.length > 0 && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
-                      {pets.map((name: string, j: number) => (
-                        <span key={j} style={{ fontSize: 12, fontWeight: 600, color: C.accent, background: C.accentDim, padding: '2px 10px', borderRadius: 20 }}>
-                          🐾 {name}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="flex gap-4 flex-wrap" style={{ fontSize: 13, color: C.textMuted }}>
-                    {r.distance_meters > 0  && <span>📍 {(r.distance_meters / 1000).toFixed(1)} km</span>}
-                    {r.pee_count > 0        && <span>💧 {r.pee_count} xixi</span>}
-                    {r.poop_count > 0       && <span>💩 {r.poop_count} cocô</span>}
-                    {r.note_count > 0       && <span>📝 {r.note_count} nota{r.note_count > 1 ? 's' : ''}</span>}
-                  </div>
-
-                  {r.notes && (
-                    <p style={{ marginTop: 8, fontSize: 13, color: C.textSec, fontStyle: 'italic' }}>{r.notes}</p>
-                  )}
-
+        <Card pad={false}>
+          <CardHeader title="Passeios" extra={<span style={{ fontSize: 13, color: T.muted }}>{plural(rows.length, 'relatório', 'relatórios')}</span>} />
+          {rows.map((r: any) => {
+            const dist = km(r.distance_meters);
+            const owner = ownerNames[r.owner_id];
+            return (
+              <div key={r.id} className="zw-row" style={{ alignItems: 'flex-start', flexWrap: 'wrap', padding: '16px 18px' }}>
+                <div style={{ flex: '1 1 320px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <span style={{ fontSize: 15, fontWeight: 800 }}>{nomesPets(r.pet_ids)} · {dataCurta(r.created_at)} às {hora(r.created_at)}</span>
+                  {owner && <span style={{ fontSize: 13, color: T.muted }}>Tutor: {owner}</span>}
+                  <span style={{ display: 'flex', flexWrap: 'wrap', gap: 14, fontSize: 13, color: T.muted }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Clock size={14} aria-hidden />{duracao(r.duration_minutes)}</span>
+                    {dist ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><MapPin size={14} aria-hidden />{dist}</span> : <Chip tone="amber">Rota não registrada</Chip>}
+                    {(r.pee_count > 0 || r.poop_count > 0) && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Droplet size={14} aria-hidden />{[r.pee_count ? `Xixi ${r.pee_count}` : null, r.poop_count ? `Cocô ${r.poop_count}` : null].filter(Boolean).join(' · ')}</span>}
+                    {r.note_count > 0 && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><StickyNote size={14} aria-hidden />{plural(r.note_count, 'nota', 'notas')}</span>}
+                    {r.photos?.length > 0 && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Camera size={14} aria-hidden />{plural(r.photos.length, 'foto', 'fotos')}</span>}
+                  </span>
+                  {r.notes && <span style={{ fontSize: 13, color: T.muted, fontStyle: 'italic' }}>&ldquo;{r.notes}&rdquo;</span>}
                   {r.photos?.length > 0 && (
-                    <div className="flex gap-2 mt-3 flex-wrap">
-                      {r.photos.map((url: string, j: number) => (
-                        <img key={j} src={url} alt="foto do passeio"
-                          style={{ width: 76, height: 76, objectFit: 'cover', borderRadius: 8, border: `1px solid ${C.border}` }} />
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
+                      {r.photos.slice(0, 5).map((url: string, j: number) => (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img key={j} src={url} alt={`Foto ${j + 1} do passeio`} loading="lazy" style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 10, border: `1px solid ${T.line}` }} />
                       ))}
                     </div>
                   )}
-                </li>
-              );
-            })}
-          </ul>
-        </div>
+                </div>
+                <a href={`/dashboard/relatorios/${r.id}`} className="zw-btn zw-btn-ghost zw-btn-s">Ver relatório</a>
+              </div>
+            );
+          })}
+        </Card>
+      )}
+
+      {/* Outros atendimentos concluídos */}
+      {scheduleRows.length > 0 && (
+        <Card pad={false} style={{ marginBottom: 8 }}>
+          <CardHeader title="Outros atendimentos concluídos" />
+          {scheduleRows.map((s: any) => {
+            const svc = s.walker_services;
+            return (
+              <div key={s.id} className="zw-row" style={{ flexWrap: 'wrap' }}>
+                <div style={{ flex: '1 1 260px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <span style={{ fontSize: 15, fontWeight: 700 }}>{SERVICE_LABEL[svc?.type] ?? svc?.label ?? 'Atendimento'} · {nomesPets(s.pet_ids)}</span>
+                  <span style={{ fontSize: 13, color: T.muted }}>{dataCurta(s.scheduled_at)}{ownerNames[s.owner_id] ? ` · ${ownerNames[s.owner_id]}` : ''}</span>
+                </div>
+                {s.duration_minutes && <Chip tone="neutral">{duracao(s.duration_minutes)}</Chip>}
+              </div>
+            );
+          })}
+        </Card>
       )}
     </div>
   );

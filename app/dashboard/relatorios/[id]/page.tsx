@@ -4,10 +4,10 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 const C = {
-  card: '#132219', border: 'rgba(0,200,167,0.12)',
-  accent: '#00C6A7', accentDim: 'rgba(0,198,167,0.12)',
-  text: '#E8F5F0', textSec: '#7FA898', textMuted: '#4A6B60',
-  success: '#22D3A5', warning: '#F59E0B',
+  card: '#11201B', border: 'rgba(134,239,172,0.12)',
+  accent: '#22C55E', accentDim: 'rgba(34,197,94,0.12)',
+  text: '#EEF6F1', textSec: '#A3BCB0', textMuted: '#8FAB9E',
+  success: '#86EFAC', warning: '#FBBF24',
 };
 
 const EVENT_META: Record<string, { emoji: string; label: string; color: string; bg: string }> = {
