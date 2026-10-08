@@ -32,5 +32,11 @@ Momento memorável: resolver pendências (pagamento, agendamento sem registro) c
 ## Protótipos
 - Canvas "Zupet Walker — Dashboard v1" (Início A/B, Financeiro, Agenda, Relatórios, Serviços).
 
+## Padrões de tela
+- Lista + detalhe lado a lado: classe `.zw-split` (vira uma coluna abaixo de 900px). Usada em Pets; Relatórios segue a mesma ideia.
+- Ações destrutivas ou de status: confirmação inline ("Sim, recusar" / "Voltar"), nunca confirm()/alert(); erro aparece no próprio card.
+- Ícones lucide no lugar de emojis; cores de serviço fixas (passeio verde, banho azul, hospedagem lilás, day care amarelo, adestramento laranja, vet rosa).
+
 ## Pendente
-- Agenda (semana/lista e card "Precisa de atenção"), Pets, Perfil e Plano Pro na nova direção.
+- Todas as telas do dashboard estão na direção B (2026-10-08).
+- Futuro, se quiser: gravar rota GPS no app (hoje só há distância), alternar visibilidade de serviços (depende da regra do plano grátis).
