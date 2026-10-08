@@ -7,91 +7,48 @@ function createAdminClient() {
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
 }
-import { formatCurrency } from '@/lib/utils';
+import { AlertTriangle, Clock, MapPin, Lock } from 'lucide-react';
+import { T, Card, CardHeader, Kpi, Label, Chip, Avatar, corPorNome } from '@/components/walker/dash-ui';
+import { brl, duracao, km, dataCurta, plural } from '@/lib/format';
 import { NovoLancamentoModal } from './NovoLancamentoModal';
 import { TabelaPagamentos } from './TabelaPagamentos';
 import { MonthNav } from './MonthNav';
 import { BotaoRegistrarPagamento } from './BotaoRegistrarPagamento';
 
-const C = {
-  card: '#132219', border: 'rgba(0,200,167,0.12)',
-  accent: '#00C6A7', accentDim: 'rgba(0,198,167,0.12)',
-  text: '#E8F5F0', textSec: '#7FA898', textMuted: '#4A6B60',
-  success: '#22D3A5', warning: '#F59E0B', danger: '#F87171',
-};
+
 
 const BILLING_TYPE_LABEL: Record<string, string> = {
-  walk:        '🦮 Passeio',
-  bath:        '🛁 Banho e Tosa',
-  boarding:    '🌙 Hospedagem',
-  daycare:     '🏠 Creche',
-  vet_visit:   '🏥 Visita ao Vet',
-  training:    '🎯 Adestramento',
-  per_session: '📋 Por sessão',
-  daily:       '📅 Diário',
-  weekly:      '📆 Semanal',
-  monthly:     '🗓️ Mensal',
+  walk: 'Passeio', bath: 'Banho e Tosa', boarding: 'Hospedagem', daycare: 'Day Care',
+  vet_visit: 'Visita Veterinária', training: 'Adestramento',
+  per_session: 'Por sessão', daily: 'Diário', weekly: 'Semanal', monthly: 'Mensal',
 };
+const PAYMENT_METHOD_LABEL: Record<string, string> = { cash: 'Dinheiro', pix: 'PIX', card: 'Cartão' };
 
-function formatDuration(min: number) {
-  const h = Math.floor(min / 60);
-  const m = min % 60;
-  if (h === 0) return `${m}min`;
-  return m > 0 ? `${h}h ${m}min` : `${h}h`;
-}
-
-// Gráfico de barras SVG simples
-function BarChart({ data }: { data: { label: string; paid: number; pending: number }[] }) {
-  const maxVal = Math.max(...data.map(d => d.paid + d.pending), 1);
-  const W = 100 / data.length;
-  const BAR_H = 80;
-
+// Gráfico de receita (6 meses) com escala e valores
+function ReceitaChart({ data }: { data: { label: string; paid: number; pending: number; atual: boolean }[] }) {
+  const max = Math.max(...data.map((d) => d.paid + d.pending), 0);
+  const topo = max <= 0 ? 50 : Math.ceil(max / 50) * 50;
+  const H = 150;
+  const curto = (v: number) => brl(v).replace(',00', '');
   return (
-    <div style={{ padding: '8px 20px 16px' }}>
-      <svg viewBox={`0 0 ${data.length * 60} 110`} style={{ width: '100%', height: 110, overflow: 'visible' }}>
-        {data.map((d, i) => {
-          const totalH = ((d.paid + d.pending) / maxVal) * BAR_H;
-          const paidH = (d.paid / maxVal) * BAR_H;
-          const pendH = (d.pending / maxVal) * BAR_H;
-          const x = i * 60 + 8;
-          const barW = 44;
-
+    <div style={{ display: 'flex', gap: 10 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: H + 28, paddingBottom: 22, fontSize: 11, color: T.label, textAlign: 'right', width: 64 }}>
+        <span>{curto(topo)}</span><span>{curto(topo / 2)}</span><span>R$ 0</span>
+      </div>
+      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: `repeat(${data.length}, minmax(0, 1fr))`, gap: 14, borderBottom: `1px solid ${T.line}` }}>
+        {data.map((d) => {
+          const total = d.paid + d.pending;
           return (
-            <g key={i}>
-              {/* Barra pendente (fundo) */}
-              {pendH > 0 && (
-                <rect x={x} y={BAR_H - totalH + 2} width={barW} height={pendH} rx={3} fill="#fef3c7" stroke="#fde68a" strokeWidth={0.5} />
-              )}
-              {/* Barra paga (frente) */}
-              {paidH > 0 && (
-                <rect x={x} y={BAR_H - paidH + 2} width={barW} height={paidH} rx={3} fill="#00C6A7" />
-              )}
-              {/* Barra vazia */}
-              {totalH === 0 && (
-                <rect x={x} y={BAR_H - 4 + 2} width={barW} height={4} rx={2} fill="#e8f4f2" />
-              )}
-              {/* Label mês */}
-              <text x={x + barW / 2} y={BAR_H + 16} textAnchor="middle" fontSize={9} fill="#7FA898">{d.label}</text>
-              {/* Valor total acima da barra */}
-              {(d.paid + d.pending) > 0 && (
-                <text x={x + barW / 2} y={BAR_H - totalH - 2} textAnchor="middle" fontSize={8.5} fill="#E8F5F0" fontWeight="700">
-                  {formatCurrency(d.paid + d.pending)}
-                </text>
-              )}
-            </g>
+            <div key={d.label} title={`${d.label}: recebido ${brl(d.paid)}, a receber ${brl(d.pending)}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', gap: 4, height: H + 28 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: T.muted }}>{total > 0 ? curto(total) : '—'}</span>
+              <div style={{ width: '100%', maxWidth: 56, display: 'flex', flexDirection: 'column', borderRadius: '6px 6px 2px 2px', overflow: 'hidden' }}>
+                <span style={{ height: Math.round((d.pending / topo) * H), background: T.amber }} />
+                <span style={{ height: Math.round((d.paid / topo) * H), background: T.accent }} />
+              </div>
+              <span style={{ fontSize: 12, fontWeight: 700, color: d.atual ? T.text : T.label, paddingTop: 4 }}>{d.label}</span>
+            </div>
           );
         })}
-      </svg>
-      {/* Legenda */}
-      <div style={{ display: 'flex', gap: 16, justifyContent: 'flex-end', marginTop: 4 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#7FA898' }}>
-          <div style={{ width: 10, height: 10, background: '#00C6A7', borderRadius: 2 }} />
-          Recebido
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#7FA898' }}>
-          <div style={{ width: 10, height: 10, background: 'rgba(245,158,11,0.5)', borderRadius: 2, border: '1px solid rgba(245,158,11,0.4)' }} />
-          Pendente
-        </div>
       </div>
     </div>
   );
@@ -227,24 +184,33 @@ export default async function FinanceiroPage({ searchParams }: { searchParams?: 
   // payments já estão filtrados pelo mês selecionado
   const paidMes    = paymentsRows.filter((p: any) => p.status === 'paid').reduce((s: number, p: any) => s + (p.amount ?? 0), 0);
   const pendingMes = paymentsRows.filter((p: any) => p.status === 'pending').reduce((s: number, p: any) => s + (p.amount ?? 0), 0);
+  // Previsão: ritmo do mês (recebido + a receber) projetado até o último dia
   const projecaoMes = diaAtual > 0
-    ? (paidMes / diaAtual) * diasNoMes
+    ? ((paidMes + pendingMes) / diaAtual) * diasNoMes
     : 0;
 
   // ── Item 3: Receita mensal (6 meses) ──────────────────────────
   const MONTHS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  // Busca própria de 6 meses (antes o gráfico usava só os pagamentos do mês selecionado)
+  const { data: chartPaymentsRaw } = profile?.id
+    ? await supabase.from('walker_payments')
+        .select('amount, status, created_at')
+        .eq('walker_id', profile.id)
+        .gte('created_at', sixMonthsAgo.toISOString())
+    : { data: [] };
+  const chartPayments = applyFreeCutoff((chartPaymentsRaw ?? []) as any[], 'created_at');
   const chartData = Array.from({ length: 6 }, (_, i) => {
     const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
     const label = MONTHS[d.getMonth()];
     const yr = d.getFullYear();
     const mo = d.getMonth();
-    const rows = paymentsRows.filter((p: any) => {
+    const rows = chartPayments.filter((p: any) => {
       const pd = new Date(p.created_at);
       return pd.getFullYear() === yr && pd.getMonth() === mo;
     });
     const paid    = rows.filter((p: any) => p.status === 'paid').reduce((s: number, p: any) => s + (p.amount ?? 0), 0);
     const pending = rows.filter((p: any) => p.status === 'pending').reduce((s: number, p: any) => s + (p.amount ?? 0), 0);
-    return { label, paid, pending };
+    return { label, paid, pending, atual: yr === viewYear && mo === viewMonth };
   });
 
   // ── Item 4: Receita por tipo de serviço ────────────────────────
@@ -300,264 +266,162 @@ export default async function FinanceiroPage({ searchParams }: { searchParams?: 
   });
   const petRows = Object.entries(byPet).sort((a, b) => b[1].walks - a[1].walks);
 
+  const NOMES_MES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  const pendCount = paymentsRows.filter((p: any) => p.status === 'pending').length;
+
   return (
-    <div style={{ padding: '28px 24px', maxWidth: 1100, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, letterSpacing: '-0.03em' }}>Financeiro</h1>
+    <div className="zw-page">
+      {/* ── Cabeçalho ── */}
+      <header style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+          <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em' }}>Financeiro</h1>
           <MonthNav viewMonth={viewMonth} viewYear={viewYear} />
         </div>
         <NovoLancamentoModal owners={allOwnerIds.map(id => ({ user_id: id, name: ownerNames[id] ?? id }))} />
-      </div>
+      </header>
 
       {!isPro && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 10, padding: '10px 14px', marginBottom: 24, fontSize: 13, color: '#F59E0B' }}>
-          <span>🔒</span>
-          <span>Plano Free: exibindo apenas os últimos 7 dias. <a href="/dashboard/pro" style={{ color: '#F59E0B', fontWeight: 700, textDecoration: 'underline' }}>Faça upgrade para ver o histórico completo.</a></span>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, fontSize: 13, color: T.muted }}>
+          <Lock size={15} aria-hidden /> No plano grátis o histórico mostra os últimos 7 dias.
+          <a href="/dashboard/pro" style={{ color: T.accentLt, fontWeight: 700, textDecoration: 'none' }}>Ver tudo com o Pro</a>
         </div>
       )}
 
-      {/* ── Stats principais ── */}
-      <div className="db-stat-grid" style={{ marginBottom: 24 }}>
-        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: '18px 20px' }}>
-          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: C.textSec, marginBottom: 10 }}>Total recebido</p>
-          <p style={{ fontSize: 26, fontWeight: 800, color: C.success, letterSpacing: '-0.04em', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(totalPaid)}</p>
-          <p style={{ fontSize: 11.5, color: C.textSec, marginTop: 6 }}>pagamentos confirmados</p>
-        </div>
-        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: '18px 20px' }}>
-          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: C.textSec, marginBottom: 10 }}>A receber</p>
-          <p style={{ fontSize: 26, fontWeight: 800, color: C.warning, letterSpacing: '-0.04em', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(totalPending)}</p>
-          <p style={{ fontSize: 11.5, color: C.textSec, marginTop: 6 }}>aguardando pagamento</p>
-        </div>
-        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: '18px 20px' }}>
-          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: C.textSec, marginBottom: 10 }}>Passeios</p>
-          <p style={{ fontSize: 26, fontWeight: 800, color: C.text, letterSpacing: '-0.04em', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{totalWalks}</p>
-          <p style={{ fontSize: 11.5, color: C.textSec, marginTop: 6 }}>{formatDuration(totalMin)} no total</p>
-        </div>
-        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: '18px 20px' }}>
-          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: C.textSec, marginBottom: 10 }}>Distância</p>
-          <p style={{ fontSize: 26, fontWeight: 800, color: C.text, letterSpacing: '-0.04em', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{(totalDist / 1000).toFixed(1)}</p>
-          <p style={{ fontSize: 11.5, color: C.textSec, marginTop: 6 }}>km percorridos</p>
-        </div>
+      {/* ── Números do mês ── */}
+      <div className="zw-grid-kpi">
+        <Kpi label="Recebido" value={brl(totalPaid)} valueColor={T.accentLt} sub="pagamentos confirmados" />
+        <Kpi label="A receber" value={brl(totalPending)} valueColor={T.amber} sub={pendCount ? plural(pendCount, 'lançamento aguardando', 'lançamentos aguardando') : 'nada pendente'} />
+        <Kpi
+          label={isCurrentMonth ? `Previsão até ${diasNoMes}/${String(viewMonth + 1).padStart(2, '0')}` : `Total de ${NOMES_MES[viewMonth]}`}
+          value={brl(isCurrentMonth ? projecaoMes : paidMes + pendingMes)}
+          sub={isCurrentMonth ? `no ritmo atual (dia ${diaAtual} de ${diasNoMes}), contando o que falta receber` : 'recebido + a receber'}
+        />
+        <Kpi label="Passeios" value={String(totalWalks)} sub={`${duracao(totalMin)} no total${km(totalDist) ? ` · ${km(totalDist)}` : ''}`} />
       </div>
 
-      {/* ── Gráfico de receita mensal ── */}
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden', marginBottom: 16 }}>
-        <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h2 style={{ fontWeight: 700, fontSize: 13, color: C.text, letterSpacing: '-0.01em' }}>Receita mensal</h2>
-          <span style={{ fontSize: 12, color: C.textSec }}>últimos 6 meses</span>
+      {/* ── Receita 6 meses ── */}
+      <Card style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 800 }}>Receita dos últimos 6 meses</h2>
+          <div style={{ display: 'flex', gap: 16, fontSize: 13, color: T.muted, fontWeight: 600 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: T.accent }} />Recebido</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: T.amber }} />A receber</span>
+          </div>
         </div>
-        <BarChart data={chartData} />
-      </div>
+        <ReceitaChart data={chartData} />
+      </Card>
 
-      {/* ── Projeção do mês atual ── */}
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden', marginBottom: 16 }}>
-        <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${C.border}` }}>
-          <h2 style={{ fontWeight: 700, fontSize: 13, color: C.text, letterSpacing: '-0.01em' }}>Projeção — {MONTHS[now.getMonth()]} {now.getFullYear()}</h2>
-        </div>
-        <div style={{ padding: '16px 20px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
-          <div>
-            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: C.textSec, marginBottom: 8 }}>Confirmado no mês</p>
-            <p style={{ fontSize: 22, fontWeight: 800, color: C.success, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(paidMes)}</p>
-          </div>
-          <div>
-            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: C.textSec, marginBottom: 8 }}>Pendente no mês</p>
-            <p style={{ fontSize: 22, fontWeight: 800, color: C.warning, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(pendingMes)}</p>
-          </div>
-          <div>
-            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: C.textSec, marginBottom: 8 }}>Projeção até fim do mês</p>
-            <p style={{ fontSize: 22, fontWeight: 800, color: C.text, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(projecaoMes)}</p>
-            <p style={{ fontSize: 11, color: C.textMuted, marginTop: 4 }}>baseado no ritmo atual (dia {diaAtual}/{diasNoMes})</p>
-          </div>
-        </div>
-        <div style={{ padding: '0 20px 16px' }}>
-          <div style={{ height: 6, background: 'rgba(0,198,167,0.08)', borderRadius: 3, overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${(diaAtual / diasNoMes) * 100}%`, background: 'linear-gradient(90deg, #00C6A7, #22D3A5)', borderRadius: 3 }} />
-          </div>
-          <p style={{ fontSize: 11, color: C.textMuted, marginTop: 6 }}>{Math.round((diaAtual / diasNoMes) * 100)}% do mês decorrido</p>
-        </div>
-      </div>
-
-      {/* ── Passeios não cobrados ── */}
+      {/* ── Passeios sem cobrança ── */}
       {uncoveredSessions.length > 0 && (
-        <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 14, overflow: 'hidden', marginBottom: 16 }}>
-          <div style={{ padding: '16px 20px 14px', borderBottom: '1px solid rgba(245,158,11,0.3)', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 16 }}>⚠️</span>
-            <h2 style={{ fontWeight: 700, fontSize: 13, color: C.warning, letterSpacing: '-0.01em' }}>Passeios sem cobrança registrada</h2>
-            <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, color: C.warning, background: 'rgba(245,158,11,0.2)', padding: '2px 10px', borderRadius: 20 }}>{uncoveredSessions.length}</span>
-          </div>
-          <ul style={{ listStyle: 'none' }}>
-            {uncoveredSessions.slice(0, 5).map((s: any, i: number) => (
-              <li key={s.id} style={{ padding: '12px 20px', borderTop: i > 0 ? '1px solid rgba(245,158,11,0.2)' : 'none', display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: C.warning }}>
-                    {s.ended_at ? new Date(s.ended_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) : '—'}
-                  </p>
-                  <p style={{ fontSize: 12, color: C.textSec, marginTop: 1 }}>
-                    {ownerNames[s.owner_id] ?? 'Tutor'} · {(s.pet_ids ?? []).map((id: string) => petNames[id] ?? id).join(', ')}
-                  </p>
-                </div>
-                <span style={{ fontSize: 11, color: C.warning, background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)', padding: '3px 10px', borderRadius: 20 }}>
-                  Sem cobrança
-                </span>
-              </li>
-            ))}
-          </ul>
+        <Card pad={false} style={{ borderColor: T.amberLine, background: 'rgba(251,191,36,0.06)' }}>
+          <CardHeader title={<><AlertTriangle size={18} color={T.amber} aria-hidden /> Passeios sem cobrança registrada <Chip tone="amber">{uncoveredSessions.length}</Chip></>} />
+          {uncoveredSessions.slice(0, 5).map((s: any) => (
+            <div key={s.id} className="zw-row">
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span style={{ fontSize: 14, fontWeight: 700 }}>{s.ended_at ? dataCurta(s.ended_at) : '—'} · {(s.pet_ids ?? []).map((id: string) => petNames[id] ?? 'Pet').join(' e ')}</span>
+                <span style={{ fontSize: 13, color: T.muted }}>{ownerNames[s.owner_id] ?? 'Tutor'}</span>
+              </div>
+              <Chip tone="amber">Sem cobrança</Chip>
+            </div>
+          ))}
           {uncoveredSessions.length > 5 && (
-            <p style={{ padding: '10px 20px', fontSize: 12, color: C.warning, borderTop: '1px solid rgba(245,158,11,0.2)' }}>
-              + {uncoveredSessions.length - 5} passeio{uncoveredSessions.length - 5 > 1 ? 's' : ''} sem cobrança — registre no app
-            </p>
+            <div className="zw-row" style={{ fontSize: 13, color: T.amber }}>
+              + {plural(uncoveredSessions.length - 5, 'passeio', 'passeios')} sem cobrança. Registre pelo app ou em Novo lançamento.
+            </div>
           )}
-        </div>
+        </Card>
       )}
 
-      <div className="db-row2" style={{ marginBottom: 16 }}>
-        {/* Por tipo de serviço */}
-        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${C.border}` }}>
-            <h2 style={{ fontWeight: 700, fontSize: 13, color: C.text, letterSpacing: '-0.01em' }}>Por tipo de serviço</h2>
-          </div>
-          {typeRows.length === 0 ? (
-            <div style={{ padding: '36px 20px', textAlign: 'center', fontSize: 13, color: C.textSec }}>Nenhum dado ainda.</div>
-          ) : (
-            <ul style={{ listStyle: 'none' }}>
-              {typeRows.map(([type, data], i) => {
-                const total = data.paid + data.pending;
-                const maxType = typeRows[0][1].paid + typeRows[0][1].pending;
-                const pct = maxType > 0 ? (total / maxType) * 100 : 0;
-                return (
-                  <li key={type} style={{ padding: '12px 20px', borderTop: i > 0 ? `1px solid ${C.border}` : 'none' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: C.text }}>
-                        {BILLING_TYPE_LABEL[type] ?? type}
-                      </span>
-                      <div style={{ textAlign: 'right' }}>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: C.success, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(data.paid)}</span>
-                        {data.pending > 0 && <span style={{ fontSize: 11, color: C.warning, marginLeft: 6 }}>+{formatCurrency(data.pending)}</span>}
-                      </div>
-                    </div>
-                    <div style={{ height: 4, background: 'rgba(0,198,167,0.08)', borderRadius: 2, overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${pct}%`, background: C.accent, borderRadius: 2 }} />
-                    </div>
-                    <p style={{ fontSize: 11, color: C.textMuted, marginTop: 4 }}>{data.count} registro{data.count !== 1 ? 's' : ''}</p>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-
-        {/* Por tutor */}
-        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${C.border}` }}>
-            <h2 style={{ fontWeight: 700, fontSize: 13, color: C.text, letterSpacing: '-0.01em' }}>Por tutor</h2>
-          </div>
-          {ownerRows.length === 0 ? (
-            <div style={{ padding: '36px 20px', textAlign: 'center', fontSize: 13, color: C.textSec }}>Nenhum dado ainda.</div>
-          ) : (
-            <ul style={{ listStyle: 'none' }}>
-              {ownerRows.map(([ownerId, data], i) => (
-                <li key={ownerId} style={{ padding: '12px 20px', borderTop: i > 0 ? `1px solid ${C.border}` : 'none', display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 34, height: 34, borderRadius: '50%', background: C.accentDim, border: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, flexShrink: 0 }}>
-                    👤
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: 13.5, fontWeight: 600, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{data.name}</p>
-                    <p style={{ fontSize: 12, color: C.textSec, marginTop: 1 }}>{data.walks} passeio{data.walks !== 1 ? 's' : ''} · {formatDuration(data.minutes)}</p>
-                  </div>
-                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    {data.paid > 0 && <p style={{ fontSize: 13, fontWeight: 700, color: C.success, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(data.paid)}</p>}
-                    {data.pending > 0 && <p style={{ fontSize: 11, color: C.warning, fontVariantNumeric: 'tabular-nums' }}>+ {formatCurrency(data.pending)} pend.</p>}
-                    {data.paid === 0 && data.pending === 0 && <p style={{ fontSize: 11, color: C.textMuted }}>sem cobrança</p>}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
-
-      {/* Por pet */}
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden', marginBottom: 16 }}>
-        <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${C.border}` }}>
-          <h2 style={{ fontWeight: 700, fontSize: 13, color: C.text, letterSpacing: '-0.01em' }}>Por pet</h2>
-        </div>
-        {petRows.length === 0 ? (
-          <div style={{ padding: '36px 20px', textAlign: 'center', fontSize: 13, color: C.textSec }}>Nenhum passeio registrado.</div>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', padding: '12px 20px', gap: 12 }}>
-            {petRows.map(([petId, data]) => (
-              <div key={petId} style={{ background: C.accentDim, border: `1px solid ${C.border}`, borderRadius: 10, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(0,198,167,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>🐶</div>
-                <div style={{ minWidth: 0 }}>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{data.name}</p>
-                  <p style={{ fontSize: 11, color: C.textSec, marginTop: 2 }}>{data.walks} passeio{data.walks !== 1 ? 's' : ''}</p>
-                  <p style={{ fontSize: 11, color: C.textMuted }}>{(data.distance / 1000).toFixed(1)} km · {formatDuration(data.minutes)}</p>
+      {/* ── Por serviço, tutor e pet ── */}
+      <div className="zw-grid-3">
+        <Card style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <h2 style={{ fontSize: 15, fontWeight: 800 }}>Por serviço</h2>
+          {typeRows.length === 0 ? <span style={{ fontSize: 13, color: T.muted }}>Nenhum lançamento no período.</span> : typeRows.map(([type, data]) => {
+            const total = data.paid + data.pending;
+            const maxType = typeRows[0][1].paid + typeRows[0][1].pending;
+            return (
+              <div key={type} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, fontSize: 14 }}>
+                  <span style={{ fontWeight: 700 }}>{BILLING_TYPE_LABEL[type] ?? type}</span>
+                  <span style={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{brl(total)}</span>
                 </div>
+                <div style={{ height: 6, borderRadius: 99, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                  <span style={{ display: 'block', height: '100%', width: `${maxType > 0 ? (total / maxType) * 100 : 0}%`, background: T.accent, borderRadius: 99 }} />
+                </div>
+                <span style={{ fontSize: 12, color: T.muted }}>{plural(data.count, 'lançamento', 'lançamentos')}{data.pending > 0 ? ` · ${brl(data.pending)} a receber` : ''}</span>
               </div>
-            ))}
-          </div>
-        )}
+            );
+          })}
+        </Card>
+
+        <Card pad={false}>
+          <CardHeader title="Por tutor" />
+          {ownerRows.length === 0 ? <div className="zw-row" style={{ fontSize: 13, color: T.muted }}>Nenhum dado no período.</div> : ownerRows.map(([ownerId, data]) => (
+            <div key={ownerId} className="zw-row">
+              <Avatar name={data.name} bg={corPorNome(data.name)} size={34} />
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <span style={{ fontSize: 14, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{data.name}</span>
+                <span style={{ fontSize: 12, color: T.muted }}>{plural(data.walks, 'passeio', 'passeios')} · {duracao(data.minutes)}</span>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                {data.paid > 0 && <div style={{ fontSize: 14, fontWeight: 700, color: T.accentLt }}>{brl(data.paid)}</div>}
+                {data.pending > 0 && <div style={{ fontSize: 12, color: T.amber }}>{brl(data.pending)} a receber</div>}
+                {data.paid === 0 && data.pending === 0 && <div style={{ fontSize: 12, color: T.muted }}>sem cobrança</div>}
+              </div>
+            </div>
+          ))}
+        </Card>
+
+        <Card pad={false}>
+          <CardHeader title="Por pet" />
+          {petRows.length === 0 ? <div className="zw-row" style={{ fontSize: 13, color: T.muted }}>Nenhum passeio no período.</div> : petRows.map(([petId, data]) => (
+            <div key={petId} className="zw-row">
+              <Avatar name={data.name} bg={corPorNome(data.name)} size={34} />
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <span style={{ fontSize: 14, fontWeight: 700 }}>{data.name}</span>
+                <span style={{ fontSize: 12, color: T.muted, display: 'flex', gap: 10 }}>
+                  <span>{plural(data.walks, 'passeio', 'passeios')}</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Clock size={12} aria-hidden />{duracao(data.minutes)}</span>
+                  {km(data.distance) && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><MapPin size={12} aria-hidden />{km(data.distance)}</span>}
+                </span>
+              </div>
+            </div>
+          ))}
+        </Card>
       </div>
 
       {/* ── Atendimentos concluídos ── */}
       {doneSchedulesRows.length > 0 && (
-        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden', marginBottom: 16 }}>
-          <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <h2 style={{ fontWeight: 700, fontSize: 13, color: C.text, letterSpacing: '-0.01em' }}>Atendimentos concluídos</h2>
-            <span style={{ fontSize: 12, color: C.textSec }}>últimos 6 meses</span>
-          </div>
+        <Card pad={false}>
+          <CardHeader title="Atendimentos concluídos" extra={<span style={{ fontSize: 13, color: T.muted }}>em {NOMES_MES[viewMonth]}</span>} />
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', color: T.text }}>
               <thead>
-                <tr style={{ background: 'rgba(0,198,167,0.06)' }}>
+                <tr>
                   {['Data', 'Tutor', 'Serviço', 'Valor', 'Pagamento'].map((h, i) => (
-                    <th key={h} style={{
-                      padding: '10px 20px',
-                      textAlign: i === 3 ? 'right' : i === 4 ? 'center' : 'left',
-                      fontSize: 11, fontWeight: 600, letterSpacing: '0.05em',
-                      textTransform: 'uppercase' as const, color: C.textSec,
-                      borderBottom: `1px solid ${C.border}`,
-                    }}>{h}</th>
+                    <th key={h} style={{ textAlign: i === 3 ? 'right' : 'left', fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: T.label, padding: '12px 18px', borderBottom: `1px solid ${T.line}`, whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {doneSchedulesRows.map((s: any, i: number) => {
+                {doneSchedulesRows.map((s: any) => {
                   const svc = s.walker_services;
                   const pmt = paymentBySchedule[s.id];
-                  const serviceLabel = BILLING_TYPE_LABEL[svc?.type ?? s.service_type] ?? svc?.label ?? '—';
                   const price = svc?.price ?? s.amount ?? pmt?.amount ?? 0;
-                  const pmtStatus = pmt?.status;
-                  const pmtMethod = pmt?.payment_method;
-                  const PAYMENT_METHOD_LABEL: Record<string, string> = { cash: '💵 Dinheiro', pix: '📲 PIX', card: '💳 Cartão' };
+                  const cell = { padding: '14px 18px', borderTop: `1px solid ${T.line}`, whiteSpace: 'nowrap' as const, fontSize: 14 };
                   return (
-                    <tr key={s.id} style={{ borderTop: i > 0 ? `1px solid ${C.border}` : 'none' }}>
-                      <td style={{ padding: '12px 20px', color: C.textSec, fontSize: 13 }}>
-                        {new Date(s.scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: '2-digit' })}
-                      </td>
-                      <td style={{ padding: '12px 20px', color: C.textSec, fontSize: 13 }}>{ownerNames[s.owner_id] ?? '—'}</td>
-                      <td style={{ padding: '12px 20px', color: C.textSec, fontSize: 13 }}>{serviceLabel}</td>
-                      <td style={{ padding: '12px 20px', textAlign: 'right', fontWeight: 700, color: C.text, fontVariantNumeric: 'tabular-nums', fontSize: 13 }}>
-                        {price > 0 ? `R$ ${price.toFixed(2).replace('.', ',')}` : '—'}
-                      </td>
-                      <td style={{ padding: '12px 20px', textAlign: 'center' }}>
+                    <tr key={s.id}>
+                      <td style={{ ...cell, color: T.muted }}>{dataCurta(s.scheduled_at)}</td>
+                      <td style={{ ...cell, fontWeight: 700 }}>{ownerNames[s.owner_id] ?? '—'}</td>
+                      <td style={cell}>{BILLING_TYPE_LABEL[svc?.type ?? s.service_type] ?? svc?.label ?? '—'}</td>
+                      <td style={{ ...cell, textAlign: 'right', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{price > 0 ? brl(price) : '—'}</td>
+                      <td style={cell}>
                         {!pmt ? (
-                          <BotaoRegistrarPagamento
-                            scheduleId={s.id}
-                            ownerId={s.owner_id}
-                            serviceType={svc?.type ?? s.service_type ?? 'walk'}
-                            amount={price}
-                            scheduledAt={s.scheduled_at}
-                          />
-                        ) : pmtStatus === 'paid' ? (
-                          <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, color: C.success, background: 'rgba(34,211,165,0.15)' }}>
-                            {pmtMethod ? PAYMENT_METHOD_LABEL[pmtMethod] ?? pmtMethod : 'Pago'}
-                          </span>
+                          <BotaoRegistrarPagamento scheduleId={s.id} ownerId={s.owner_id} serviceType={svc?.type ?? s.service_type ?? 'walk'} amount={price} scheduledAt={s.scheduled_at} />
+                        ) : pmt.status === 'paid' ? (
+                          <Chip>{pmt.payment_method ? `Pago · ${PAYMENT_METHOD_LABEL[pmt.payment_method] ?? pmt.payment_method}` : 'Pago'}</Chip>
                         ) : (
-                          <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, color: C.warning, background: 'rgba(245,158,11,0.15)' }}>
-                            Pendente
-                          </span>
+                          <Chip tone="amber">Pendente</Chip>
                         )}
                       </td>
                     </tr>
@@ -566,16 +430,13 @@ export default async function FinanceiroPage({ searchParams }: { searchParams?: 
               </tbody>
             </table>
           </div>
-        </div>
+        </Card>
       )}
 
-      {/* ── Histórico de pagamentos ── */}
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden' }}>
-        <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${C.border}` }}>
-          <h2 style={{ fontWeight: 700, fontSize: 13, color: C.text, letterSpacing: '-0.01em' }}>Histórico de pagamentos</h2>
-        </div>
+      {/* ── Lançamentos ── */}
+      <Card pad={false} style={{ marginBottom: 8 }}>
         <TabelaPagamentos payments={paymentsRows} ownerNames={ownerNames} viewMonth={viewMonth} viewYear={viewYear} />
-      </div>
+      </Card>
     </div>
   );
 }

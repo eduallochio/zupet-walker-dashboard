@@ -4,9 +4,9 @@ import { useState, useTransition, useRef, useEffect } from 'react';
 import { registrarPagamentoDinheiro } from './actions';
 
 const METODOS = [
-  { value: 'cash', label: '💵 Dinheiro' },
-  { value: 'pix',  label: '📲 PIX' },
-  { value: 'card', label: '💳 Cartão' },
+  { value: 'cash', label: 'Dinheiro' },
+  { value: 'pix',  label: 'PIX' },
+  { value: 'card', label: 'Cartão' },
 ];
 
 export function BotaoRegistrarPagamento({
@@ -47,13 +47,9 @@ export function BotaoRegistrarPagamento({
       <button
         ref={btnRef}
         onClick={() => setOpen(o => !o)}
-        style={{
-          padding: '4px 12px', borderRadius: 20, border: '1px solid rgba(0,168,142,0.4)',
-          background: 'rgba(0,168,142,0.1)', color: '#00A88E',
-          fontSize: 11, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
-        }}
+        className="zw-btn zw-btn-ghost zw-btn-s"
       >
-        + Registrar ▾
+        Registrar pagamento
       </button>
 
       {open && (
@@ -64,8 +60,8 @@ export function BotaoRegistrarPagamento({
             top: pos.top,
             right: pos.right,
             zIndex: 20,
-            background: '#132219',
-            border: '1px solid rgba(0,200,167,0.2)',
+            background: '#11201B',
+            border: '1px solid rgba(134,239,172,0.2)',
             borderRadius: 10,
             overflow: 'hidden',
             minWidth: 140,

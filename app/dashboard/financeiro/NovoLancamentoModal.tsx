@@ -40,15 +40,7 @@ export function NovoLancamentoModal({ owners }: { owners: Owner[] }) {
   return (
     <>
       {/* Botão de abertura */}
-      <button
-        onClick={() => setOpen(true)}
-        style={{
-          display: 'flex', alignItems: 'center', gap: 6,
-          background: '#00C6A7', color: '#fff', border: 'none', cursor: 'pointer',
-          padding: '8px 16px', borderRadius: 8,
-          fontSize: 13, fontWeight: 600, letterSpacing: '-0.01em',
-        }}
-      >
+      <button onClick={() => setOpen(true)} className="zw-btn zw-btn-primary">
         + Novo lançamento
       </button>
 
