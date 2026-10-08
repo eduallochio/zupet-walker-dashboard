@@ -128,6 +128,22 @@ export default async function AgendaPage({ searchParams }: { searchParams?: Prom
           owner_name: r.owner_id ? linkOwnerNames[r.owner_id] : undefined,
         }));
     }
+
+    // Pets avulsos cadastrados pelo walker (sem tutor)
+    const { data: ownPets } = await supabase
+      .from('pets')
+      .select('id, name, breed')
+      .eq('walker_owner_id', user.id)
+      .is('merged_into', null)
+      .eq('is_memorial', false)
+      .order('name');
+
+    const ownPetIds = new Set(linkedPets.map((p) => p.pet_id));
+    for (const p of (ownPets ?? []) as any[]) {
+      if (!ownPetIds.has(p.id)) {
+        linkedPets.push({ pet_id: p.id, name: p.name, breed: p.breed ?? undefined });
+      }
+    }
   }
 
   const today = new Date();

@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
+import { BotaoDesvincular } from './BotaoDesvincular';
 
 const C = {
   card: '#132219', border: 'rgba(0,200,167,0.12)',
@@ -37,12 +38,23 @@ export default async function PetsPage({ searchParams }: { searchParams?: Promis
   // Pets vinculados a este walker
   const { data: links } = await supabase
     .from('walker_pet_links')
-    .select('pet_id, owner_id, status, linked_at, billing_override, service_id')
+    .select('id, pet_id, owner_id, status, linked_at, billing_override, service_id')
     .eq('walker_id', walkerId);
 
   const petIds = (links ?? []).map((l) => l.pet_id);
 
-  // Dados dos pets
+  // Pets avulsos cadastrados pelo walker (sem tutor vinculado)
+  const { data: ownPetsData } = await supabase
+    .from('pets')
+    .select('id, name, species, breed, photo_uri')
+    .eq('walker_owner_id', user.id)
+    .is('merged_into', null)
+    .eq('is_memorial', false)
+    .order('name');
+
+  const ownPets = (ownPetsData ?? []) as Array<{ id: string; name: string; species: string | null; breed: string | null; photo_uri: string | null }>;
+
+  // Dados dos pets vinculados
   const { data: petsData } = petIds.length > 0
     ? await supabase.from('pets').select('id, name, species, breed, photo_uri').in('id', petIds)
     : { data: [] };
@@ -93,9 +105,11 @@ export default async function PetsPage({ searchParams }: { searchParams?: Promis
     return metricsMap[pid];
   };
 
+  const allTrackedPetIds = [...petIds, ...ownPets.map((p) => p.id)];
+
   for (const r of reports ?? []) {
     for (const pid of r.pet_ids ?? []) {
-      if (!petIds.includes(pid)) continue;
+      if (!allTrackedPetIds.includes(pid)) continue;
       const m = ensureMetrics(pid);
       m.totalWalks++;
       m.totalDistanceMeters += r.distance_meters ?? 0;
@@ -108,7 +122,7 @@ export default async function PetsPage({ searchParams }: { searchParams?: Promis
 
   for (const s of schedules ?? []) {
     for (const pid of s.pet_ids ?? []) {
-      if (!petIds.includes(pid)) continue;
+      if (!allTrackedPetIds.includes(pid)) continue;
       const m = ensureMetrics(pid);
       const stype = s.service_type ?? 'service';
       m.serviceCount[stype] = (m.serviceCount[stype] ?? 0) + 1;
@@ -119,14 +133,14 @@ export default async function PetsPage({ searchParams }: { searchParams?: Promis
 
   for (const p of payments ?? []) {
     for (const pid of p.pet_ids ?? []) {
-      if (!petIds.includes(pid)) continue;
+      if (!allTrackedPetIds.includes(pid)) continue;
       const m = ensureMetrics(pid);
       m.totalRevenue += Number(p.amount ?? 0);
     }
   }
 
   // Ordenar histórico por data desc
-  for (const pid of petIds) {
+  for (const pid of allTrackedPetIds) {
     if (metricsMap[pid]) {
       metricsMap[pid].walkHistory.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }
@@ -147,14 +161,20 @@ export default async function PetsPage({ searchParams }: { searchParams?: Promis
   return (
     <div style={{ padding: '28px 24px', maxWidth: 960, margin: '0 auto' }}>
       <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, letterSpacing: '-0.03em', marginBottom: 24 }}>
-        Pets vinculados
+        Pets
       </h1>
 
-      {petIds.length === 0 ? (
+      {petIds.length === 0 && ownPets.length === 0 ? (
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: '48px 20px', textAlign: 'center', color: C.textSec, fontSize: 14 }}>
-          Nenhum pet vinculado ainda. Os pets aparecerão aqui quando tutores aceitarem sua solicitação.
+          Nenhum pet ainda. Pets vinculados por tutores e pets avulsos cadastrados no app aparecerão aqui.
         </div>
       ) : (
+        <>
+        {petIds.length > 0 && ownPets.length > 0 && (
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: C.text, letterSpacing: '-0.02em', marginBottom: 14 }}>
+            Pets de tutores <span style={{ fontSize: 12, fontWeight: 500, color: C.textSec }}>({petIds.length})</span>
+          </h2>
+        )}
         <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
           {/* Lista de pets */}
           <div style={{ flex: '0 0 320px', minWidth: 280, display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -168,24 +188,19 @@ export default async function PetsPage({ searchParams }: { searchParams?: Promis
               const ownerName = ownerMap[link?.owner_id] ?? '—';
               const isActive = link?.status === 'active';
               return (
-                <Link key={pid} href={`/dashboard/pets?pet=${pid}`} style={{ textDecoration: 'none' }}>
-                  <div style={{
-                    background: isSelected ? 'rgba(0,198,167,0.14)' : C.card,
-                    border: `1px solid ${isSelected ? C.accent : C.border}`,
-                    borderRadius: 14,
-                    padding: '14px 16px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    cursor: 'pointer',
-                    transition: 'border-color 0.15s, background 0.15s',
-                  }}>
+                <div key={pid} style={{
+                  background: isSelected ? 'rgba(0,198,167,0.14)' : C.card,
+                  border: `1px solid ${isSelected ? C.accent : C.border}`,
+                  borderRadius: 14,
+                  overflow: 'hidden',
+                  transition: 'border-color 0.15s, background 0.15s',
+                }}>
+                  <Link href={`/dashboard/pets?pet=${pid}`} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', cursor: 'pointer' }}>
                     {/* Avatar */}
                     <div style={{
                       width: 46, height: 46, borderRadius: 10,
                       background: 'rgba(0,198,167,0.15)',
-                      flexShrink: 0,
-                      overflow: 'hidden',
+                      flexShrink: 0, overflow: 'hidden',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 22,
                     }}>
@@ -220,8 +235,17 @@ export default async function PetsPage({ searchParams }: { searchParams?: Promis
                       </p>
                       <p style={{ fontSize: 10, color: C.textMuted, marginTop: 1 }}>passeios</p>
                     </div>
+                  </Link>
+                  {/* Botão desvincular fora do Link para evitar aninhamento de âncoras */}
+                  <div style={{ padding: '0 16px 12px', display: 'flex', justifyContent: 'flex-end' }}>
+                    <BotaoDesvincular
+                      linkId={link?.id ?? ''}
+                      petId={pid}
+                      ownerId={link?.owner_id ?? null}
+                      petName={pet.name}
+                    />
                   </div>
-                </Link>
+                </div>
               );
             })}
           </div>
@@ -341,6 +365,58 @@ export default async function PetsPage({ searchParams }: { searchParams?: Promis
               Selecione um pet para ver o histórico e métricas detalhadas.
             </div>
           )}
+        </div>
+        </>
+      )}
+
+      {/* Seção de pets avulsos */}
+      {ownPets.length > 0 && (
+        <div style={{ marginTop: 40 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: C.text, letterSpacing: '-0.02em', marginBottom: 16 }}>
+            Meus pets <span style={{ fontSize: 12, fontWeight: 500, color: C.textSec }}>({ownPets.length} avulso{ownPets.length !== 1 ? 's' : ''})</span>
+          </h2>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+            {ownPets.map((pet) => {
+              const speciesIcon = SPECIES_ICON[pet.species ?? ''] ?? '🐾';
+              const m = metricsMap[pet.id];
+              return (
+                <div key={pet.id} style={{
+                  background: C.card, border: `1px solid ${C.border}`,
+                  borderRadius: 14, display: 'flex', alignItems: 'center',
+                  gap: 12, padding: '12px 16px', minWidth: 240,
+                }}>
+                  <div style={{
+                    width: 42, height: 42, borderRadius: 10,
+                    background: 'rgba(0,198,167,0.15)',
+                    flexShrink: 0, overflow: 'hidden',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 20,
+                  }}>
+                    {pet.photo_uri
+                      ? <img src={pet.photo_uri} alt={pet.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : speciesIcon}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontWeight: 700, fontSize: 14, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {pet.name}
+                    </p>
+                    <p style={{ fontSize: 12, color: C.textSec }}>
+                      {[pet.breed, pet.species].filter(Boolean).join(' · ') || '—'}
+                    </p>
+                    <p style={{ fontSize: 11, color: C.textMuted, marginTop: 2 }}>
+                      Sem tutor vinculado
+                    </p>
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <p style={{ fontSize: 18, fontWeight: 800, color: C.accent, letterSpacing: '-0.04em', lineHeight: 1 }}>
+                      {m?.totalWalks ?? 0}
+                    </p>
+                    <p style={{ fontSize: 10, color: C.textMuted, marginTop: 1 }}>passeios</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
