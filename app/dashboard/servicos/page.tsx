@@ -92,7 +92,7 @@ export default async function ServicosPage() {
           {/* Prévia de como o tutor vê */}
           <aside style={{ flex: '1 1 300px', minWidth: 280, display: 'flex', flexDirection: 'column', gap: 10 }}>
             <Label>Como o tutor vê</Label>
-            <Card style={{ display: 'flex', flexDirection: 'column', gap: 14, background: '#132219' }}>
+            <Card style={{ display: 'flex', flexDirection: 'column', gap: 14, background: T.card2 }}>
               <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                 <Avatar name={profile?.name ?? 'Walker'} src={profile?.avatar_url} size={48} bg={T.accentLt} />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>

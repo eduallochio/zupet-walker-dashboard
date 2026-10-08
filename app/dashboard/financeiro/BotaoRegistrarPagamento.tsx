@@ -39,7 +39,7 @@ export function BotaoRegistrarPagamento({
   }
 
   if (isPending) {
-    return <span style={{ fontSize: 11, color: '#7FA898' }}>Salvando...</span>;
+    return <span style={{ fontSize: 12, color: '#A3BCB0' }}>Salvando…</span>;
   }
 
   return (
