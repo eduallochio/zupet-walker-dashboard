@@ -1,22 +1,23 @@
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
+import { Check, Dog, Footprints, Bath, Home, Sun, GraduationCap, Stethoscope, Plus, X, User } from 'lucide-react';
 import { criarAgendamentoManual } from './actions';
 
 const C = {
-  bg: '#0D1F18', card: '#132219', border: 'rgba(0,200,167,0.12)',
-  accent: '#00C6A7', accentDim: 'rgba(0,198,167,0.12)',
-  text: '#E8F5F0', textSec: '#7FA898', textMuted: '#4A6B60',
-  inputBg: '#0D1F18', danger: '#F87171',
+  bg: '#0B1512', card: '#11201B', border: 'rgba(134,239,172,0.12)',
+  accent: '#22C55E', accentDim: 'rgba(34,197,94,0.12)',
+  text: '#EEF6F1', textSec: '#A3BCB0', textMuted: '#8FAB9E',
+  inputBg: '#0B1512', danger: '#FCA5A5',
 };
 
 const SERVICE_OPTIONS = [
-  { value: 'walk',      label: 'Passeio',           emoji: '🐾' },
-  { value: 'bath',      label: 'Banho e Tosa',       emoji: '🛁' },
-  { value: 'boarding',  label: 'Hospedagem',         emoji: '🏠' },
-  { value: 'daycare',   label: 'Day Care',           emoji: '☀️' },
-  { value: 'training',  label: 'Adestramento',       emoji: '🎓' },
-  { value: 'vet_visit', label: 'Visita Veterinária', emoji: '🩺' },
+  { value: 'walk',      label: 'Passeio',           icon: Footprints },
+  { value: 'bath',      label: 'Banho e Tosa',       icon: Bath },
+  { value: 'boarding',  label: 'Hospedagem',         icon: Home },
+  { value: 'daycare',   label: 'Day Care',           icon: Sun },
+  { value: 'training',  label: 'Adestramento',       icon: GraduationCap },
+  { value: 'vet_visit', label: 'Visita Veterinária', icon: Stethoscope },
 ];
 
 type LinkedPet = { pet_id: string; name: string; breed?: string; owner_name?: string };
@@ -28,16 +29,8 @@ export function NovoAgendamentoBtn({ linkedPets }: Props) {
 
   return (
     <>
-      <button
-        onClick={() => setOpen(true)}
-        style={{
-          display: 'flex', alignItems: 'center', gap: 6,
-          background: C.accent, color: '#0D1F18',
-          border: 'none', borderRadius: 10,
-          padding: '8px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer',
-        }}
-      >
-        <span style={{ fontSize: 16, lineHeight: 1 }}>+</span> Novo agendamento
+      <button onClick={() => setOpen(true)} className="zw-btn zw-btn-primary">
+        <Plus size={16} aria-hidden /> Novo agendamento
       </button>
 
       {open && (
@@ -131,9 +124,10 @@ function NovoAgendamentoModal({ linkedPets, onClose }: { linkedPets: LinkedPet[]
           </h2>
           <button
             onClick={onClose}
-            style={{ background: 'none', border: 'none', color: C.textSec, fontSize: 22, cursor: 'pointer', lineHeight: 1 }}
+            aria-label="Fechar"
+            style={{ background: 'none', border: 'none', color: C.textSec, cursor: 'pointer', lineHeight: 1, display: 'inline-flex' }}
           >
-            ×
+            <X size={20} aria-hidden />
           </button>
         </div>
 
@@ -160,7 +154,7 @@ function NovoAgendamentoModal({ linkedPets, onClose }: { linkedPets: LinkedPet[]
                       transition: 'all 0.15s',
                     }}
                   >
-                    <span>{opt.emoji}</span> {opt.label}
+                    <opt.icon size={15} aria-hidden /> {opt.label}
                   </button>
                 );
               })}
@@ -239,16 +233,16 @@ function NovoAgendamentoModal({ linkedPets, onClose }: { linkedPets: LinkedPet[]
                         textAlign: 'left', width: '100%',
                       }}
                     >
-                      <span style={{ fontSize: 18 }}>🐶</span>
+                      <Dog size={18} color={C.textSec} aria-hidden />
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{pet.name}</div>
                         {pet.owner_name && (
                           <div style={{ fontSize: 11, color: C.accent, marginTop: 1 }}>
-                            👤 {pet.owner_name} · tutor no Zupet
+                            <User size={11} aria-hidden style={{ verticalAlign: '-1px' }} /> {pet.owner_name} · tutor no Zupet
                           </div>
                         )}
                       </div>
-                      {sel && <span style={{ color: C.accent, fontSize: 16 }}>✓</span>}
+                      {sel && <Check size={16} color={C.accent} aria-hidden />}
                     </button>
                   );
                 })}
@@ -305,10 +299,10 @@ function NovoAgendamentoModal({ linkedPets, onClose }: { linkedPets: LinkedPet[]
               style={{
                 padding: '9px 20px', borderRadius: 9, fontSize: 13, fontWeight: 700,
                 background: isPending ? C.textMuted : C.accent,
-                color: '#0D1F18', border: 'none', cursor: isPending ? 'not-allowed' : 'pointer',
+                color: '#05130A', border: 'none', cursor: isPending ? 'not-allowed' : 'pointer',
               }}
             >
-              {isPending ? 'Salvando...' : '📅 Criar agendamento'}
+              {isPending ? 'Salvando...' : 'Criar agendamento'}
             </button>
           </div>
         </form>

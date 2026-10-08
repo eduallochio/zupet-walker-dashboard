@@ -4,10 +4,10 @@ import { useState, useTransition } from 'react';
 import { desvincularPet } from './actions';
 
 const C = {
-  border: 'rgba(0,200,167,0.12)',
-  text: '#E8F5F0', textSec: '#7FA898',
-  danger: '#F87171', dangerDim: 'rgba(248,113,113,0.1)',
-  warning: '#F59E0B',
+  border: 'rgba(134,239,172,0.12)',
+  text: '#EEF6F1', textSec: '#A3BCB0',
+  danger: '#FCA5A5', dangerDim: 'rgba(252,165,165,0.1)',
+  warning: '#FBBF24',
 };
 
 type Step = 'idle' | 'confirmUnlink' | 'confirmPayments' | 'confirmSchedules';
@@ -23,25 +23,20 @@ export function BotaoDesvincular({
   const [step, setStep] = useState<Step>('idle');
   const [cancelPayments, setCancelPayments] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [erro, setErro] = useState<string | null>(null);
 
   const executar = (cancelPay: boolean, cancelSched: boolean) => {
+    setErro(null);
     startTransition(async () => {
       const result = await desvincularPet(linkId, petId, ownerId, cancelPay, cancelSched);
-      if (result.error) alert('Erro: ' + result.error);
+      if (result.error) setErro(result.error);
       else setStep('idle');
     });
   };
 
   if (step === 'idle') {
     return (
-      <button
-        onClick={() => setStep('confirmUnlink')}
-        style={{
-          fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, cursor: 'pointer',
-          border: `1px solid rgba(248,113,113,0.35)`,
-          background: C.dangerDim, color: C.danger,
-        }}
-      >
+      <button onClick={() => setStep('confirmUnlink')} className="zw-btn zw-btn-s zw-btn-ghost" style={{ color: C.danger, borderColor: 'rgba(252,165,165,0.35)' }}>
         Desvincular
       </button>
     );
@@ -52,8 +47,8 @@ export function BotaoDesvincular({
     zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
   };
   const box: React.CSSProperties = {
-    background: '#132219', borderRadius: 16, padding: 24,
-    border: '1px solid rgba(0,200,167,0.2)', maxWidth: 380, width: '100%', gap: 16,
+    background: '#11201B', borderRadius: 16, padding: 24,
+    border: '1px solid rgba(134,239,172,0.2)', maxWidth: 380, width: '100%', gap: 16,
     display: 'flex', flexDirection: 'column',
   };
   const btn = (color: string, bg: string, border: string): React.CSSProperties => ({
@@ -63,7 +58,7 @@ export function BotaoDesvincular({
 
   return (
     <>
-      <button onClick={() => setStep('confirmUnlink')} style={{ fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, cursor: 'pointer', border: `1px solid rgba(248,113,113,0.35)`, background: C.dangerDim, color: C.danger }}>
+      <button onClick={() => setStep('confirmUnlink')} className="zw-btn zw-btn-s zw-btn-ghost" style={{ color: C.danger, borderColor: 'rgba(252,165,165,0.35)' }}>
         Desvincular
       </button>
 
@@ -98,13 +93,15 @@ export function BotaoDesvincular({
                 </button>
                 <button
                   onClick={() => { setCancelPayments(true); setStep('confirmSchedules'); }}
-                  style={btn(C.warning, 'rgba(245,158,11,0.1)', `1px solid rgba(245,158,11,0.3)`)}
+                  style={btn(C.warning, 'rgba(251,191,36,0.1)', `1px solid rgba(251,191,36,0.3)`)}
                 >
                   Cancelar pagamentos
                 </button>
               </div>
             </>
           )}
+
+          {erro && <p role="alert" style={{ fontSize: 13, color: C.danger, textAlign: 'center' }}>Não foi possível desvincular: {erro}</p>}
 
           {step === 'confirmSchedules' && (
             <>
@@ -123,7 +120,7 @@ export function BotaoDesvincular({
                 <button
                   onClick={() => executar(cancelPayments, true)}
                   disabled={isPending}
-                  style={btn(C.warning, 'rgba(245,158,11,0.1)', `1px solid rgba(245,158,11,0.3)`)}
+                  style={btn(C.warning, 'rgba(251,191,36,0.1)', `1px solid rgba(251,191,36,0.3)`)}
                 >
                   {isPending ? 'Salvando...' : 'Cancelar agendamentos'}
                 </button>

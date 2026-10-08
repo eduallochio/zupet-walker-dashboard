@@ -1,18 +1,22 @@
 import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
+import { T, Card, CardHeader, Chip, EmptyState, Avatar, Label, corPorNome } from '@/components/walker/dash-ui';
+import { brl, dataCurta, duracao, km, plural, relativo } from '@/lib/format';
+import { Clock, Dog, Footprints, MapPin, PawPrint, Route, Wallet, CalendarHeart, History, UserRound } from 'lucide-react';
 import { BotaoDesvincular } from './BotaoDesvincular';
 
-const C = {
-  card: '#132219', border: 'rgba(0,200,167,0.12)',
-  accent: '#00C6A7', accentDim: 'rgba(0,198,167,0.12)',
-  text: '#E8F5F0', textSec: '#7FA898', textMuted: '#4A6B60',
-  bg: '#0D1F18',
+const ESPECIE: Record<string, string> = {
+  dog: 'Cachorro', cat: 'Gato', bird: 'Ave', rabbit: 'Coelho', hamster: 'Hamster',
 };
 
-const SPECIES_ICON: Record<string, string> = {
-  dog: '🐕', cat: '🐈', bird: '🐦', rabbit: '🐇', hamster: '🐹',
+const SERVICE_LABEL: Record<string, string> = {
+  walk: 'Passeio', bath: 'Banho e tosa', boarding: 'Hospedagem',
+  daycare: 'Day care', vet_visit: 'Visita ao vet', training: 'Adestramento', service: 'Serviço',
 };
+
+const descricao = (p: { breed?: string | null; species?: string | null }) =>
+  [p.breed, p.species ? (ESPECIE[p.species] ?? p.species) : null].filter(Boolean).join(' · ');
 
 export default async function PetsPage({ searchParams }: { searchParams?: Promise<{ pet?: string }> }) {
   const sp = await (searchParams ?? Promise.resolve({} as { pet?: string }));
@@ -70,6 +74,8 @@ export default async function PetsPage({ searchParams }: { searchParams?: Promis
 
   const petMap: Record<string, any> = {};
   (petsData ?? []).forEach((p: any) => { petMap[p.id] = p; });
+
+  ownPets.forEach((p) => { if (!petMap[p.id]) petMap[p.id] = p; });
 
   const linkMap: Record<string, any> = {};
   (links ?? []).forEach((l) => { linkMap[l.pet_id] = l; });
@@ -148,275 +154,186 @@ export default async function PetsPage({ searchParams }: { searchParams?: Promis
 
   const selectedPet = selectedPetId ? petMap[selectedPetId] : null;
   const selectedLink = selectedPetId ? linkMap[selectedPetId] : null;
-  const selectedMetrics = selectedPetId ? metricsMap[selectedPetId] : null;
+  const selectedMetrics: PetMetrics | null = selectedPet
+    ? (metricsMap[selectedPetId!] ?? { totalWalks: 0, totalRevenue: 0, totalDistanceMeters: 0, totalMinutes: 0, serviceCount: {}, lastActivity: null, walkHistory: [] })
+    : null;
 
-  const SERVICE_LABEL: Record<string, string> = {
-    walk: 'Passeio', bath: 'Banho e Tosa', boarding: 'Hospedagem',
-    daycare: 'Creche', vet_visit: 'Visita ao Vet', training: 'Adestramento',
+  const linkedIds = petIds.filter((pid) => petMap[pid]);
+  const ativos = linkedIds.filter((pid) => linkMap[pid]?.status === 'active').length;
+  const totalPets = linkedIds.length + ownPets.length;
+
+  const statusVinculo = (st?: string) =>
+    st === 'active' ? { label: 'Ativo', tone: 'accent' as const }
+    : st === 'pending' ? { label: 'Pendente', tone: 'amber' as const }
+    : { label: 'Encerrado', tone: 'neutral' as const };
+
+  const itemPet = (pid: string, avulso: boolean) => {
+    const pet = petMap[pid];
+    const link = linkMap[pid];
+    const m = metricsMap[pid];
+    const sel = selectedPetId === pid;
+    const st = statusVinculo(link?.status);
+    return (
+      <Link
+        key={pid}
+        href={`/dashboard/pets?pet=${pid}`}
+        scroll={false}
+        aria-current={sel ? 'true' : undefined}
+        className="zw-row"
+        style={{
+          textDecoration: 'none', color: 'inherit',
+          background: sel ? T.accentDim : 'transparent',
+          boxShadow: sel ? `inset 3px 0 0 ${T.accent}` : 'none',
+        }}
+      >
+        <Avatar name={pet.name} src={pet.photo_uri} size={42} bg={corPorNome(pet.name)} />
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 14, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{pet.name}</span>
+            {!avulso && st.tone !== 'accent' && <Chip tone={st.tone}>{st.label}</Chip>}
+          </span>
+          <span style={{ fontSize: 12, color: T.muted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {avulso ? 'Cadastrado por você' : `Tutor: ${ownerMap[link?.owner_id] ?? '—'}`}
+            {m?.lastActivity ? ` · ${relativo(m.lastActivity)}` : ''}
+          </span>
+        </div>
+        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+          <div style={{ fontSize: 17, fontWeight: 800, color: T.accentLt, fontVariantNumeric: 'tabular-nums' }}>{m?.totalWalks ?? 0}</div>
+          <div style={{ fontSize: 11, color: T.label }}>{(m?.totalWalks ?? 0) === 1 ? 'passeio' : 'passeios'}</div>
+        </div>
+      </Link>
+    );
   };
 
-  const formatDate = (d: string) =>
-    new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: '2-digit' });
+  const stats = selectedMetrics ? [
+    { label: 'Passeios', value: String(selectedMetrics.totalWalks), icon: Footprints },
+    { label: 'Distância', value: km(selectedMetrics.totalDistanceMeters) ?? '—', icon: Route },
+    { label: 'Tempo total', value: duracao(selectedMetrics.totalMinutes), icon: Clock },
+    { label: 'Receita', value: brl(selectedMetrics.totalRevenue), icon: Wallet },
+    { label: 'Último atendimento', value: selectedMetrics.lastActivity ? dataCurta(selectedMetrics.lastActivity) : '—', icon: History },
+    { label: 'Vínculo desde', value: selectedLink?.linked_at ? dataCurta(selectedLink.linked_at) : '—', icon: CalendarHeart },
+  ] : [];
 
   return (
-    <div style={{ padding: '28px 24px', maxWidth: 960, margin: '0 auto' }}>
-      <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, letterSpacing: '-0.03em', marginBottom: 24 }}>
-        Pets
-      </h1>
+    <div className="zw-page">
+      <header className="zw-in" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em' }}>Pets</h1>
+        <span style={{ fontSize: 14, color: T.muted }}>
+          {totalPets
+            ? `${plural(ativos, 'vínculo ativo', 'vínculos ativos')}${ownPets.length ? ` · ${plural(ownPets.length, 'pet cadastrado', 'pets cadastrados')} por você` : ''}`
+            : 'Os pets que você atende aparecem aqui'}
+        </span>
+      </header>
 
-      {petIds.length === 0 && ownPets.length === 0 ? (
-        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: '48px 20px', textAlign: 'center', color: C.textSec, fontSize: 14 }}>
-          Nenhum pet ainda. Pets vinculados por tutores e pets avulsos cadastrados no app aparecerão aqui.
-        </div>
+      {totalPets === 0 ? (
+        <Card>
+          <EmptyState
+            icon={PawPrint}
+            title="Nenhum pet ainda"
+            text="Quando um tutor vincular um pet a você, ou quando você cadastrar um pet avulso no app, ele aparece aqui com histórico e métricas."
+          />
+        </Card>
       ) : (
-        <>
-        {petIds.length > 0 && ownPets.length > 0 && (
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: C.text, letterSpacing: '-0.02em', marginBottom: 14 }}>
-            Pets de tutores <span style={{ fontSize: 12, fontWeight: 500, color: C.textSec }}>({petIds.length})</span>
-          </h2>
-        )}
-        <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-          {/* Lista de pets */}
-          <div style={{ flex: '0 0 320px', minWidth: 280, display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {petIds.map((pid) => {
-              const pet = petMap[pid];
-              const link = linkMap[pid];
-              const m = metricsMap[pid];
-              if (!pet) return null;
-              const isSelected = selectedPetId === pid;
-              const speciesIcon = SPECIES_ICON[pet.species ?? ''] ?? '🐾';
-              const ownerName = ownerMap[link?.owner_id] ?? '—';
-              const isActive = link?.status === 'active';
-              return (
-                <div key={pid} style={{
-                  background: isSelected ? 'rgba(0,198,167,0.14)' : C.card,
-                  border: `1px solid ${isSelected ? C.accent : C.border}`,
-                  borderRadius: 14,
-                  overflow: 'hidden',
-                  transition: 'border-color 0.15s, background 0.15s',
-                }}>
-                  <Link href={`/dashboard/pets?pet=${pid}`} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', cursor: 'pointer' }}>
-                    {/* Avatar */}
-                    <div style={{
-                      width: 46, height: 46, borderRadius: 10,
-                      background: 'rgba(0,198,167,0.15)',
-                      flexShrink: 0, overflow: 'hidden',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 22,
-                    }}>
-                      {pet.photo_uri
-                        ? <img src={pet.photo_uri} alt={pet.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        : speciesIcon}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                        <p style={{ fontWeight: 700, fontSize: 14, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {pet.name}
-                        </p>
-                        <span style={{
-                          fontSize: 10, fontWeight: 600, padding: '1px 7px', borderRadius: 20,
-                          background: isActive ? 'rgba(34,211,165,0.15)' : 'rgba(245,158,11,0.12)',
-                          color: isActive ? '#22D3A5' : '#F59E0B',
-                          flexShrink: 0,
-                        }}>
-                          {isActive ? 'Ativo' : link?.status === 'pending' ? 'Pendente' : link?.status ?? '—'}
-                        </span>
-                      </div>
-                      <p style={{ fontSize: 12, color: C.textSec, marginBottom: 4 }}>
-                        {[pet.breed, pet.species].filter(Boolean).join(' · ')}
-                      </p>
-                      <p style={{ fontSize: 11, color: C.textMuted }}>
-                        👤 {ownerName}
-                      </p>
-                    </div>
-                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <p style={{ fontSize: 18, fontWeight: 800, color: C.accent, letterSpacing: '-0.04em', lineHeight: 1 }}>
-                        {m?.totalWalks ?? 0}
-                      </p>
-                      <p style={{ fontSize: 10, color: C.textMuted, marginTop: 1 }}>passeios</p>
-                    </div>
-                  </Link>
-                  {/* Botão desvincular fora do Link para evitar aninhamento de âncoras */}
-                  <div style={{ padding: '0 16px 12px', display: 'flex', justifyContent: 'flex-end' }}>
-                    <BotaoDesvincular
-                      linkId={link?.id ?? ''}
-                      petId={pid}
-                      ownerId={link?.owner_id ?? null}
-                      petName={pet.name}
-                    />
-                  </div>
+        <div className="zw-split zw-in">
+          {/* ── Lista ── */}
+          <Card pad={false}>
+            {linkedIds.length > 0 && (
+              <>
+                <div style={{ padding: '14px 18px 10px', display: 'flex', justifyContent: 'space-between' }}>
+                  <Label>Pets de tutores</Label>
+                  <span style={{ fontSize: 12, color: T.label }}>{linkedIds.length}</span>
                 </div>
-              );
-            })}
-          </div>
+                {linkedIds.map((pid) => itemPet(pid, false))}
+              </>
+            )}
+            {ownPets.length > 0 && (
+              <>
+                <div style={{ padding: '14px 18px 10px', display: 'flex', justifyContent: 'space-between', borderTop: linkedIds.length ? `1px solid ${T.line}` : 'none' }}>
+                  <Label>Cadastrados por você</Label>
+                  <span style={{ fontSize: 12, color: T.label }}>{ownPets.length}</span>
+                </div>
+                {ownPets.map((p) => itemPet(p.id, true))}
+              </>
+            )}
+          </Card>
 
-          {/* Detalhe do pet selecionado */}
+          {/* ── Detalhe ── */}
           {selectedPet && selectedMetrics ? (
-            <div style={{ flex: 1, minWidth: 280 }}>
-              {/* Card de métricas */}
-              <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: '18px 20px', marginBottom: 16 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
-                  <div style={{
-                    width: 52, height: 52, borderRadius: 12,
-                    background: 'rgba(0,198,167,0.15)',
-                    overflow: 'hidden',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 26, flexShrink: 0,
-                  }}>
-                    {selectedPet.photo_uri
-                      ? <img src={selectedPet.photo_uri} alt={selectedPet.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      : (SPECIES_ICON[selectedPet.species ?? ''] ?? '🐾')}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
+              <Card style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+                  <Avatar name={selectedPet.name} src={selectedPet.photo_uri} size={56} bg={corPorNome(selectedPet.name)} />
+                  <div style={{ flex: 1, minWidth: 160, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    <h2 style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.02em' }}>{selectedPet.name}</h2>
+                    {descricao(selectedPet) && <span style={{ fontSize: 13, color: T.muted }}>{descricao(selectedPet)}</span>}
+                    <span style={{ fontSize: 13, color: T.muted, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <UserRound size={14} aria-hidden />
+                      {selectedLink ? `Tutor: ${ownerMap[selectedLink.owner_id] ?? '—'}` : 'Pet cadastrado por você, sem tutor no Zupet'}
+                    </span>
                   </div>
-                  <div>
-                    <h2 style={{ fontSize: 18, fontWeight: 800, color: C.text, letterSpacing: '-0.02em', marginBottom: 2 }}>
-                      {selectedPet.name}
-                    </h2>
-                    <p style={{ fontSize: 12, color: C.textSec }}>
-                      {[selectedPet.breed, selectedPet.species].filter(Boolean).join(' · ')}
-                    </p>
-                    <p style={{ fontSize: 11, color: C.textMuted, marginTop: 2 }}>
-                      Tutor: {ownerMap[selectedLink?.owner_id] ?? '—'}
-                    </p>
-                  </div>
+                  {selectedLink && (
+                    <BotaoDesvincular
+                      linkId={selectedLink.id ?? ''}
+                      petId={selectedPetId!}
+                      ownerId={selectedLink.owner_id ?? null}
+                      petName={selectedPet.name}
+                    />
+                  )}
                 </div>
 
-                <div className="db-stat-grid">
-                  {[
-                    { label: 'Passeios', value: String(selectedMetrics.totalWalks) },
-                    { label: 'Distância total', value: selectedMetrics.totalDistanceMeters >= 1000 ? `${(selectedMetrics.totalDistanceMeters / 1000).toFixed(1)} km` : `${selectedMetrics.totalDistanceMeters} m` },
-                    { label: 'Tempo total', value: selectedMetrics.totalMinutes >= 60 ? `${Math.floor(selectedMetrics.totalMinutes / 60)}h ${selectedMetrics.totalMinutes % 60}min` : selectedMetrics.totalMinutes > 0 ? `${selectedMetrics.totalMinutes}min` : '—' },
-                    { label: 'Receita gerada', value: selectedMetrics.totalRevenue > 0 ? `R$ ${selectedMetrics.totalRevenue.toFixed(2).replace('.', ',')}` : 'R$ 0,00' },
-                    { label: 'Último atendimento', value: selectedMetrics.lastActivity ? formatDate(selectedMetrics.lastActivity) : '—' },
-                    { label: 'Vínculo desde', value: selectedLink?.linked_at ? formatDate(selectedLink.linked_at) : '—' },
-                  ].map(({ label, value }) => (
-                    <div key={label} style={{ background: '#0D1F18', border: `1px solid ${C.border}`, borderRadius: 10, padding: '12px 14px' }}>
-                      <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: C.textSec, marginBottom: 6 }}>{label}</p>
-                      <p style={{ fontSize: 20, fontWeight: 800, color: C.text, letterSpacing: '-0.03em', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{value}</p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
+                  {stats.map(({ label, value, icon: Icon }) => (
+                    <div key={label} style={{ background: T.card2, border: `1px solid ${T.line}`, borderRadius: 12, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: T.label }}>
+                        <Icon size={14} aria-hidden /> {label}
+                      </span>
+                      <span style={{ fontSize: 20, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{value}</span>
                     </div>
                   ))}
                 </div>
 
-                {/* Serviços realizados */}
+                {selectedMetrics.totalWalks > 0 && selectedMetrics.totalDistanceMeters === 0 && (
+                  <span style={{ fontSize: 12, color: T.label, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <MapPin size={13} aria-hidden /> Distância aparece quando o passeio é registrado com GPS pelo app.
+                  </span>
+                )}
+
                 {Object.keys(selectedMetrics.serviceCount).length > 1 && (
-                  <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${C.border}` }}>
-                    <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: C.textSec, marginBottom: 10 }}>Serviços realizados</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <Label>Serviços realizados</Label>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                       {Object.entries(selectedMetrics.serviceCount).map(([type, count]) => (
-                        <div key={type} style={{ background: C.accentDim, border: `1px solid rgba(0,198,167,0.18)`, borderRadius: 20, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span style={{ fontSize: 12 }}>{SERVICE_LABEL[type] ?? type}</span>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: C.accent }}>{count}×</span>
-                        </div>
+                        <Chip key={type}>{SERVICE_LABEL[type] ?? type} · {count}</Chip>
                       ))}
                     </div>
                   </div>
                 )}
-              </div>
+              </Card>
 
-              {/* Histórico de passeios */}
-              <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden' }}>
-                <div style={{ padding: '14px 18px', borderBottom: `1px solid ${C.border}` }}>
-                  <h3 style={{ fontWeight: 700, fontSize: 13, color: C.text }}>Histórico</h3>
-                </div>
+              <Card pad={false}>
+                <CardHeader title="Histórico" extra={<span style={{ fontSize: 13, color: T.muted }}>{plural(selectedMetrics.walkHistory.length, 'registro', 'registros')}</span>} />
                 {selectedMetrics.walkHistory.length === 0 ? (
-                  <div style={{ padding: '32px 18px', textAlign: 'center', color: C.textSec, fontSize: 13 }}>
-                    Nenhum atendimento registrado.
+                  <EmptyState icon={History} title="Nenhum atendimento registrado" text="Passeios e serviços concluídos com este pet aparecem aqui." />
+                ) : selectedMetrics.walkHistory.slice(0, 20).map((h, i) => (
+                  <div key={`${h.id}-${i}`} className="zw-row" style={{ flexWrap: 'wrap' }}>
+                    <div style={{ flex: '1 1 160px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <span style={{ fontSize: 14, fontWeight: 700 }}>{SERVICE_LABEL[h.type] ?? h.type}</span>
+                      <span style={{ fontSize: 12, color: T.muted }}>{dataCurta(h.date)}</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      {!!h.duration && <Chip tone="neutral">{duracao(h.duration)}</Chip>}
+                      {km(h.distance) && <Chip tone="neutral">{km(h.distance)}</Chip>}
+                      {!!h.amount && <Chip>{brl(Number(h.amount))}</Chip>}
+                    </div>
                   </div>
-                ) : (
-                  <ul style={{ listStyle: 'none' }}>
-                    {selectedMetrics.walkHistory.slice(0, 20).map((h, i) => (
-                      <li key={`${h.id}-${i}`} style={{
-                        padding: '12px 18px',
-                        borderTop: i > 0 ? `1px solid ${C.border}` : 'none',
-                        display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
-                      }}>
-                        <div style={{ flex: 1, minWidth: 140 }}>
-                          <p style={{ fontWeight: 600, color: C.text, fontSize: 13 }}>
-                            {formatDate(h.date)}
-                          </p>
-                          <p style={{ fontSize: 12, color: C.textSec, marginTop: 2 }}>
-                            {SERVICE_LABEL[h.type] ?? h.type}
-                          </p>
-                        </div>
-                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                          {h.duration && (
-                            <span style={{ fontSize: 11, color: C.textSec, background: C.accentDim, border: `1px solid ${C.border}`, padding: '2px 8px', borderRadius: 20 }}>
-                              {h.duration >= 60 ? `${Math.floor(h.duration / 60)}h ${h.duration % 60}min` : `${h.duration}min`}
-                            </span>
-                          )}
-                          {h.distance && (
-                            <span style={{ fontSize: 11, color: C.textSec, background: C.accentDim, border: `1px solid ${C.border}`, padding: '2px 8px', borderRadius: 20 }}>
-                              {(h.distance / 1000).toFixed(1)} km
-                            </span>
-                          )}
-                          {h.amount && (
-                            <span style={{ fontSize: 11, fontWeight: 700, color: C.accent, background: C.accentDim, border: `1px solid rgba(0,198,167,0.2)`, padding: '2px 8px', borderRadius: 20 }}>
-                              R$ {Number(h.amount).toFixed(2).replace('.', ',')}
-                            </span>
-                          )}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+                ))}
+              </Card>
             </div>
           ) : (
-            <div style={{ flex: 1, minWidth: 280, background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: '40px 20px', textAlign: 'center', color: C.textSec, fontSize: 13 }}>
-              Selecione um pet para ver o histórico e métricas detalhadas.
-            </div>
+            <Card>
+              <EmptyState icon={Dog} title="Escolha um pet" text="Selecione um pet na lista para ver histórico, distância percorrida e receita gerada." />
+            </Card>
           )}
-        </div>
-        </>
-      )}
-
-      {/* Seção de pets avulsos */}
-      {ownPets.length > 0 && (
-        <div style={{ marginTop: 40 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: C.text, letterSpacing: '-0.02em', marginBottom: 16 }}>
-            Meus pets <span style={{ fontSize: 12, fontWeight: 500, color: C.textSec }}>({ownPets.length} avulso{ownPets.length !== 1 ? 's' : ''})</span>
-          </h2>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-            {ownPets.map((pet) => {
-              const speciesIcon = SPECIES_ICON[pet.species ?? ''] ?? '🐾';
-              const m = metricsMap[pet.id];
-              return (
-                <div key={pet.id} style={{
-                  background: C.card, border: `1px solid ${C.border}`,
-                  borderRadius: 14, display: 'flex', alignItems: 'center',
-                  gap: 12, padding: '12px 16px', minWidth: 240,
-                }}>
-                  <div style={{
-                    width: 42, height: 42, borderRadius: 10,
-                    background: 'rgba(0,198,167,0.15)',
-                    flexShrink: 0, overflow: 'hidden',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 20,
-                  }}>
-                    {pet.photo_uri
-                      ? <img src={pet.photo_uri} alt={pet.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      : speciesIcon}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontWeight: 700, fontSize: 14, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {pet.name}
-                    </p>
-                    <p style={{ fontSize: 12, color: C.textSec }}>
-                      {[pet.breed, pet.species].filter(Boolean).join(' · ') || '—'}
-                    </p>
-                    <p style={{ fontSize: 11, color: C.textMuted, marginTop: 2 }}>
-                      Sem tutor vinculado
-                    </p>
-                  </div>
-                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <p style={{ fontSize: 18, fontWeight: 800, color: C.accent, letterSpacing: '-0.04em', lineHeight: 1 }}>
-                      {m?.totalWalks ?? 0}
-                    </p>
-                    <p style={{ fontSize: 10, color: C.textMuted, marginTop: 1 }}>passeios</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
         </div>
       )}
     </div>
