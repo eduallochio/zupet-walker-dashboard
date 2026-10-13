@@ -1,41 +1,26 @@
 import { cookies } from 'next/headers';
+import type { ReactNode } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { T, Card, CardHeader, Chip, EmptyState, Avatar, Label, corPorNome } from '@/components/walker/dash-ui';
+import { decimal, duracao, hora, km, dataCurta } from '@/lib/format';
+import {
+  ArrowLeft, Camera, CheckCheck, CircleDot, Droplet, MapPinOff, PawPrint, Send, Smile, StickyNote,
+  TrendingDown, TrendingUp, type LucideIcon,
+} from 'lucide-react';
 
-const C = {
-  card: '#132219', border: 'rgba(0,200,167,0.12)',
-  accent: '#00C6A7', accentDim: 'rgba(0,198,167,0.12)',
-  text: '#E8F5F0', textSec: '#7FA898', textMuted: '#4A6B60',
-  success: '#22D3A5', warning: '#F59E0B',
+const EVENT_META: Record<string, { label: string; icon: LucideIcon; color: string; bg: string }> = {
+  pee:         { label: 'Xixi',      icon: Droplet,       color: '#93C5FD', bg: 'rgba(147,197,253,0.14)' },
+  poop:        { label: 'Cocô',      icon: CircleDot,     color: '#FBBF24', bg: 'rgba(251,191,36,0.14)' },
+  interaction: { label: 'Interação', icon: PawPrint,      color: '#86EFAC', bg: 'rgba(134,239,172,0.12)' },
+  mood:        { label: 'Humor',     icon: Smile,         color: '#C4B5FD', bg: 'rgba(196,181,253,0.14)' },
+  note:        { label: 'Nota',      icon: StickyNote,    color: '#A3BCB0', bg: 'rgba(163,188,176,0.12)' },
 };
 
-const EVENT_META: Record<string, { emoji: string; label: string; color: string; bg: string }> = {
-  pee:         { emoji: '💧', label: 'Xixi',      color: '#60a5fa', bg: 'rgba(96,165,250,0.15)' },
-  poop:        { emoji: '💩', label: 'Cocô',      color: '#fbbf24', bg: 'rgba(251,191,36,0.15)'  },
-  interaction: { emoji: '🐾', label: 'Interação', color: '#22D3A5', bg: 'rgba(34,211,165,0.12)' },
-  mood:        { emoji: '😊', label: 'Humor',     color: '#c084fc', bg: 'rgba(192,132,252,0.15)' },
-  note:        { emoji: '📝', label: 'Nota',      color: '#7FA898', bg: 'rgba(127,168,152,0.12)' },
-};
-
-function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString('pt-BR', {
-    weekday: 'long', day: '2-digit', month: 'long', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  });
-}
-
-function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-}
-
-function formatDuration(min: number | null) {
-  if (!min) return '—';
-  const h = Math.floor(min / 60);
-  const m = min % 60;
-  if (h === 0) return `${m} min`;
-  return m > 0 ? `${h}h ${m}min` : `${h}h`;
-}
+const TZ = 'America/Sao_Paulo';
+const dataLonga = (iso: string) =>
+  new Date(iso).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: TZ });
 
 export default async function RelatoriDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -110,217 +95,205 @@ export default async function RelatoriDetailPage({ params }: { params: Promise<{
   const durationDiff = avgDuration && report.duration_minutes ? report.duration_minutes - avgDuration : null;
   const distanceDiff = avgDistance && report.distance_meters  ? report.distance_meters  - avgDistance  : null;
 
-  const photos = report.photos ?? [];
+  const photos: string[] = report.photos ?? [];
+  const media = (k: 'pee_count' | 'poop_count') =>
+    prevReports.length ? decimal(prevReports.reduce((acc: number, r: any) => acc + (r[k] ?? 0), 0) / prevReports.length) : '—';
+
+  const stats = [
+    { label: 'Duração', value: duracao(report.duration_minutes), diff: durationDiff, fmt: (v: number) => duracao(Math.abs(v)) },
+    { label: 'Distância', value: km(report.distance_meters) ?? '—', diff: distanceDiff, fmt: (v: number) => km(Math.abs(v)) ?? '0 km' },
+    { label: 'Xixi · Cocô', value: `${report.pee_count ?? 0} · ${report.poop_count ?? 0}`, diff: null, fmt: null },
+    { label: 'Fotos', value: String(photos.length), diff: null, fmt: null },
+  ];
+
+  const th = (txt: string, center = false) => (
+    <th key={txt} style={{ padding: '10px 18px', textAlign: center ? 'center' : 'left', fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: T.label, borderBottom: `1px solid ${T.line}` }}>{txt}</th>
+  );
+  const td = (v: ReactNode, opts: { center?: boolean; strong?: boolean; color?: string } = {}) => (
+    <td style={{ padding: '11px 18px', textAlign: opts.center ? 'center' : 'left', color: opts.color ?? (opts.strong ? T.text : T.muted), fontWeight: opts.strong ? 700 : 500, fontVariantNumeric: 'tabular-nums' }}>{v}</td>
+  );
 
   return (
-    <div style={{ padding: '28px 24px', maxWidth: 1000, margin: '0 auto' }}>
-      {/* Breadcrumb + voltar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
-        <Link href="/dashboard/relatorios" style={{ fontSize: 13, color: C.accent, textDecoration: 'none', fontWeight: 600 }}>
-          ← Relatórios
+    <div className="zw-page">
+      {/* ── Cabeçalho ── */}
+      <header className="zw-in" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <Link href="/dashboard/relatorios" style={{ fontSize: 14, color: T.accentLt, textDecoration: 'none', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 6, alignSelf: 'flex-start' }}>
+          <ArrowLeft size={16} aria-hidden /> Relatórios
         </Link>
-        <span style={{ fontSize: 13, color: C.textMuted }}>/</span>
-        <span style={{ fontSize: 13, color: C.textSec }}>Detalhe do passeio</span>
-      </div>
-
-      {/* Header */}
-      <div style={{ marginBottom: 28 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, letterSpacing: '-0.03em' }}>
-          Passeio — {new Date(report.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
-        </h1>
-        <p style={{ fontSize: 13, color: C.textSec, marginTop: 3, textTransform: 'capitalize' }}>
-          {formatDateTime(report.created_at)}
-        </p>
-      </div>
-
-      <div className="db-row2" style={{ marginBottom: 16 }}>
-        {/* Card tutor */}
-        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-          <div style={{ width: 44, height: 44, borderRadius: '50%', background: C.accentDim, border: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
-            👤
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em' }}>
+              Passeio com {pets.map((p: any) => p.name).join(', ') || 'pet'}
+            </h1>
+            <span style={{ fontSize: 14, color: T.muted, textTransform: 'capitalize' }}>
+              {dataLonga(report.created_at)} · {hora(report.created_at)}
+            </span>
           </div>
-          <div>
-            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: C.textSec, marginBottom: 4 }}>Tutor</p>
-            <p style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{ownerName}</p>
-          </div>
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(34,211,165,0.15)', borderRadius: 20, padding: '4px 10px' }}>
-            <span style={{ fontSize: 13 }}>✓</span>
-            <span style={{ fontSize: 11, fontWeight: 600, color: C.success }}>Concluído</span>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {report.sent_at && <Chip tone="neutral"><Send size={12} aria-hidden /> Enviado {dataCurta(report.sent_at)}</Chip>}
+            {report.read_at
+              ? <Chip><CheckCheck size={12} aria-hidden /> Lido pelo tutor</Chip>
+              : report.sent_at ? <Chip tone="amber">Ainda não lido</Chip> : null}
           </div>
         </div>
+      </header>
 
-        {/* Card pets */}
-        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: '16px 20px' }}>
-          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: C.textSec, marginBottom: 10 }}>Pets do passeio</p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+      {/* ── Tutor e pets ── */}
+      <div className="zw-grid-2 zw-in">
+        <Card style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <Avatar name={ownerName} size={44} bg={corPorNome(ownerName)} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Label>Tutor</Label>
+            <span style={{ fontSize: 16, fontWeight: 800 }}>{ownerName}</span>
+          </div>
+        </Card>
+        <Card style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <Label>{pets.length === 1 ? 'Pet do passeio' : 'Pets do passeio'}</Label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
             {pets.map((pet: any) => (
-              <div key={pet.id} style={{ display: 'flex', alignItems: 'center', gap: 6, background: C.accentDim, border: `1px solid ${C.border}`, borderRadius: 20, padding: '4px 12px' }}>
-                <span style={{ fontSize: 14 }}>{pet.species === 'cat' ? '🐱' : '🐶'}</span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{pet.name}</span>
-                {pet.breed && <span style={{ fontSize: 11, color: C.textSec }}>{pet.breed}</span>}
+              <div key={pet.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Avatar name={pet.name} src={pet.photo_uri} size={32} bg={corPorNome(pet.name)} />
+                <span style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: 14, fontWeight: 700 }}>{pet.name}</span>
+                  {pet.breed && <span style={{ fontSize: 12, color: T.muted }}>{pet.breed}</span>}
+                </span>
               </div>
             ))}
           </div>
-        </div>
+        </Card>
       </div>
 
-      {/* Stats principais */}
-      <div className="db-stat-grid" style={{ marginBottom: 16 }}>
-        {[
-          { label: 'Duração', value: formatDuration(report.duration_minutes), diff: durationDiff, fmt: (v: number) => `${Math.abs(v)}min` },
-          { label: 'Distância', value: report.distance_meters > 0 ? `${(report.distance_meters / 1000).toFixed(2)} km` : '—', diff: distanceDiff, fmt: (v: number) => `${(Math.abs(v) / 1000).toFixed(1)}km` },
-          { label: 'Eventos', value: String(events.length), diff: null, fmt: null },
-          { label: 'Fotos', value: String(photos.length), diff: null, fmt: null },
-        ].map(({ label, value, diff, fmt }) => (
-          <div key={label} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: '18px 20px' }}>
-            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: C.textSec, marginBottom: 10 }}>{label}</p>
-            <p style={{ fontSize: 26, fontWeight: 800, color: C.text, letterSpacing: '-0.04em', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{value}</p>
-            {diff !== null && fmt && avgDuration !== null && (
-              <p style={{ fontSize: 11.5, color: diff >= 0 ? C.success : C.warning, marginTop: 6 }}>
-                {diff >= 0 ? '▲' : '▼'} {fmt(diff)} vs. média
-              </p>
+      {/* ── Números ── */}
+      <div className="zw-grid-kpi zw-in">
+        {stats.map(({ label, value, diff, fmt }) => (
+          <Card key={label} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <Label>{label}</Label>
+            <span style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>{value}</span>
+            {diff !== null && fmt && diff !== 0 && (
+              <span style={{ fontSize: 13, color: diff > 0 ? T.accentLt : T.amber, display: 'flex', alignItems: 'center', gap: 5 }}>
+                {diff > 0 ? <TrendingUp size={14} aria-hidden /> : <TrendingDown size={14} aria-hidden />}
+                {fmt(diff)} {diff > 0 ? 'acima' : 'abaixo'} da média
+              </span>
             )}
-            {diff === null && avgDuration !== null && (
-              <p style={{ fontSize: 11.5, color: C.textSec, marginTop: 6 }}>neste passeio</p>
-            )}
-          </div>
+          </Card>
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: photos.length > 0 ? '1fr 1fr' : '1fr', gap: 16, marginBottom: 16 }}>
-        {/* Linha do tempo de eventos */}
-        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${C.border}` }}>
-            <h2 style={{ fontWeight: 700, fontSize: 13, color: C.text, letterSpacing: '-0.01em' }}>
-              Linha do tempo — {events.length} eventos
-            </h2>
-          </div>
-          {events.length === 0 ? (
-            <div style={{ padding: '36px 20px', textAlign: 'center', fontSize: 13, color: C.textSec }}>
-              Nenhum evento registrado.
-            </div>
-          ) : (
-            <div style={{ padding: '8px 0' }}>
-              {(report.pet_ids ?? []).map((pid: string) => {
-                const petEvents = eventsByPet[pid] ?? [];
-                if (petEvents.length === 0) return null;
-                const pet = petMap[pid];
-                return (
-                  <div key={pid} style={{ marginBottom: 8 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 20px', background: 'rgba(0,198,167,0.06)', borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}` }}>
-                      <span style={{ fontSize: 14 }}>{pet?.species === 'cat' ? '🐱' : '🐶'}</span>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: C.text }}>{pet?.name ?? pid}</span>
-                      <span style={{ fontSize: 11, color: C.textSec, marginLeft: 'auto' }}>{petEvents.length} eventos</span>
-                    </div>
-                    {petEvents.map((ev: any, i: number) => {
-                      const meta = EVENT_META[ev.type] ?? { emoji: '•', label: ev.type, color: C.textSec, bg: 'rgba(127,168,152,0.12)' };
-                      return (
-                        <div key={ev.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 20px', borderBottom: i < petEvents.length - 1 ? `1px solid ${C.border}` : 'none' }}>
-                          <div style={{ flexShrink: 0, paddingTop: 2 }}>
-                            <div style={{ width: 28, height: 28, borderRadius: '50%', background: meta.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>
-                              {meta.emoji}
-                            </div>
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                              <span style={{ fontSize: 13, fontWeight: 600, color: meta.color }}>{meta.label}</span>
-                              <span style={{ fontSize: 11, color: C.textMuted, fontVariantNumeric: 'tabular-nums' }}>{formatTime(ev.recorded_at)}</span>
-                            </div>
-                            {ev.value && (
-                              <p style={{ fontSize: 12, color: C.textSec, marginTop: 2, lineHeight: 1.5 }}>{ev.value}</p>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Fotos */}
-        {photos.length > 0 && (
-          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden' }}>
-            <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${C.border}` }}>
-              <h2 style={{ fontWeight: 700, fontSize: 13, color: C.text, letterSpacing: '-0.01em' }}>
-                Fotos do passeio ({photos.length})
-              </h2>
-            </div>
-            <div style={{ padding: 12, display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
-              {photos.map((url: string, i: number) => (
-                <a key={i} href={url} target="_blank" rel="noreferrer" style={{ display: 'block', borderRadius: 8, overflow: 'hidden', aspectRatio: '1', border: `1px solid ${C.border}` }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={url} alt={`Foto ${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Obs. gerais */}
-      {report.notes && (
-        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden', marginBottom: 16 }}>
-          <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${C.border}` }}>
-            <h2 style={{ fontWeight: 700, fontSize: 13, color: C.text, letterSpacing: '-0.01em' }}>Observações do passeio</h2>
-          </div>
-          <p style={{ padding: '16px 20px', fontSize: 14, color: C.textSec, lineHeight: 1.6, fontStyle: 'italic' }}>{report.notes}</p>
-        </div>
+      {!report.distance_meters && (
+        <span style={{ fontSize: 13, color: T.label, display: 'flex', alignItems: 'center', gap: 6, marginTop: -6 }}>
+          <MapPinOff size={14} aria-hidden /> Rota não registrada: a distância aparece quando o passeio é feito com o GPS do app ligado.
+        </span>
       )}
 
-      {/* Comparativo com passeios anteriores */}
+      <div className="zw-grid-2">
+        {/* ── Linha do tempo ── */}
+        <Card pad={false}>
+          <CardHeader title="Linha do tempo" extra={<span style={{ fontSize: 13, color: T.muted }}>{events.length} {events.length === 1 ? 'evento' : 'eventos'}</span>} />
+          {events.length === 0 ? (
+            <EmptyState icon={PawPrint} title="Nenhum evento registrado" text="Xixi, cocô, humor e notas marcados durante o passeio aparecem aqui." />
+          ) : (report.pet_ids ?? []).map((pid: string) => {
+            const petEvents = eventsByPet[pid] ?? [];
+            if (petEvents.length === 0) return null;
+            const pet = petMap[pid];
+            return (
+              <div key={pid}>
+                {(report.pet_ids ?? []).length > 1 && (
+                  <div style={{ padding: '10px 18px', borderTop: `1px solid ${T.line}`, display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 13, fontWeight: 800 }}>{pet?.name ?? 'Pet'}</span>
+                    <span style={{ fontSize: 12, color: T.label }}>{petEvents.length} eventos</span>
+                  </div>
+                )}
+                <ol style={{ listStyle: 'none', padding: '6px 18px 14px', borderTop: `1px solid ${T.line}` }}>
+                  {petEvents.map((ev: any, i: number) => {
+                    const meta = EVENT_META[ev.type] ?? { label: ev.type, icon: CircleDot, color: T.muted, bg: 'rgba(255,255,255,0.06)' };
+                    const last = i === petEvents.length - 1;
+                    return (
+                      <li key={ev.id} style={{ display: 'flex', gap: 12, position: 'relative', paddingTop: 10 }}>
+                        {!last && <span aria-hidden style={{ position: 'absolute', left: 14, top: 40, bottom: -10, width: 2, background: T.line }} />}
+                        <span style={{ width: 30, height: 30, borderRadius: '50%', background: meta.bg, color: meta.color, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <meta.icon size={15} aria-hidden />
+                        </span>
+                        <div style={{ flex: 1, minWidth: 0, paddingTop: 4 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                            <span style={{ fontSize: 14, fontWeight: 700 }}>{meta.label}</span>
+                            <span style={{ fontSize: 12, color: T.label, fontVariantNumeric: 'tabular-nums' }}>{hora(ev.recorded_at)}</span>
+                          </div>
+                          {ev.value && <p style={{ fontSize: 13, color: T.muted, marginTop: 2, lineHeight: 1.5 }}>{ev.value}</p>}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </div>
+            );
+          })}
+        </Card>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
+          {/* ── Fotos ── */}
+          <Card pad={false}>
+            <CardHeader title={<><Camera size={18} color={T.accent} aria-hidden /> Fotos</>} extra={photos.length ? <span style={{ fontSize: 13, color: T.muted }}>{photos.length}</span> : undefined} />
+            {photos.length === 0 ? (
+              <EmptyState icon={Camera} title="Sem fotos neste passeio" text="Fotos tiradas pelo app durante o passeio são enviadas junto com o relatório." />
+            ) : (
+              <div style={{ padding: '0 18px 18px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 8 }}>
+                {photos.map((url, i) => (
+                  <a key={i} href={url} target="_blank" rel="noreferrer" style={{ display: 'block', borderRadius: 10, overflow: 'hidden', aspectRatio: '1', border: `1px solid ${T.line}` }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt={`Foto ${i + 1} do passeio`} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  </a>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          {/* ── Observações ── */}
+          {report.notes && (
+            <Card style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <Label>Observações</Label>
+              <p style={{ fontSize: 14, color: T.text, lineHeight: 1.6 }}>{report.notes}</p>
+            </Card>
+          )}
+        </div>
+      </div>
+
+      {/* ── Comparativo ── */}
       {prevReports.length > 0 && (
-        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${C.border}` }}>
-            <h2 style={{ fontWeight: 700, fontSize: 13, color: C.text, letterSpacing: '-0.01em' }}>
-              Comparativo — últimos {prevReports.length} passeios
-            </h2>
-          </div>
+        <Card pad={false}>
+          <CardHeader title="Comparado aos últimos passeios" extra={<span style={{ fontSize: 13, color: T.muted }}>{prevReports.length} anteriores</span>} />
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
+            <table style={{ width: '100%', fontSize: 14, borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ background: 'rgba(0,198,167,0.06)' }}>
-                  {['Data', 'Duração', 'Distância', '💧', '💩'].map((h, i) => (
-                    <th key={h} style={{ padding: '10px 20px', textAlign: i > 1 ? 'center' : 'left', fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: C.textSec, borderBottom: `1px solid ${C.border}` }}>{h}</th>
-                  ))}
-                </tr>
+                <tr>{th('Data')}{th('Duração')}{th('Distância', true)}{th('Xixi', true)}{th('Cocô', true)}</tr>
               </thead>
               <tbody>
-                <tr style={{ background: 'rgba(0,198,167,0.08)', borderBottom: `1px solid ${C.border}` }}>
-                  <td style={{ padding: '12px 20px', fontWeight: 700, color: C.accent }}>Este passeio</td>
-                  <td style={{ padding: '12px 20px', color: C.text, fontWeight: 600 }}>{formatDuration(report.duration_minutes)}</td>
-                  <td style={{ padding: '12px 20px', textAlign: 'center', color: C.text, fontWeight: 600 }}>{report.distance_meters > 0 ? `${(report.distance_meters / 1000).toFixed(1)} km` : '—'}</td>
-                  <td style={{ padding: '12px 20px', textAlign: 'center', fontWeight: 600, color: C.text }}>{report.pee_count}</td>
-                  <td style={{ padding: '12px 20px', textAlign: 'center', fontWeight: 600, color: C.text }}>{report.poop_count}</td>
+                <tr style={{ background: T.accentDim }}>
+                  {td('Este passeio', { strong: true, color: T.accentLt })}
+                  {td(duracao(report.duration_minutes), { strong: true })}
+                  {td(km(report.distance_meters) ?? '—', { center: true, strong: true })}
+                  {td(report.pee_count ?? 0, { center: true, strong: true })}
+                  {td(report.poop_count ?? 0, { center: true, strong: true })}
                 </tr>
                 {prevReports.map((r: any) => (
-                  <tr key={r.id} style={{ borderBottom: `1px solid ${C.border}` }}>
-                    <td style={{ padding: '11px 20px', color: C.textSec }}>
-                      {new Date(r.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
-                    </td>
-                    <td style={{ padding: '11px 20px', color: C.textSec }}>{formatDuration(r.duration_minutes)}</td>
-                    <td style={{ padding: '11px 20px', textAlign: 'center', color: C.textSec }}>{r.distance_meters > 0 ? `${(r.distance_meters / 1000).toFixed(1)} km` : '—'}</td>
-                    <td style={{ padding: '11px 20px', textAlign: 'center', color: C.textSec }}>{r.pee_count}</td>
-                    <td style={{ padding: '11px 20px', textAlign: 'center', color: C.textSec }}>{r.poop_count}</td>
+                  <tr key={r.id} style={{ borderTop: `1px solid ${T.line}` }}>
+                    {td(<Link href={`/dashboard/relatorios/${r.id}`} style={{ color: T.muted, textDecoration: 'none' }}>{dataCurta(r.created_at)}</Link>)}
+                    {td(duracao(r.duration_minutes))}
+                    {td(km(r.distance_meters) ?? '—', { center: true })}
+                    {td(r.pee_count ?? 0, { center: true })}
+                    {td(r.poop_count ?? 0, { center: true })}
                   </tr>
                 ))}
-                <tr style={{ background: 'rgba(0,198,167,0.06)', borderTop: `2px solid ${C.border}` }}>
-                  <td style={{ padding: '11px 20px', fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: C.textSec }}>Média</td>
-                  <td style={{ padding: '11px 20px', color: C.textSec, fontWeight: 600 }}>{formatDuration(avgDuration)}</td>
-                  <td style={{ padding: '11px 20px', textAlign: 'center', color: C.textSec, fontWeight: 600 }}>{avgDistance ? `${(avgDistance / 1000).toFixed(1)} km` : '—'}</td>
-                  <td style={{ padding: '11px 20px', textAlign: 'center', color: C.textSec, fontWeight: 600 }}>
-                    {prevReports.length ? (prevReports.reduce((s: number, r: any) => s + r.pee_count, 0) / prevReports.length).toFixed(1) : '—'}
-                  </td>
-                  <td style={{ padding: '11px 20px', textAlign: 'center', color: C.textSec, fontWeight: 600 }}>
-                    {prevReports.length ? (prevReports.reduce((s: number, r: any) => s + r.poop_count, 0) / prevReports.length).toFixed(1) : '—'}
-                  </td>
+                <tr style={{ borderTop: `1px solid ${T.lineStrong}` }}>
+                  {td('Média', { strong: true })}
+                  {td(duracao(avgDuration))}
+                  {td(km(avgDistance) ?? '—', { center: true })}
+                  {td(media('pee_count'), { center: true })}
+                  {td(media('poop_count'), { center: true })}
                 </tr>
               </tbody>
             </table>
           </div>
-        </div>
+        </Card>
       )}
     </div>
   );

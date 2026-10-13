@@ -23,8 +23,11 @@ export default async function PerfilPage() {
     .single();
 
   return (
-    <div style={{ maxWidth: 560, padding: '28px 24px' }}>
-      <h1 style={{ fontSize: 22, fontWeight: 800, color: '#E8F5F0', letterSpacing: '-0.03em', marginBottom: 28 }}>Meu Perfil</h1>
+    <div className="zw-page" style={{ maxWidth: 760 }}>
+      <header className="zw-in" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em' }}>Meu perfil</h1>
+        <span style={{ fontSize: 14, color: '#A3BCB0' }}>O que os tutores veem quando encontram você no Zupet</span>
+      </header>
       <ProfileForm
         initialName={profile?.name ?? ''}
         initialBio={profile?.bio ?? ''}

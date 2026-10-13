@@ -1,30 +1,54 @@
 'use client';
 
-import { useState, useTransition, useRef } from 'react';
+import { useState, useTransition, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { CheckCircle2, Clock, Plus, X } from 'lucide-react';
 import { criarLancamento } from './actions';
 
 const BILLING_OPTIONS = [
-  { value: 'per_session', label: '📋 Por sessão' },
-  { value: 'walk',        label: '🦮 Passeio' },
-  { value: 'bath',        label: '🛁 Banho' },
-  { value: 'hotel',       label: '🏠 Hospedagem' },
-  { value: 'day_care',    label: '☀️ Day care' },
-  { value: 'training',    label: '🎓 Treinamento' },
-  { value: 'monthly',     label: '🗓️ Mensal' },
-  { value: 'weekly',      label: '📆 Semanal' },
+  { value: 'per_session', label: 'Por sessão' },
+  { value: 'walk',        label: 'Passeio' },
+  { value: 'bath',        label: 'Banho' },
+  { value: 'hotel',       label: 'Hospedagem' },
+  { value: 'day_care',    label: 'Day care' },
+  { value: 'training',    label: 'Adestramento' },
+  { value: 'monthly',     label: 'Mensal' },
+  { value: 'weekly',      label: 'Semanal' },
 ];
 
+const C = {
+  card: '#11201B', input: '#0B1512', line: 'rgba(134,239,172,0.12)', lineStrong: 'rgba(134,239,172,0.22)',
+  text: '#EEF6F1', muted: '#A3BCB0', label: '#8FAB9E',
+  accent: '#22C55E', accentLt: '#86EFAC', accentDim: 'rgba(34,197,94,0.12)',
+  amber: '#FBBF24', amberDim: 'rgba(251,191,36,0.12)', danger: '#FCA5A5',
+};
+
 type Owner = { user_id: string; name: string };
+type Status = 'pending' | 'paid';
 
 export function NovoLancamentoModal({ owners }: { owners: Owner[] }) {
   const [open, setOpen] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [status, setStatus] = useState<Status>('pending');
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open]);
+
+  function fechar() {
+    setOpen(false);
+    setErro(null);
+  }
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
+    fd.set('status', status);
     setErro(null);
     startTransition(async () => {
       const result = await criarLancamento(fd);
@@ -32,57 +56,56 @@ export function NovoLancamentoModal({ owners }: { owners: Owner[] }) {
         setErro(result.error);
       } else {
         formRef.current?.reset();
+        setStatus('pending');
         setOpen(false);
       }
     });
   }
 
+  const STATUS_OPTS: { value: Status; label: string; icon: typeof Clock; fg: string; bg: string; border: string }[] = [
+    { value: 'pending', label: 'Pendente', icon: Clock,        fg: C.amber,    bg: C.amberDim,  border: 'rgba(251,191,36,0.45)' },
+    { value: 'paid',    label: 'Já pago',  icon: CheckCircle2, fg: C.accentLt, bg: C.accentDim, border: 'rgba(34,197,94,0.5)' },
+  ];
+
   return (
     <>
-      {/* Botão de abertura */}
-      <button
-        onClick={() => setOpen(true)}
-        style={{
-          display: 'flex', alignItems: 'center', gap: 6,
-          background: '#00C6A7', color: '#fff', border: 'none', cursor: 'pointer',
-          padding: '8px 16px', borderRadius: 8,
-          fontSize: 13, fontWeight: 600, letterSpacing: '-0.01em',
-        }}
-      >
-        + Novo lançamento
+      <button onClick={() => setOpen(true)} className="zw-btn zw-btn-primary">
+        <Plus size={16} aria-hidden /> Novo lançamento
       </button>
 
-      {/* Overlay */}
-      {open && (
+      {open && createPortal(
         <div
-          onClick={() => setOpen(false)}
+          onClick={fechar}
           style={{
-            position: 'fixed', inset: 0, background: 'rgba(13,41,38,0.45)',
-            zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: 20,
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(3px)',
+            zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
           }}
         >
-          {/* Modal */}
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="nl-titulo"
             onClick={e => e.stopPropagation()}
+            className="zw-in"
             style={{
-              background: '#fff', borderRadius: 16, width: '100%', maxWidth: 480,
-              boxShadow: '0 20px 60px rgba(0,0,0,0.18)', overflow: 'hidden',
+              background: C.card, border: `1px solid ${C.line}`, borderRadius: 18, width: '100%', maxWidth: 500,
+              maxHeight: 'calc(100dvh - 32px)', overflowY: 'auto',
+              boxShadow: '0 24px 60px rgba(0,0,0,0.5)', color: C.text,
             }}
           >
-            {/* Header */}
-            <div style={{ padding: '18px 24px 16px', borderBottom: '1px solid #e8f4f2', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h2 style={{ fontSize: 15, fontWeight: 700, color: '#0D2926', letterSpacing: '-0.02em' }}>Novo lançamento financeiro</h2>
-              <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', fontSize: 20, lineHeight: 1, padding: 4 }}>✕</button>
+            {/* Cabeçalho */}
+            <div style={{ padding: '20px 24px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h2 id="nl-titulo" style={{ fontSize: 17, fontWeight: 800, letterSpacing: '-0.02em' }}>Novo lançamento</h2>
+              <button onClick={fechar} aria-label="Fechar" style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.muted, padding: 4, display: 'inline-flex' }}>
+                <X size={20} aria-hidden />
+              </button>
             </div>
 
             <form ref={formRef} onSubmit={handleSubmit}>
-              <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-
-                {/* Tutor */}
+              <div style={{ padding: '0 24px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div>
-                  <label style={labelStyle}>Tutor</label>
-                  <select name="owner_id" style={inputStyle}>
+                  <label htmlFor="nl-tutor" style={labelStyle}>Tutor</label>
+                  <select id="nl-tutor" name="owner_id" style={inputStyle}>
                     <option value="">Sem tutor (lançamento avulso)</option>
                     {owners.map(o => (
                       <option key={o.user_id} value={o.user_id}>{o.name}</option>
@@ -90,22 +113,17 @@ export function NovoLancamentoModal({ owners }: { owners: Owner[] }) {
                   </select>
                 </div>
 
-                {/* Valor + Tipo */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
                   <div>
-                    <label style={labelStyle}>Valor (R$) *</label>
-                    <input
-                      name="amount"
-                      type="text"
-                      inputMode="decimal"
-                      placeholder="0,00"
-                      required
-                      style={inputStyle}
-                    />
+                    <label htmlFor="nl-valor" style={labelStyle}>Valor</label>
+                    <div style={{ position: 'relative' }}>
+                      <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 14, color: C.label, pointerEvents: 'none' }}>R$</span>
+                      <input id="nl-valor" name="amount" type="text" inputMode="decimal" placeholder="0,00" required style={{ ...inputStyle, paddingLeft: 38, fontVariantNumeric: 'tabular-nums' }} />
+                    </div>
                   </div>
                   <div>
-                    <label style={labelStyle}>Tipo de serviço *</label>
-                    <select name="billing_type" required style={inputStyle}>
+                    <label htmlFor="nl-tipo" style={labelStyle}>Tipo de serviço</label>
+                    <select id="nl-tipo" name="billing_type" required style={inputStyle}>
                       {BILLING_OPTIONS.map(o => (
                         <option key={o.value} value={o.value}>{o.label}</option>
                       ))}
@@ -113,103 +131,76 @@ export function NovoLancamentoModal({ owners }: { owners: Owner[] }) {
                   </div>
                 </div>
 
-                {/* Descrição */}
                 <div>
-                  <label style={labelStyle}>Descrição</label>
-                  <input
-                    name="description"
-                    type="text"
-                    placeholder="Ex: Passeio segunda-feira, Banho + tosa..."
-                    style={inputStyle}
-                  />
+                  <label htmlFor="nl-desc" style={labelStyle}>Descrição <span style={opcional}>opcional</span></label>
+                  <input id="nl-desc" name="description" type="text" placeholder="Ex: Passeio de segunda, banho e tosa…" style={inputStyle} />
                 </div>
 
-                {/* Status */}
-                <div>
-                  <label style={labelStyle}>Status *</label>
+                <div role="radiogroup" aria-label="Status do pagamento">
+                  <span style={labelStyle}>Status</span>
                   <div style={{ display: 'flex', gap: 10 }}>
-                    {[
-                      { value: 'pending', label: '⏳ Pendente', color: '#92400e', bg: '#fef3c7' },
-                      { value: 'paid',    label: '✅ Já pago',  color: '#00A88E', bg: '#D1EEEA' },
-                    ].map(opt => (
-                      <label key={opt.value} style={{ flex: 1, cursor: 'pointer' }}>
-                        <input type="radio" name="status" value={opt.value} defaultChecked={opt.value === 'pending'} style={{ display: 'none' }} />
-                        <StatusOption label={opt.label} color={opt.color} bg={opt.bg} />
-                      </label>
-                    ))}
+                    {STATUS_OPTS.map(opt => {
+                      const sel = status === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          role="radio"
+                          aria-checked={sel}
+                          onClick={() => setStatus(opt.value)}
+                          style={{
+                            flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                            padding: '11px 14px', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit',
+                            fontSize: 14, fontWeight: 700, transition: 'all .15s',
+                            border: `1px solid ${sel ? opt.border : C.line}`,
+                            background: sel ? opt.bg : 'transparent',
+                            color: sel ? opt.fg : C.muted,
+                          }}
+                        >
+                          <opt.icon size={16} aria-hidden /> {opt.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
-                {/* Observações */}
                 <div>
-                  <label style={labelStyle}>Observações</label>
-                  <textarea
-                    name="notes"
-                    placeholder="Informações adicionais (opcional)"
-                    rows={2}
-                    style={{ ...inputStyle, resize: 'none', fontFamily: 'inherit' }}
-                  />
+                  <label htmlFor="nl-obs" style={labelStyle}>Observações <span style={opcional}>opcional</span></label>
+                  <textarea id="nl-obs" name="notes" placeholder="Informações adicionais" rows={2} style={{ ...inputStyle, resize: 'vertical' }} />
                 </div>
 
                 {erro && (
-                  <div style={{ background: '#fee2e2', border: '1px solid #fecaca', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#991b1b' }}>
-                    {erro}
-                  </div>
+                  <p role="alert" style={{ background: 'rgba(252,165,165,0.08)', border: '1px solid rgba(252,165,165,0.3)', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: C.danger }}>
+                    Não foi possível salvar: {erro}
+                  </p>
                 )}
               </div>
 
-              {/* Footer */}
-              <div style={{ padding: '16px 24px', borderTop: '1px solid #e8f4f2', display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  style={{ padding: '9px 18px', borderRadius: 8, border: '1px solid #D1EEEA', background: '#fff', fontSize: 13, fontWeight: 600, color: '#6B7280', cursor: 'pointer' }}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={isPending}
-                  style={{
-                    padding: '9px 22px', borderRadius: 8, border: 'none',
-                    background: isPending ? '#9CA3AF' : '#00C6A7',
-                    color: '#fff', fontSize: 13, fontWeight: 700,
-                    cursor: isPending ? 'default' : 'pointer',
-                    letterSpacing: '-0.01em',
-                  }}
-                >
+              <div style={{ padding: '16px 24px', borderTop: `1px solid ${C.line}`, display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                <button type="button" onClick={fechar} className="zw-btn zw-btn-ghost">Cancelar</button>
+                <button type="submit" disabled={isPending} className="zw-btn zw-btn-primary">
                   {isPending ? 'Salvando…' : 'Salvar lançamento'}
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );
 }
 
-// Radio button visual customizado — lê o estado via CSS :has
-function StatusOption({ label, color, bg }: { label: string; color: string; bg: string }) {
-  return (
-    <div style={{
-      padding: '10px 14px', borderRadius: 8, textAlign: 'center',
-      border: `1.5px solid ${color}40`, background: bg,
-      fontSize: 13, fontWeight: 600, color,
-    }}>
-      {label}
-    </div>
-  );
-}
-
 const labelStyle: React.CSSProperties = {
-  display: 'block', fontSize: 11, fontWeight: 600, letterSpacing: '0.05em',
-  textTransform: 'uppercase', color: '#6B7280', marginBottom: 6,
+  display: 'block', fontSize: 12, fontWeight: 700, letterSpacing: '0.06em',
+  textTransform: 'uppercase', color: C.label, marginBottom: 6,
 };
 
+const opcional: React.CSSProperties = { textTransform: 'none', letterSpacing: 0, fontWeight: 500, color: C.label, opacity: 0.8 };
+
 const inputStyle: React.CSSProperties = {
-  width: '100%', padding: '10px 12px', borderRadius: 8,
-  border: '1px solid #D1EEEA', fontSize: 13, color: '#0D2926',
-  background: '#F5FAFA', outline: 'none', boxSizing: 'border-box',
-  fontFamily: 'inherit',
+  width: '100%', padding: '11px 12px', borderRadius: 10,
+  border: `1px solid ${C.lineStrong}`, fontSize: 14, color: C.text,
+  background: C.input, outline: 'none', boxSizing: 'border-box',
+  fontFamily: 'inherit', colorScheme: 'dark',
 };

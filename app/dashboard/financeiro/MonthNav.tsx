@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 
-const MONTHS_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const MONTHS_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 export function MonthNav({ viewMonth, viewYear, basePath = '/dashboard/financeiro' }: { viewMonth: number; viewYear: number; basePath?: string }) {
   const router = useRouter();
@@ -27,22 +27,25 @@ export function MonthNav({ viewMonth, viewYear, basePath = '/dashboard/financeir
 
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', gap: 4,
-      background: 'rgba(0,198,167,0.08)', borderRadius: 10,
-      padding: '4px 6px', border: '1px solid rgba(0,200,167,0.2)',
+      display: 'flex', alignItems: 'center',
+      borderRadius: 10, border: '1px solid rgba(134,239,172,0.12)', overflow: 'hidden',
     }}>
-      <button onClick={prev} style={btn}>‹</button>
-      <span style={{ minWidth: 110, textAlign: 'center', fontSize: 13, fontWeight: 700, color: '#E8F5F0' }}>
+      <button onClick={prev} style={btn} aria-label="Mês anterior">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M15 6l-6 6 6 6" /></svg>
+      </button>
+      <span style={{ minWidth: 130, textAlign: 'center', fontSize: 14, fontWeight: 700, color: '#EEF6F1' }}>
         {MONTHS_PT[viewMonth]} {viewYear}
       </span>
-      <button onClick={next} disabled={isCurrentMonth} style={{ ...btn, opacity: isCurrentMonth ? 0.3 : 1 }}>›</button>
+      <button onClick={next} disabled={isCurrentMonth} style={{ ...btn, opacity: isCurrentMonth ? 0.3 : 1 }} aria-label="Próximo mês">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M9 6l6 6-6 6" /></svg>
+      </button>
     </div>
   );
 }
 
 const btn: React.CSSProperties = {
-  width: 28, height: 28, borderRadius: 7, border: 'none',
+  width: 40, height: 40, border: 'none',
   background: 'transparent', cursor: 'pointer', fontSize: 18,
   display: 'flex', alignItems: 'center', justifyContent: 'center',
-  color: '#E8F5F0', fontWeight: 700, lineHeight: 1,
+  color: '#EEF6F1', fontWeight: 700, lineHeight: 1,
 };

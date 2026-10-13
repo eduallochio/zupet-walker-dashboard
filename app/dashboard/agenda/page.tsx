@@ -1,36 +1,45 @@
 import { cookies } from 'next/headers';
+import type { ReactNode } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { MonthNav } from '../financeiro/MonthNav';
 import { BotoesAgendamento } from './BotoesAgendamento';
 import { NovoAgendamentoBtn } from './NovoAgendamentoModal';
+import { ResolverAtrasado } from '@/components/walker/PendenciaAcoes';
+import { T, Card, CardHeader, Chip, EmptyState, IconBox, Label } from '@/components/walker/dash-ui';
+import { dataCurta, diaKey, duracao, hora, plural, semanaAtual } from '@/lib/format';
+import {
+  AlertTriangle, Bath, CalendarCheck, CalendarDays, GraduationCap, History, Home, Inbox,
+  Footprints, StickyNote, Stethoscope, Sun, type LucideIcon,
+} from 'lucide-react';
 
 type ScheduleStatus = 'proposed' | 'confirmed' | 'cancelled' | 'done';
 
-const C = {
-  bg: '#0D1F18', card: '#132219', border: 'rgba(0,200,167,0.12)',
-  accent: '#00C6A7', accentDim: 'rgba(0,198,167,0.12)',
-  text: '#E8F5F0', textSec: '#7FA898', textMuted: '#4A6B60',
-  success: '#22D3A5', warning: '#F59E0B', danger: '#F87171',
+const STATUS: Record<ScheduleStatus, { label: string; tone: 'accent' | 'amber' | 'neutral' }> = {
+  confirmed: { label: 'Confirmado', tone: 'accent' },
+  proposed:  { label: 'Aguardando você', tone: 'amber' },
+  cancelled: { label: 'Cancelado', tone: 'neutral' },
+  done:      { label: 'Concluído', tone: 'neutral' },
 };
 
-const STATUS_CONFIG: Record<ScheduleStatus, { label: string; color: string; bg: string }> = {
-  confirmed: { label: 'Confirmado', color: C.success,  bg: 'rgba(34,211,165,0.15)' },
-  proposed:  { label: 'Pendente',   color: C.warning,  bg: 'rgba(245,158,11,0.15)' },
-  cancelled: { label: 'Cancelado',  color: C.danger,   bg: 'rgba(248,113,113,0.15)' },
-  done:      { label: 'Concluído',  color: C.textSec,  bg: 'rgba(127,168,152,0.12)' },
+const SERVICO: Record<string, { label: string; icon: LucideIcon; cor: string }> = {
+  walk:      { label: 'Passeio', icon: Footprints, cor: '#22C55E' },
+  bath:      { label: 'Banho e tosa', icon: Bath, cor: '#93C5FD' },
+  boarding:  { label: 'Hospedagem', icon: Home, cor: '#C4B5FD' },
+  daycare:   { label: 'Day care', icon: Sun, cor: '#FCD34D' },
+  training:  { label: 'Adestramento', icon: GraduationCap, cor: '#FDBA74' },
+  vet_visit: { label: 'Visita veterinária', icon: Stethoscope, cor: '#F9A8D4' },
 };
+const servicoDe = (t?: string | null) => SERVICO[t ?? 'walk'] ?? SERVICO.walk;
 
-function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString('pt-BR', {
-    weekday: 'short', day: '2-digit', month: 'short',
-    hour: '2-digit', minute: '2-digit',
-  });
-}
+const DIAS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 
-function formatDuration(min: number | null) {
-  if (!min) return '—';
-  if (min < 60) return `${min}min`;
-  return `${Math.floor(min / 60)}h${min % 60 ? (min % 60) + 'min' : ''}`;
+function tituloDia(key: string, hojeKey: string, amanhaKey: string) {
+  const d = new Date(`${key}T12:00:00Z`);
+  const rot = d.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
+  if (key === hojeKey) return `Hoje · ${rot}`;
+  if (key === amanhaKey) return `Amanhã · ${rot}`;
+  return rot;
 }
 
 export default async function AgendaPage({ searchParams }: { searchParams?: Promise<{ mes?: string; ano?: string }> }) {
@@ -63,14 +72,14 @@ export default async function AgendaPage({ searchParams }: { searchParams?: Prom
   const [{ data: upcoming }, { data: pastSchedules }] = await Promise.all([
     profile?.id
       ? supabase.from('walk_schedules')
-          .select('id, scheduled_at, duration_minutes, pet_ids, status, notes, owner_id')
+          .select('id, scheduled_at, duration_minutes, pet_ids, status, notes, owner_id, service_type')
           .eq('walker_id', profile.id)
           .in('status', ['proposed', 'confirmed'])
           .order('scheduled_at', { ascending: true })
       : Promise.resolve({ data: [] }),
     profile?.id
       ? supabase.from('walk_schedules')
-          .select('id, scheduled_at, duration_minutes, pet_ids, status, notes, owner_id')
+          .select('id, scheduled_at, duration_minutes, pet_ids, status, notes, owner_id, service_type')
           .eq('walker_id', profile.id)
           .in('status', ['done', 'cancelled'])
           .gte('scheduled_at', filterStart)
@@ -85,7 +94,7 @@ export default async function AgendaPage({ searchParams }: { searchParams?: Prom
 
   // Buscar nomes dos pets
   const allPetIds = [...new Set(allRows.flatMap((s: any) => s.pet_ids ?? []))];
-  let petNames: Record<string, string> = {};
+  const petNames: Record<string, string> = {};
   if (allPetIds.length > 0) {
     const { data: petsData } = await supabase
       .from('pets').select('id, name').in('id', allPetIds);
@@ -94,7 +103,7 @@ export default async function AgendaPage({ searchParams }: { searchParams?: Prom
 
   // Buscar nomes dos tutores
   const ownerIds = [...new Set(allRows.map((s: any) => s.owner_id).filter(Boolean))];
-  let ownerNames: Record<string, string> = {};
+  const ownerNames: Record<string, string> = {};
   if (ownerIds.length > 0) {
     const { data: owners } = await supabase
       .from('user_profiles').select('user_id, name').in('user_id', ownerIds);
@@ -128,125 +137,183 @@ export default async function AgendaPage({ searchParams }: { searchParams?: Prom
           owner_name: r.owner_id ? linkOwnerNames[r.owner_id] : undefined,
         }));
     }
+
+    // Pets avulsos cadastrados pelo walker (sem tutor)
+    const { data: ownPets } = await supabase
+      .from('pets')
+      .select('id, name, breed')
+      .eq('walker_owner_id', user.id)
+      .is('merged_into', null)
+      .eq('is_memorial', false)
+      .order('name');
+
+    const ownPetIds = new Set(linkedPets.map((p) => p.pet_id));
+    for (const p of (ownPets ?? []) as any[]) {
+      if (!ownPetIds.has(p.id)) {
+        linkedPets.push({ pet_id: p.id, name: p.name, breed: p.breed ?? undefined });
+      }
+    }
   }
 
-  const today = new Date();
-  const confirmedToday = upcomingRows.filter((s: any) => {
-    const d = new Date(s.scheduled_at);
-    return s.status === 'confirmed' &&
-      d.getFullYear() === today.getFullYear() &&
-      d.getMonth() === today.getMonth() &&
-      d.getDate() === today.getDate();
-  });
+  // ── Grupos ──
+  const limiteAtraso = now.getTime() - 3 * 3600_000;
+  const atrasados   = upcomingRows.filter((s: any) => s.status === 'confirmed' && new Date(s.scheduled_at).getTime() < limiteAtraso);
+  const solicitacoes = upcomingRows.filter((s: any) => s.status === 'proposed');
+  const proximos    = upcomingRows.filter((s: any) => s.status === 'confirmed' && new Date(s.scheduled_at).getTime() >= limiteAtraso);
 
-  const MONTHS_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const hojeKey  = diaKey(now.toISOString());
+  const amanhaKey = diaKey(new Date(now.getTime() + 86400_000).toISOString());
+  const porDia: Record<string, any[]> = {};
+  for (const s of proximos) (porDia[diaKey(s.scheduled_at)] ??= []).push(s);
+  const diasOrdenados = Object.keys(porDia).sort();
+  const hojeCount = (porDia[hojeKey] ?? []).length;
+
+  const semana = semanaAtual();
+  const nomeMes = MESES[viewMonth];
+  const concluidosMes = pastRows.filter((s: any) => s.status === 'done').length;
+
+  const nomesPets = (ids: string[] | null) => (ids ?? []).map((id) => petNames[id]).filter(Boolean).join(', ') || 'Pet';
+
+  const Linha = ({ s, children }: { s: any; children?: ReactNode }) => {
+    const sv = servicoDe(s.service_type);
+    return (
+      <div className="zw-row" style={{ alignItems: 'stretch', flexWrap: 'wrap' }}>
+        <div style={{ width: 52, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 2, paddingTop: 2 }}>
+          <span style={{ fontSize: 15, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{hora(s.scheduled_at)}</span>
+          <span style={{ fontSize: 12, color: T.label }}>{duracao(s.duration_minutes)}</span>
+        </div>
+        <span aria-hidden style={{ width: 3, borderRadius: 3, background: sv.cor, flexShrink: 0 }} />
+        <div style={{ flex: '1 1 220px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <span style={{ fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <sv.icon size={15} color={sv.cor} aria-hidden /> {sv.label} · {nomesPets(s.pet_ids)}
+          </span>
+          <span style={{ fontSize: 13, color: T.muted }}>
+            {ownerNames[s.owner_id] ? `Tutor: ${ownerNames[s.owner_id]}` : 'Pet cadastrado por você'}
+          </span>
+          {s.notes && (
+            <span style={{ fontSize: 12, color: T.label, display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+              <StickyNote size={13} aria-hidden style={{ marginTop: 1, flexShrink: 0 }} /> {s.notes}
+            </span>
+          )}
+        </div>
+        {children ?? <div style={{ alignSelf: 'center' }}><Chip tone={STATUS[s.status as ScheduleStatus]?.tone ?? 'neutral'}>{STATUS[s.status as ScheduleStatus]?.label ?? s.status}</Chip></div>}
+      </div>
+    );
+  };
 
   return (
-    <div style={{ padding: '28px 24px', maxWidth: 900, margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div>
-            <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, letterSpacing: '-0.03em' }}>Agenda</h1>
-            <p style={{ fontSize: 13, color: C.textSec, marginTop: 3 }}>
-              {confirmedToday.length > 0
-                ? `${confirmedToday.length} atendimento${confirmedToday.length > 1 ? 's' : ''} confirmado${confirmedToday.length > 1 ? 's' : ''} hoje`
-                : 'Nenhum atendimento confirmado para hoje'}
-            </p>
-          </div>
-          <MonthNav viewMonth={viewMonth} viewYear={viewYear} basePath="/dashboard/agenda" />
+    <div className="zw-page">
+      {/* ── Cabeçalho ── */}
+      <header className="zw-in" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em' }}>Agenda</h1>
+          <span style={{ fontSize: 14, color: T.muted }}>
+            {hojeCount ? `${plural(hojeCount, 'atendimento', 'atendimentos')} hoje` : 'Nenhum atendimento hoje'}
+            {solicitacoes.length ? ` · ${plural(solicitacoes.length, 'solicitação aguardando', 'solicitações aguardando')}` : ''}
+          </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <NovoAgendamentoBtn linkedPets={linkedPets} />
-          {(['proposed', 'confirmed'] as ScheduleStatus[]).map((st) => {
-            const count = upcomingRows.filter((s: any) => s.status === st).length;
-            const cfg = STATUS_CONFIG[st];
-            return count > 0 ? (
-              <div key={st} style={{ fontSize: 12, fontWeight: 600, color: cfg.color, background: cfg.bg, padding: '4px 12px', borderRadius: 20 }}>
-                {count} {cfg.label.toLowerCase()}
-              </div>
-            ) : null;
+        <NovoAgendamentoBtn linkedPets={linkedPets} />
+      </header>
+
+      {/* ── Semana ── */}
+      <Card pad={false} style={{ padding: '6px 12px 12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 6px' }}>
+          <Label>Esta semana</Label>
+          <span style={{ fontSize: 13, color: T.muted }}>{plural(proximos.filter((s: any) => s.scheduled_at >= semana.inicio && s.scheduled_at <= semana.fim).length, 'confirmado', 'confirmados')}</span>
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {semana.dias.map((d, i) => {
+            const n = (porDia[d.key] ?? []).length;
+            return (
+              <a key={d.key} href={n ? `#dia-${d.key}` : undefined} className={`zw-day${d.hoje ? ' hoje' : ''}`} aria-label={`${DIAS[i]} ${d.dia}: ${plural(n, 'atendimento', 'atendimentos')}`}>
+                <span>{DIAS[i]}</span><b>{d.dia}</b>
+                <span className="zw-dots">{Array.from({ length: Math.min(n, 4) }).map((_, k) => <i key={k} />)}</span>
+              </a>
+            );
           })}
         </div>
-      </div>
+      </Card>
 
-      {/* Próximos */}
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden', marginBottom: 16 }}>
-        <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${C.border}` }}>
-          <h2 style={{ fontWeight: 700, fontSize: 13, color: C.text, letterSpacing: '-0.01em' }}>Próximos agendamentos</h2>
-        </div>
-        {upcomingRows.length === 0 ? (
-          <div style={{ padding: '36px 20px', textAlign: 'center', fontSize: 13, color: C.textSec }}>
-            Nenhum agendamento pendente ou confirmado.
+      {/* ── Precisa de atenção ── */}
+      {atrasados.length > 0 && (
+        <Card pad={false} style={{ borderColor: T.amberLine }}>
+          <CardHeader title={<><AlertTriangle size={18} color={T.amber} aria-hidden /> Precisa de atenção <Chip tone="amber">{atrasados.length}</Chip></>} />
+          <p style={{ fontSize: 13, color: T.muted, padding: '0 18px 12px', marginTop: -6 }}>
+            Estes horários já passaram e continuam como confirmados. Conte o que aconteceu para manter agenda e financeiro certos.
+          </p>
+          {atrasados.map((s: any) => (
+            <div key={s.id} className="zw-row" style={{ flexWrap: 'wrap' }}>
+              <IconBox icon={servicoDe(s.service_type).icon} bg={T.amberDim} fg={T.amber} />
+              <div style={{ flex: '1 1 200px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span style={{ fontSize: 14, fontWeight: 700 }}>{servicoDe(s.service_type).label} de {nomesPets(s.pet_ids)}</span>
+                <span style={{ fontSize: 13, color: T.muted }}>
+                  {dataCurta(s.scheduled_at)} às {hora(s.scheduled_at)}{ownerNames[s.owner_id] ? ` · ${ownerNames[s.owner_id]}` : ''}
+                </span>
+              </div>
+              <ResolverAtrasado scheduleId={s.id} />
+            </div>
+          ))}
+        </Card>
+      )}
+
+      {/* ── Solicitações ── */}
+      {solicitacoes.length > 0 && (
+        <Card pad={false}>
+          <CardHeader title={<><Inbox size={18} color={T.amber} aria-hidden /> Solicitações <Chip tone="amber">{solicitacoes.length}</Chip></>} />
+          {solicitacoes.map((s: any) => (
+            <Linha key={s.id} s={s}>
+              <div style={{ alignSelf: 'center' }}><BotoesAgendamento scheduleId={s.id} /></div>
+            </Linha>
+          ))}
+        </Card>
+      )}
+
+      {/* ── Próximos ── */}
+      <Card pad={false}>
+        <CardHeader title={<><CalendarDays size={18} color={T.accent} aria-hidden /> Próximos</>} />
+        {diasOrdenados.length === 0 ? (
+          <EmptyState
+            icon={CalendarCheck}
+            title="Nada confirmado pela frente"
+            text="Quando você aceitar uma solicitação ou criar um agendamento, ele aparece aqui organizado por dia."
+          />
+        ) : diasOrdenados.map((key) => (
+          <div key={key} id={`dia-${key}`}>
+            <div style={{ padding: '12px 18px 6px', borderTop: `1px solid ${T.line}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 13, fontWeight: 800, textTransform: 'capitalize', color: key === hojeKey ? T.accentLt : T.text }}>
+                {tituloDia(key, hojeKey, amanhaKey)}
+              </span>
+              <span style={{ fontSize: 12, color: T.label }}>{plural(porDia[key].length, 'atendimento', 'atendimentos')}</span>
+            </div>
+            {porDia[key].map((s: any) => <Linha key={s.id} s={s} />)}
           </div>
-        ) : (
-          <ul>
-            {upcomingRows.map((s: any, i: number) => {
-              const cfg = STATUS_CONFIG[s.status as ScheduleStatus] ?? STATUS_CONFIG.proposed;
-              const pets = (s.pet_ids ?? []).map((id: string) => petNames[id] ?? id);
-              return (
-                <li key={s.id} style={{ padding: '14px 20px', borderTop: i > 0 ? `1px solid ${C.border}` : 'none', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 10, background: C.accentDim, border: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
-                    🐾
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className="flex items-center gap-2" style={{ marginBottom: 4, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{formatDateTime(s.scheduled_at)}</span>
-                      <span style={{ fontSize: 11, fontWeight: 600, color: cfg.color, background: cfg.bg, padding: '2px 8px', borderRadius: 20, flexShrink: 0 }}>{cfg.label}</span>
-                    </div>
-                    <div style={{ fontSize: 12, color: C.textSec, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                      {ownerNames[s.owner_id] && <span>👤 {ownerNames[s.owner_id]}</span>}
-                      {pets.length > 0 && <span>🐶 {pets.join(', ')}</span>}
-                      <span>⏱ {formatDuration(s.duration_minutes)}</span>
-                    </div>
-                    {s.notes && <p style={{ fontSize: 12, color: C.textMuted, marginTop: 4, fontStyle: 'italic' }}>{s.notes}</p>}
-                    {s.status === 'proposed' && (
-                      <div style={{ marginTop: 10 }}>
-                        <BotoesAgendamento scheduleId={s.id} />
-                      </div>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
+        ))}
+      </Card>
 
-      {/* Histórico filtrado pelo mês */}
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden' }}>
-        <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${C.border}` }}>
-          <h2 style={{ fontWeight: 700, fontSize: 13, color: C.text, letterSpacing: '-0.01em' }}>
-            Histórico — {MONTHS_PT[viewMonth]} {viewYear}
-          </h2>
-        </div>
+      {/* ── Histórico do mês ── */}
+      <Card pad={false}>
+        <CardHeader
+          title={<><History size={18} color={T.muted} aria-hidden /> Histórico de {nomeMes}</>}
+          extra={<MonthNav viewMonth={viewMonth} viewYear={viewYear} basePath="/dashboard/agenda" />}
+        />
+        {pastRows.length > 0 && (
+          <p style={{ fontSize: 13, color: T.muted, padding: '0 18px 12px', marginTop: -6 }}>
+            {plural(concluidosMes, 'concluído', 'concluídos')} · {plural(pastRows.length - concluidosMes, 'cancelado', 'cancelados')}
+          </p>
+        )}
         {pastRows.length === 0 ? (
-          <div style={{ padding: '36px 20px', textAlign: 'center', fontSize: 13, color: C.textSec }}>
-            Nenhum atendimento em {MONTHS_PT[viewMonth]} {viewYear}.
+          <EmptyState icon={History} title={`Nenhum atendimento em ${nomeMes} de ${viewYear}`} text="Atendimentos concluídos e cancelados do mês aparecem aqui." />
+        ) : pastRows.map((s: any) => (
+          <div key={s.id} style={{ opacity: s.status === 'cancelled' ? 0.55 : 1 }}>
+            <Linha s={s}>
+              <div style={{ alignSelf: 'center', display: 'flex', gap: 8, alignItems: 'center' }}>
+                <span style={{ fontSize: 12, color: T.label }}>{dataCurta(s.scheduled_at)}</span>
+                <Chip tone={STATUS[s.status as ScheduleStatus].tone}>{STATUS[s.status as ScheduleStatus].label}</Chip>
+              </div>
+            </Linha>
           </div>
-        ) : (
-          <ul>
-            {pastRows.map((s: any, i: number) => {
-              const cfg = STATUS_CONFIG[s.status as ScheduleStatus] ?? STATUS_CONFIG.done;
-              const pets = (s.pet_ids ?? []).map((id: string) => petNames[id] ?? id);
-              return (
-                <li key={s.id} style={{ padding: '12px 20px', borderTop: i > 0 ? `1px solid ${C.border}` : 'none', display: 'flex', alignItems: 'center', gap: 14, opacity: s.status === 'cancelled' ? 0.55 : 1 }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className="flex items-center gap-2" style={{ marginBottom: 2, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{formatDateTime(s.scheduled_at)}</span>
-                      <span style={{ fontSize: 11, fontWeight: 600, color: cfg.color, background: cfg.bg, padding: '2px 8px', borderRadius: 20, flexShrink: 0 }}>{cfg.label}</span>
-                    </div>
-                    <div style={{ fontSize: 12, color: C.textSec, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                      {ownerNames[s.owner_id] && <span>👤 {ownerNames[s.owner_id]}</span>}
-                      {pets.length > 0 && <span>🐶 {pets.join(', ')}</span>}
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
+        ))}
+      </Card>
     </div>
   );
 }

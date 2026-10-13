@@ -1,56 +1,20 @@
 import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
-import { formatCurrency } from '@/lib/utils';
-import { MonthNav } from './financeiro/MonthNav';
-
-function formatRelative(dateStr: string) {
-  const d = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - d.getTime();
-  const diffDays = Math.floor(diffMs / 86400000);
-  if (diffDays === 0) return 'hoje';
-  if (diffDays === 1) return 'ontem';
-  if (diffDays < 7) return `${diffDays} dias atrás`;
-  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
-}
-
-function formatDuration(min: number | null) {
-  if (!min) return '—';
-  if (min < 60) return `${min}min`;
-  return `${Math.floor(min / 60)}h${min % 60 ? (min % 60) + 'min' : ''}`;
-}
-
-function getGreeting() {
-  const h = new Date().getHours();
-  if (h < 12) return 'Bom dia';
-  if (h < 18) return 'Boa tarde';
-  return 'Boa noite';
-}
+import { AlertTriangle, CalendarDays, CheckCircle2, Clock, MapPin, PawPrint, Plus, Star, Wallet, Inbox } from 'lucide-react';
+import { T, Card, CardHeader, Label, Chip, EmptyState, IconBox, Avatar, ButtonLink, corPorNome } from '@/components/walker/dash-ui';
+import { MarcarPago, ResolverAtrasado, CopiarLink } from '@/components/walker/PendenciaAcoes';
+import { brl, decimal, duracao, km, plural, dataCurta, hora, relativo, saudacao, semanaAtual, diaKey } from '@/lib/format';
 
 const SERVICE_LABEL: Record<string, string> = {
   walk: 'Passeio', bath: 'Banho e Tosa', boarding: 'Hospedagem',
-  daycare: 'Creche', vet_visit: 'Visita ao Vet', training: 'Adestramento',
+  daycare: 'Day Care', vet_visit: 'Visita Veterinária', training: 'Adestramento',
 };
-const SERVICE_ICON: Record<string, string> = {
-  walk: '🦮', bath: '🛁', boarding: '🌙', daycare: '🏠', vet_visit: '🏥', training: '🎯',
+const SERVICE_COLOR: Record<string, string> = {
+  walk: '#22C55E', bath: '#60A5FA', training: '#F472B6', boarding: '#C4B5FD', daycare: '#FDBA74', vet_visit: '#FCA5A5',
 };
+const DIAS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 
-export default async function DashboardPage({ searchParams }: { searchParams?: Promise<{ mes?: string; ano?: string }> }) {
-  const sp = await (searchParams ?? Promise.resolve({} as { mes?: string; ano?: string }));
-  const now = new Date();
-  // URL usa mês 1-based; internamente 0-based
-  const viewMonth = sp.mes !== undefined ? parseInt(sp.mes) - 1 : now.getMonth();
-  const viewYear  = sp.ano !== undefined ? parseInt(sp.ano)     : now.getFullYear();
-
-  const filterStart = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-01T00:00:00.000Z`;
-  const lastDay = new Date(Date.UTC(viewYear, viewMonth + 1, 0)).getUTCDate();
-  const filterEnd   = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}T23:59:59.999Z`;
-  // Mês anterior para comparação de faturamento
-  const prevMonth = viewMonth === 0 ? 11 : viewMonth - 1;
-  const prevYear  = viewMonth === 0 ? viewYear - 1 : viewYear;
-  const prevFilterStart = `${prevYear}-${String(prevMonth + 1).padStart(2, '0')}-01T00:00:00.000Z`;
-  const prevFilterEnd   = filterStart;
-
+export default async function DashboardPage() {
   const jar = await cookies();
   const accessToken = jar.get('sb-access-token')?.value!;
   const supabase = createClient(
@@ -64,462 +28,301 @@ export default async function DashboardPage({ searchParams }: { searchParams?: P
 
   const { data: profile } = await supabase
     .from('walker_profiles')
-    .select('id, name, rating, plan, avatar_url, city, experience_years')
+    .select('id, name, plan, city, username')
     .eq('user_id', user.id)
     .single();
+  const walkerId = profile?.id;
+  if (!walkerId) return null;
 
-  const profileId = profile?.id;
-
-  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
-  const next7days = new Date(); next7days.setDate(next7days.getDate() + 7);
+  // ── Janelas de tempo (fuso de Brasília) ──
+  const semana = semanaAtual();
+  const agoraBR = new Date(Date.now() - 3 * 3600_000);
+  const mesInicio = new Date(Date.UTC(agoraBR.getUTCFullYear(), agoraBR.getUTCMonth(), 1) + 3 * 3600_000).toISOString();
+  const atrasoLimite = new Date(Date.now() - 3 * 3600_000).toISOString(); // confirmado há mais de 3h e não registrado
+  const hojeKey = diaKey(new Date().toISOString());
+  const nomeMes = new Date().toLocaleDateString('pt-BR', { month: 'long', timeZone: 'America/Sao_Paulo' });
 
   const [
-    { data: allSessions },
+    { data: semanaSchedules },
+    { data: atrasados },
+    { count: solicitacoes },
+    { data: pagamentosMes },
+    { data: pagamentosPendentes },
+    { data: ratings },
     { data: links },
-    { data: allPayments },
-    { data: prevPayments },
-    { data: recentReports },
-    { data: ratingsData },
-    { data: upcomingSchedules },
-    { data: pendingSchedules },
+    { data: relatorios },
   ] = await Promise.all([
-    profileId
-      ? supabase.from('walk_sessions').select('id').eq('walker_id', profileId)
-      : Promise.resolve({ data: [] }),
-    profileId
-      ? supabase.from('walker_pet_links').select('id, pet_id, status, linked_at').eq('walker_id', profileId).eq('status', 'active')
-      : Promise.resolve({ data: [] }),
-    profileId
-      ? supabase.from('walker_payments').select('amount, status, created_at').eq('walker_id', profileId).gte('created_at', filterStart).lte('created_at', filterEnd)
-      : Promise.resolve({ data: [] }),
-    profileId
-      ? supabase.from('walker_payments').select('amount, status').eq('walker_id', profileId).gte('created_at', prevFilterStart).lt('created_at', prevFilterEnd)
-      : Promise.resolve({ data: [] }),
-    profileId
-      ? supabase.from('walk_reports').select('id, created_at, duration_minutes, distance_meters, pee_count, poop_count, photos').eq('walker_id', profileId).gte('created_at', filterStart).lte('created_at', filterEnd).order('created_at', { ascending: false }).limit(4)
-      : Promise.resolve({ data: [] }),
-    profileId
-      ? supabase.from('walker_ratings').select('rating').eq('walker_id', profileId)
-      : Promise.resolve({ data: [] }),
-    profileId
-      ? supabase.from('walk_schedules')
-          .select('id, scheduled_at, status, pet_ids, walker_services(type, label)')
-          .eq('walker_id', profileId)
-          .in('status', ['confirmed', 'proposed'])
-          .gte('scheduled_at', todayStart.toISOString())
-          .lte('scheduled_at', next7days.toISOString())
-          .order('scheduled_at', { ascending: true })
-          .limit(5)
-      : Promise.resolve({ data: [] }),
-    profileId
-      ? supabase.from('walk_schedules')
-          .select('id', { count: 'exact', head: true })
-          .eq('walker_id', profileId)
-          .eq('status', 'proposed')
-      : Promise.resolve({ data: [], count: 0 }),
+    supabase.from('walk_schedules')
+      .select('id, scheduled_at, status, pet_ids, duration_minutes, service_type, owner_id, walker_services(type, label)')
+      .eq('walker_id', walkerId)
+      .in('status', ['confirmed', 'proposed', 'done'])
+      .gte('scheduled_at', semana.inicio)
+      .lte('scheduled_at', semana.fim)
+      .order('scheduled_at', { ascending: true }),
+    supabase.from('walk_schedules')
+      .select('id, scheduled_at, pet_ids, service_type, walker_services(type, label)')
+      .eq('walker_id', walkerId)
+      .eq('status', 'confirmed')
+      .lt('scheduled_at', atrasoLimite)
+      .order('scheduled_at', { ascending: false })
+      .limit(5),
+    supabase.from('walk_schedules')
+      .select('id', { count: 'exact', head: true })
+      .eq('walker_id', walkerId)
+      .eq('status', 'proposed'),
+    supabase.from('walker_payments')
+      .select('amount, status')
+      .eq('walker_id', walkerId)
+      .gte('created_at', mesInicio),
+    supabase.from('walker_payments')
+      .select('id, amount, description, service_type, created_at, owner_id')
+      .eq('walker_id', walkerId)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false })
+      .limit(5),
+    supabase.from('walker_ratings').select('rating').eq('walker_id', walkerId),
+    supabase.from('walker_pet_links').select('pet_id').eq('walker_id', walkerId).eq('status', 'active'),
+    supabase.from('walk_reports')
+      .select('id, created_at, duration_minutes, distance_meters, pee_count, poop_count, photos, pet_ids')
+      .eq('walker_id', walkerId)
+      .order('created_at', { ascending: false })
+      .limit(30),
   ]);
 
-  const avgRating = ratingsData && ratingsData.length > 0
-    ? Math.round(ratingsData.reduce((s: number, r: any) => s + Number(r.rating), 0) / ratingsData.length * 10) / 10
-    : null;
-  const ratingCount = ratingsData?.length ?? 0;
+  // ── Nomes de pets e tutores ──
+  const petIds = new Set<string>();
+  (links ?? []).forEach((l: any) => l.pet_id && petIds.add(l.pet_id));
+  [...(semanaSchedules ?? []), ...(atrasados ?? []), ...(relatorios ?? [])].forEach((s: any) => (s.pet_ids ?? []).forEach((id: string) => petIds.add(id)));
+  const ownerIds = [...new Set((pagamentosPendentes ?? []).map((p: any) => p.owner_id).filter(Boolean))];
 
-  const petIds = (links ?? []).map((l: any) => l.pet_id).filter(Boolean);
-  const { data: pets } = petIds.length
-    ? await supabase.from('pets').select('id, name, breed, photo_uri, species').in('id', petIds)
-    : { data: [] };
+  const [{ data: pets }, { data: owners }] = await Promise.all([
+    petIds.size ? supabase.from('pets').select('id, name, breed, photo_uri').in('id', [...petIds]) : Promise.resolve({ data: [] as any[] }),
+    ownerIds.length ? supabase.from('user_profiles').select('user_id, name').in('user_id', ownerIds) : Promise.resolve({ data: [] as any[] }),
+  ]);
+  const petById: Record<string, any> = {};
+  (pets ?? []).forEach((p: any) => { petById[p.id] = p; });
+  const ownerName: Record<string, string> = {};
+  (owners ?? []).forEach((o: any) => { ownerName[o.user_id] = o.name; });
+  const nomesPets = (ids: string[] | null) => (ids ?? []).map((id) => petById[id]?.name).filter(Boolean).join(' e ') || 'Pet';
+  const servico = (s: any) => SERVICE_LABEL[s.walker_services?.type ?? s.service_type] ?? s.walker_services?.label ?? 'Atendimento';
 
-  const thisMonthEarned = (allPayments ?? [])
-    .filter((p: any) => p.status === 'paid')
-    .reduce((s: number, p: any) => s + (p.amount ?? 0), 0);
+  // ── Semana ──
+  const porDia: Record<string, any[]> = {};
+  (semanaSchedules ?? []).forEach((s: any) => { (porDia[diaKey(s.scheduled_at)] ??= []).push(s); });
+  const hoje = (porDia[hojeKey] ?? []).filter((s: any) => s.status !== 'proposed');
 
-  const prevMonthEarned = (prevPayments ?? [])
-    .filter((p: any) => p.status === 'paid')
-    .reduce((s: number, p: any) => s + (p.amount ?? 0), 0);
+  // ── Dinheiro do mês ──
+  const recebido = (pagamentosMes ?? []).filter((p: any) => p.status === 'paid').reduce((s: number, p: any) => s + Number(p.amount ?? 0), 0);
+  const aReceber = (pagamentosMes ?? []).filter((p: any) => p.status === 'pending').reduce((s: number, p: any) => s + Number(p.amount ?? 0), 0);
+  const total = recebido + aReceber;
 
-  const earningTrend = prevMonthEarned > 0
-    ? Math.round(((thisMonthEarned - prevMonthEarned) / prevMonthEarned) * 100)
-    : null;
+  // ── Reputação ──
+  const notas = (ratings ?? []).map((r: any) => Number(r.rating));
+  const media = notas.length ? notas.reduce((a, b) => a + b, 0) / notas.length : null;
 
-  const pendingCount = (pendingSchedules as any)?.count ?? 0;
+  // ── Pets e último passeio ──
+  const ultimoPasseio: Record<string, string> = {};
+  (relatorios ?? []).forEach((r: any) => (r.pet_ids ?? []).forEach((id: string) => { if (!ultimoPasseio[id]) ultimoPasseio[id] = r.created_at; }));
+  const petsAtivos = (links ?? []).map((l: any) => petById[l.pet_id]).filter(Boolean);
+  const recentes = (relatorios ?? []).slice(0, 4);
+
+  // ── Pendências ──
+  const totalPendencias = (atrasados?.length ?? 0) + (solicitacoes ? 1 : 0) + (pagamentosPendentes?.length ?? 0);
+
   const firstName = profile?.name?.split(' ')[0] ?? 'Walker';
-  const initials = profile?.name?.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase() ?? '?';
-
-  const MONTHS_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-
-  // Estrelas para avaliação
-  const starFull = Math.floor(avgRating ?? 0);
-  const starHalf = avgRating ? ((avgRating % 1) >= 0.5 ? 1 : 0) : 0;
-
-  const C = {
-    bg: '#0D1F18',
-    card: '#132219',
-    cardBorder: 'rgba(0,200,167,0.12)',
-    cardBorderHover: 'rgba(0,200,167,0.25)',
-    accent: '#00C6A7',
-    accentDim: 'rgba(0,198,167,0.12)',
-    accentDimStrong: 'rgba(0,198,167,0.2)',
-    textPrimary: '#E8F5F0',
-    textSecondary: '#7FA898',
-    textMuted: '#4A6B60',
-    success: '#22D3A5',
-    warning: '#F59E0B',
-    danger: '#F87171',
-    gold: '#FFB800',
-    purple: '#A78BFA',
-    blue: '#60A5FA',
-  };
+  const linkPublico = profile?.username ? `https://walker.zupet.io/w/${profile.username}` : null;
+  const dataHoje = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'America/Sao_Paulo' });
 
   return (
-    <div style={{ color: C.textPrimary, fontFamily: 'inherit' }}>
-
-      {/* ── HEADER ── */}
-      <div className="db-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-          {/* Avatar */}
-          <div style={{
-            width: 52, height: 52, borderRadius: '50%', flexShrink: 0,
-            background: profile?.avatar_url ? 'transparent' : `linear-gradient(135deg, ${C.accent}, #008F7A)`,
-            border: `2px solid ${C.accentDimStrong}`,
-            overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 18, fontWeight: 700, color: '#fff',
-            boxShadow: `0 0 0 4px ${C.accentDim}`,
-          }}>
-            {profile?.avatar_url
-              ? <img src={profile.avatar_url} alt={firstName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              : initials}
-          </div>
-          <div>
-            <p style={{ fontSize: 12, color: C.textMuted, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 2 }}>
-              {getGreeting()}
-            </p>
-            <h1 style={{ fontSize: 22, fontWeight: 800, color: C.textPrimary, letterSpacing: '-0.03em', lineHeight: 1.1 }}>
-              {firstName}
-              {profile?.city && (
-                <span style={{ fontSize: 13, fontWeight: 400, color: C.textSecondary, marginLeft: 10 }}>
-                  📍 {profile.city}
-                </span>
-              )}
-            </h1>
-          </div>
-          <MonthNav viewMonth={viewMonth} viewYear={viewYear} basePath="/dashboard" />
-        </div>
-
-        <div className="db-header-actions">
-          {/* Badge plano */}
-          <span style={{
-            fontSize: 11, fontWeight: 700, letterSpacing: '0.08em',
-            padding: '5px 12px', borderRadius: 20,
-            background: profile?.plan === 'pro' ? 'linear-gradient(135deg, #FFB800, #FF8C00)' : C.accentDim,
-            color: profile?.plan === 'pro' ? '#fff' : C.accent,
-            border: profile?.plan === 'pro' ? 'none' : `1px solid ${C.cardBorder}`,
-          }}>
-            {profile?.plan === 'pro' ? '⭐ PRO' : 'FREE'}
+    <div className="zw-page">
+      {/* ── Cabeçalho ── */}
+      <header className="zw-in" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <span style={{ fontSize: 14, color: T.muted, fontWeight: 600, textTransform: 'capitalize' }}>
+            {dataHoje}{profile?.city ? ` · ${profile.city}` : ''}
           </span>
-
-          {pendingCount > 0 && (
-            <a href="/dashboard/agenda" style={{
-              display: 'flex', alignItems: 'center', gap: 7,
-              background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)',
-              color: C.warning, textDecoration: 'none',
-              padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700,
-            }}>
-              <span style={{
-                width: 18, height: 18, background: C.warning, borderRadius: '50%',
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 10, fontWeight: 800, color: '#1a0f00',
-              }}>{pendingCount}</span>
-              solicitaç{pendingCount === 1 ? 'ão' : 'ões'} pendente{pendingCount !== 1 ? 's' : ''}
-            </a>
-          )}
-
-          {profile?.plan === 'free' && (
-            <a href="/dashboard/pro" style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              background: 'linear-gradient(135deg, #00C6A7, #008F7A)',
-              color: '#fff', textDecoration: 'none',
-              padding: '8px 18px', borderRadius: 20,
-              fontSize: 12, fontWeight: 700, letterSpacing: '-0.01em',
-              boxShadow: '0 4px 16px rgba(0,198,167,0.3)',
-            }}>
-              ⭐ Upgrade Pro
-            </a>
-          )}
+          <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em' }}>
+            {saudacao()}, {firstName}{hoje.length ? `. ${plural(hoje.length, 'atendimento', 'atendimentos')} hoje.` : ''}
+          </h1>
         </div>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          {linkPublico && <CopiarLink url={linkPublico} />}
+          <ButtonLink href="/dashboard/agenda"><Plus size={16} strokeWidth={2.4} aria-hidden />Novo agendamento</ButtonLink>
+        </div>
+      </header>
+
+      <div className="zw-grid-2 zw-in">
+        {/* ── Sua semana ── */}
+        <Card pad={false}>
+          <CardHeader title="Sua semana" href="/dashboard/agenda" linkLabel="Abrir agenda" />
+          <div style={{ display: 'flex', gap: 6, padding: '0 12px 14px' }}>
+            {semana.dias.map((d, i) => {
+              const n = (porDia[d.key] ?? []).length;
+              return (
+                <a key={d.key} href="/dashboard/agenda" className={`zw-day${d.hoje ? ' hoje' : ''}`} aria-label={`${DIAS[i]} ${d.dia}: ${plural(n, 'atendimento', 'atendimentos')}`}>
+                  <span>{DIAS[i]}</span><b>{d.dia}</b>
+                  <span className="zw-dots">{Array.from({ length: Math.min(n, 4) }).map((_, k) => <i key={k} />)}</span>
+                </a>
+              );
+            })}
+          </div>
+          <div style={{ borderTop: `1px solid ${T.line}` }}>
+            {hoje.length ? (
+              <>
+                <div style={{ padding: '12px 18px 4px' }}><Label>Hoje</Label></div>
+                {hoje.map((s: any) => {
+                  const tipo = s.walker_services?.type ?? s.service_type;
+                  return (
+                    <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 18px' }}>
+                      <div style={{ width: 56, display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontSize: 15, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{hora(s.scheduled_at)}</span>
+                        <span style={{ fontSize: 12, color: T.muted }}>{duracao(s.duration_minutes)}</span>
+                      </div>
+                      <span style={{ width: 3, alignSelf: 'stretch', borderRadius: 3, background: SERVICE_COLOR[tipo] ?? T.accent }} />
+                      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <span style={{ fontSize: 15, fontWeight: 700 }}>{servico(s)} · {nomesPets(s.pet_ids)}</span>
+                      </div>
+                      {s.status === 'done' ? <Chip tone="neutral">Concluído</Chip> : <Chip>Confirmado</Chip>}
+                    </div>
+                  );
+                })}
+              </>
+            ) : (
+              <EmptyState
+                icon={CalendarDays}
+                title={(semanaSchedules?.length ?? 0) ? 'Nada para hoje' : 'Nenhum atendimento esta semana'}
+                text={linkPublico ? 'Envie seu link para os tutores escolherem um horário, ou crie um agendamento.' : 'Crie um agendamento ou aguarde as solicitações dos tutores pelo app.'}
+              />
+            )}
+          </div>
+        </Card>
+
+        {/* ── Pendências ── */}
+        <Card pad={false}>
+          <CardHeader title={<>Pendências {totalPendencias > 0 && <Chip tone="amber">{totalPendencias}</Chip>}</>} />
+          {(atrasados ?? []).map((s: any) => (
+            <div key={s.id} className="zw-row" style={{ flexWrap: 'wrap' }}>
+              <IconBox icon={AlertTriangle} bg={T.amberDim} fg={T.amber} />
+              <div style={{ flex: '1 1 200px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span style={{ fontSize: 14, fontWeight: 700 }}>{servico(s)} de {nomesPets(s.pet_ids)} ficou sem registro</span>
+                <span style={{ fontSize: 13, color: T.muted }}>{dataCurta(s.scheduled_at)} às {hora(s.scheduled_at)} · ainda marcado como confirmado</span>
+              </div>
+              <ResolverAtrasado scheduleId={s.id} />
+            </div>
+          ))}
+          {!!solicitacoes && (
+            <div className="zw-row">
+              <IconBox icon={Inbox} bg={T.amberDim} fg={T.amber} />
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span style={{ fontSize: 14, fontWeight: 700 }}>{plural(solicitacoes, 'solicitação aguardando', 'solicitações aguardando')} resposta</span>
+                <span style={{ fontSize: 13, color: T.muted }}>Tutores pediram um horário com você</span>
+              </div>
+              <ButtonLink href="/dashboard/agenda" variant="ghost" small>Responder</ButtonLink>
+            </div>
+          )}
+          {(pagamentosPendentes ?? []).map((p: any) => (
+            <div key={p.id} className="zw-row">
+              <IconBox icon={Wallet} bg={T.amberDim} fg={T.amber} />
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span style={{ fontSize: 14, fontWeight: 700 }}>Receber {brl(Number(p.amount))}{ownerName[p.owner_id] ? ` de ${ownerName[p.owner_id]}` : ''}</span>
+                <span style={{ fontSize: 13, color: T.muted }}>{SERVICE_LABEL[p.service_type] ?? p.description ?? 'Serviço'} · {dataCurta(p.created_at)}</span>
+              </div>
+              <MarcarPago paymentId={p.id} />
+            </div>
+          ))}
+          {totalPendencias === 0 && (
+            <div className="zw-row" style={{ color: T.accentLt, fontWeight: 700, fontSize: 14 }}>
+              <CheckCircle2 size={18} aria-hidden /> Tudo em dia. Bom trabalho!
+            </div>
+          )}
+        </Card>
       </div>
 
-      {/* ── STAT CARDS ── */}
-      <div className="db-stat-grid">
-        <StatCard
-          icon="🦮" label="Passeios" value={String(allSessions?.length ?? 0)}
-          sub="no total" accent={C.accent} accentDim={C.accentDim} C={C}
-        />
-        <StatCard
-          icon="🐾" label="Pets vinculados" value={String(petIds.length)}
-          sub="ativos agora" accent={C.purple} accentDim="rgba(167,139,250,0.12)" C={C}
-        />
-        <StatCard
-          icon="⭐" label="Avaliação"
-          value={avgRating ? avgRating.toFixed(1) : '—'}
-          suffix={avgRating ? `/ 5` : undefined}
-          sub={avgRating ? `${ratingCount} avaliação${ratingCount !== 1 ? 'ões' : ''}` : 'sem avaliações ainda'}
-          accent={C.gold} accentDim="rgba(255,184,0,0.12)" C={C}
-        />
-        <StatCard
-          icon="💰" label={`Faturamento — ${MONTHS_PT[viewMonth]}`}
-          value={formatCurrency(thisMonthEarned)}
-          sub={earningTrend !== null
-            ? earningTrend >= 0 ? `▲ ${earningTrend}% vs. mês anterior` : `▼ ${Math.abs(earningTrend)}% vs. mês anterior`
-            : `${MONTHS_PT[viewMonth]} ${viewYear}`}
-          subColor={earningTrend !== null ? (earningTrend >= 0 ? C.success : C.danger) : undefined}
-          accent={C.success} accentDim="rgba(34,211,165,0.12)" C={C}
-        />
+      <div className="zw-grid-3 zw-in">
+        {/* ── Dinheiro do mês ── */}
+        <Card style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2 style={{ fontSize: 16, fontWeight: 800 }}>Dinheiro de {nomeMes}</h2>
+            <a href="/dashboard/financeiro" style={{ fontSize: 13, fontWeight: 700, color: T.accentLt, textDecoration: 'none' }}>Financeiro</a>
+          </div>
+          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}><Label>Recebido</Label><span style={{ fontSize: 26, fontWeight: 800, color: T.accentLt }}>{brl(recebido)}</span></div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}><Label>A receber</Label><span style={{ fontSize: 26, fontWeight: 800, color: T.amber }}>{brl(aReceber)}</span></div>
+          </div>
+          <div role="img" aria-label={`Recebido ${brl(recebido)}, a receber ${brl(aReceber)}`} style={{ height: 10, borderRadius: 99, background: 'rgba(255,255,255,0.06)', overflow: 'hidden', display: 'flex' }}>
+            <span style={{ width: `${total ? (recebido / total) * 100 : 0}%`, background: T.accent }} />
+            <span style={{ width: `${total ? (aReceber / total) * 100 : 0}%`, background: T.amber }} />
+          </div>
+          <span style={{ fontSize: 13, color: T.muted }}>
+            {aReceber > 0 ? 'Marque os pagamentos que já caíram para manter o caixa certo.' : total > 0 ? 'Nada pendente neste mês.' : 'Nenhum lançamento neste mês ainda.'}
+          </span>
+        </Card>
+
+        {/* ── Pets ── */}
+        <Card pad={false}>
+          <CardHeader title="Pets" extra={<span style={{ fontSize: 13, color: T.muted, fontWeight: 600 }}>{plural(petsAtivos.length, 'ativo', 'ativos')}</span>} />
+          {petsAtivos.length ? petsAtivos.slice(0, 5).map((p: any) => (
+            <div key={p.id} className="zw-row" style={{ padding: '10px 18px' }}>
+              <Avatar name={p.name} src={p.photo_uri} bg={corPorNome(p.name)} />
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <span style={{ fontSize: 14, fontWeight: 700 }}>{p.name}</span>
+                <span style={{ fontSize: 12, color: T.muted }}>
+                  {p.breed ? `${p.breed} · ` : ''}{ultimoPasseio[p.id] ? `último passeio ${relativo(ultimoPasseio[p.id])}` : 'sem passeios registrados'}
+                </span>
+              </div>
+            </div>
+          )) : (
+            <EmptyState icon={PawPrint} title="Nenhum pet vinculado" text="Os tutores vinculam os pets a você pelo app Zupet." />
+          )}
+        </Card>
+
+        {/* ── Reputação ── */}
+        <Card style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 800 }}>Sua reputação</h2>
+          {media !== null ? (
+            <>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                <span style={{ fontSize: 36, fontWeight: 800 }}>{decimal(media)}</span>
+                <span style={{ fontSize: 14, color: T.muted, fontWeight: 600 }}>de 5 · {plural(notas.length, 'avaliação', 'avaliações')}</span>
+              </div>
+              <div style={{ display: 'flex', gap: 4, color: T.amber }} aria-hidden>
+                {[1, 2, 3, 4, 5].map((i) => <Star key={i} size={18} fill={i <= Math.round(media) ? 'currentColor' : 'none'} />)}
+              </div>
+            </>
+          ) : (
+            <span style={{ fontSize: 14, color: T.muted }}>Sem avaliações ainda. Elas aparecem depois dos primeiros atendimentos.</span>
+          )}
+          {profile?.plan !== 'pro' && (
+            <span style={{ fontSize: 13, color: T.muted, lineHeight: 1.5 }}>Profissionais Pro aparecem em destaque na busca dos tutores.</span>
+          )}
+        </Card>
       </div>
 
-      {/* ── LINHA 2: próximos agendamentos + pets ── */}
-      <div className="db-row2">
-
-        {/* Próximos agendamentos */}
-        <div style={{
-          background: C.card, border: `1px solid ${C.cardBorder}`,
-          borderRadius: 16, overflow: 'hidden',
-        }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '16px 20px 14px', borderBottom: `1px solid ${C.cardBorder}`,
-          }}>
-            <h2 style={{ fontWeight: 700, fontSize: 13, color: C.textPrimary, letterSpacing: '-0.01em' }}>
-              Próximos 7 dias
-            </h2>
-            <a href="/dashboard/agenda" style={{ fontSize: 12, fontWeight: 600, color: C.accent, textDecoration: 'none' }}>
-              Ver agenda →
-            </a>
-          </div>
-          {!upcomingSchedules?.length ? (
-            <div style={{ padding: '36px 20px', textAlign: 'center' }}>
-              <div style={{ fontSize: 28, marginBottom: 8 }}>📅</div>
-              <p style={{ fontSize: 13, color: C.textSecondary, lineHeight: 1.5 }}>
-                Nenhum agendamento nos próximos 7 dias.
-              </p>
-            </div>
-          ) : (
-            <ul style={{ listStyle: 'none' }}>
-              {(upcomingSchedules as any[]).map((s: any, i: number) => {
-                const svcType = s.walker_services?.type ?? 'walk';
-                const isToday = new Date(s.scheduled_at).toDateString() === new Date().toDateString();
-                const isPending = s.status === 'proposed';
-                return (
-                  <li key={s.id} style={{
-                    display: 'flex', alignItems: 'center', gap: 12,
-                    padding: '12px 20px',
-                    borderBottom: i < upcomingSchedules.length - 1 ? `1px solid ${C.cardBorder}` : 'none',
-                    background: isToday ? C.accentDim : 'transparent',
-                  }}>
-                    <div style={{
-                      width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                      background: isToday ? C.accentDimStrong : 'rgba(255,255,255,0.04)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
-                    }}>
-                      {SERVICE_ICON[svcType] ?? '📋'}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: 13, fontWeight: 600, color: C.textPrimary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {SERVICE_LABEL[svcType] ?? s.walker_services?.label ?? 'Serviço'}
-                        {isToday && <span style={{ fontSize: 10, fontWeight: 700, color: C.accent, marginLeft: 8, letterSpacing: '0.06em' }}>HOJE</span>}
-                      </p>
-                      <p style={{ fontSize: 11.5, color: C.textSecondary, marginTop: 2 }}>
-                        {new Date(s.scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} · {new Date(s.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                        {' · '}{s.pet_ids?.length ?? 0} pet{(s.pet_ids?.length ?? 0) !== 1 ? 's' : ''}
-                      </p>
-                    </div>
-                    <span style={{
-                      fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 20,
-                      background: isPending ? 'rgba(245,158,11,0.15)' : C.accentDim,
-                      color: isPending ? C.warning : C.accent,
-                      border: `1px solid ${isPending ? 'rgba(245,158,11,0.25)' : C.cardBorder}`,
-                      whiteSpace: 'nowrap',
-                    }}>
-                      {isPending ? 'Aguardando' : 'Confirmado'}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-
-        {/* Pets vinculados */}
-        <div style={{
-          background: C.card, border: `1px solid ${C.cardBorder}`,
-          borderRadius: 16, overflow: 'hidden',
-        }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '16px 20px 14px', borderBottom: `1px solid ${C.cardBorder}`,
-          }}>
-            <h2 style={{ fontWeight: 700, fontSize: 13, color: C.textPrimary, letterSpacing: '-0.01em' }}>
-              Pets vinculados
-            </h2>
-            <span style={{ fontSize: 11.5, color: C.textSecondary, fontWeight: 500 }}>
-              {petIds.length} ativo{petIds.length !== 1 ? 's' : ''}
-            </span>
-          </div>
-          {!petIds.length ? (
-            <div style={{ padding: '36px 20px', textAlign: 'center' }}>
-              <div style={{ fontSize: 28, marginBottom: 8 }}>🐾</div>
-              <p style={{ fontSize: 13, color: C.textSecondary, lineHeight: 1.5 }}>
-                Nenhum pet vinculado ainda.<br />
-                <span style={{ fontSize: 12, color: C.textMuted }}>Tutores vinculam pets pelo app.</span>
-              </p>
-            </div>
-          ) : (
-            <ul style={{ listStyle: 'none' }}>
-              {(pets ?? []).map((pet: any, i: number) => (
-                <li key={pet.id} style={{
-                  display: 'flex', alignItems: 'center', gap: 12,
-                  padding: '12px 20px',
-                  borderBottom: i < (pets ?? []).length - 1 ? `1px solid ${C.cardBorder}` : 'none',
-                }}>
-                  <div style={{
-                    width: 38, height: 38, borderRadius: '50%',
-                    background: 'rgba(255,255,255,0.05)', border: `1px solid ${C.cardBorder}`,
-                    overflow: 'hidden', flexShrink: 0,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
-                  }}>
-                    {pet.photo_uri
-                      ? <img src={pet.photo_uri} alt={pet.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      : (pet.species?.toLowerCase().includes('cat') || pet.species?.toLowerCase().includes('gato') ? '🐱' : '🐶')}
-                  </div>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <p style={{ fontWeight: 600, fontSize: 13.5, color: C.textPrimary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {pet.name}
-                    </p>
-                    <p style={{ fontSize: 12, color: C.textSecondary, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {pet.breed ?? pet.species ?? '—'}
-                    </p>
-                  </div>
-                  <span style={{
-                    fontSize: 10, fontWeight: 700, color: C.success,
-                    background: 'rgba(34,211,165,0.12)',
-                    border: '1px solid rgba(34,211,165,0.2)',
-                    padding: '3px 9px', borderRadius: 20, letterSpacing: '0.04em',
-                  }}>
-                    Ativo
+      {/* ── Passeios recentes ── */}
+      <Card pad={false} style={{ marginBottom: 8 }}>
+        <CardHeader title="Passeios recentes" href="/dashboard/relatorios" linkLabel="Ver relatórios" />
+        {recentes.length ? (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12, padding: '0 18px 18px' }}>
+            {recentes.map((r: any) => {
+              const dist = km(r.distance_meters);
+              const eventos = [r.pee_count ? `Xixi ${r.pee_count}` : null, r.poop_count ? `Cocô ${r.poop_count}` : null, r.photos?.length ? plural(r.photos.length, 'foto', 'fotos') : null].filter(Boolean).join(' · ');
+              return (
+                <a key={r.id} href={`/dashboard/relatorios/${r.id}`} style={{ textDecoration: 'none', color: 'inherit', border: `1px solid ${T.line}`, borderRadius: 14, padding: '12px 14px', background: T.card2, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <span style={{ fontSize: 14, fontWeight: 700 }}>{nomesPets(r.pet_ids)} · {relativo(r.created_at)}</span>
+                  <span style={{ fontSize: 13, color: T.muted, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Clock size={14} aria-hidden />{duracao(r.duration_minutes)}</span>
+                    {dist && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><MapPin size={14} aria-hidden />{dist}</span>}
                   </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
-
-      {/* ── LINHA 3: Passeios recentes ── */}
-      <div style={{
-        background: C.card, border: `1px solid ${C.cardBorder}`,
-        borderRadius: 16, overflow: 'hidden',
-      }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '16px 20px 14px', borderBottom: `1px solid ${C.cardBorder}`,
-        }}>
-          <h2 style={{ fontWeight: 700, fontSize: 13, color: C.textPrimary, letterSpacing: '-0.01em' }}>
-            Passeios recentes
-          </h2>
-          <a href="/dashboard/relatorios" style={{ fontSize: 12, fontWeight: 600, color: C.accent, textDecoration: 'none' }}>
-            Ver relatórios →
-          </a>
-        </div>
-        {!recentReports?.length ? (
-          <div style={{ padding: '36px 20px', textAlign: 'center' }}>
-            <div style={{ fontSize: 28, marginBottom: 8 }}>🦮</div>
-            <p style={{ fontSize: 13, color: C.textSecondary }}>Nenhum passeio registrado ainda.</p>
+                  {eventos && <span style={{ fontSize: 12, color: T.muted }}>{eventos}</span>}
+                  {!dist && <span><Chip tone="amber">Rota não registrada</Chip></span>}
+                </a>
+              );
+            })}
           </div>
         ) : (
-          <div className="db-reports-grid">
-            {recentReports.map((r: any, i: number) => (
-              <div key={r.id} style={{
-                padding: '16px 20px',
-                borderRight: i < recentReports.length - 1 ? `1px solid ${C.cardBorder}` : 'none',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: C.textSecondary }}>{formatRelative(r.created_at)}</span>
-                  <span style={{
-                    fontSize: 11, fontWeight: 700, color: C.accent,
-                    background: C.accentDim, padding: '2px 8px', borderRadius: 20,
-                  }}>{formatDuration(r.duration_minutes)}</span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {r.distance_meters > 0 && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: C.textSecondary }}>
-                      <span style={{ fontSize: 14 }}>📍</span>
-                      <span style={{ fontVariantNumeric: 'tabular-nums' }}>{(r.distance_meters / 1000).toFixed(1)} km</span>
-                    </div>
-                  )}
-                  <div style={{ display: 'flex', gap: 10, fontSize: 12, color: C.textSecondary }}>
-                    {r.pee_count > 0 && <span>💧 {r.pee_count}</span>}
-                    {r.poop_count > 0 && <span>💩 {r.poop_count}</span>}
-                    {r.photos?.length > 0 && <span>📸 {r.photos.length}</span>}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <EmptyState icon={MapPin} title="Nenhum passeio registrado ainda" text="Os relatórios aparecem aqui quando você finaliza um passeio no app." />
         )}
-      </div>
-
-    </div>
-  );
-}
-
-function StatCard({ icon, label, value, suffix, sub, subColor, accent, accentDim, C }: {
-  icon: string;
-  label: string;
-  value: string;
-  suffix?: string;
-  sub?: string;
-  subColor?: string;
-  accent: string;
-  accentDim: string;
-  C: Record<string, string>;
-}) {
-  return (
-    <div style={{
-      background: C.card,
-      border: `1px solid rgba(255,255,255,0.06)`,
-      borderRadius: 16, padding: '20px',
-      position: 'relative', overflow: 'hidden',
-    }}>
-      {/* Glow de fundo */}
-      <div style={{
-        position: 'absolute', top: -20, right: -20,
-        width: 80, height: 80, borderRadius: '50%',
-        background: accentDim, filter: 'blur(20px)',
-        pointerEvents: 'none',
-      }} />
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-        <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: C.textMuted }}>
-          {label}
-        </p>
-        <div style={{
-          width: 32, height: 32, borderRadius: 10,
-          background: accentDim, display: 'flex',
-          alignItems: 'center', justifyContent: 'center', fontSize: 15,
-        }}>
-          {icon}
-        </div>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 5, marginBottom: 6 }}>
-        <p style={{
-          fontSize: 28, fontWeight: 800, color: C.textPrimary,
-          letterSpacing: '-0.04em', lineHeight: 1, fontVariantNumeric: 'tabular-nums',
-        }}>{value}</p>
-        {suffix && <span style={{ fontSize: 13, color: C.textSecondary }}>{suffix}</span>}
-      </div>
-      {sub && (
-        <p style={{ fontSize: 11.5, color: subColor ?? C.textMuted, fontWeight: subColor ? 600 : 400 }}>
-          {sub}
-        </p>
-      )}
+      </Card>
     </div>
   );
 }

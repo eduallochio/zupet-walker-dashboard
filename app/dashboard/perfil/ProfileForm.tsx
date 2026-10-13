@@ -1,6 +1,7 @@
 'use client';
 import { useState, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import { Check, Crown, HelpCircle, Link2, Plus, Sparkles, X } from 'lucide-react';
 
 const SIZE_OPTIONS = [
   { value: 'small',  label: 'Pequeno (1–5 kg)' },
@@ -116,12 +117,12 @@ export default function ProfileForm({
 
   const inputStyle: React.CSSProperties = {
     width: '100%',
-    border: '1px solid rgba(0,200,167,0.2)',
+    border: '1px solid rgba(134,239,172,0.16)',
     borderRadius: 10,
     padding: '11px 14px',
     fontSize: 14,
-    color: '#E8F5F0',
-    background: '#0D2E22',
+    color: '#EEF6F1',
+    background: '#0B1512',
     outline: 'none',
     fontFamily: 'inherit',
     boxSizing: 'border-box',
@@ -129,19 +130,30 @@ export default function ProfileForm({
 
   const labelStyle: React.CSSProperties = {
     display: 'block',
-    fontSize: 11,
-    fontWeight: 600,
-    letterSpacing: '0.05em',
+    fontSize: 12,
+    fontWeight: 700,
+    letterSpacing: '0.06em',
     textTransform: 'uppercase',
-    color: '#7FA898',
+    color: '#8FAB9E',
     marginBottom: 6,
   };
 
-  const sectionStyle: React.CSSProperties = {
-    padding: '18px 0 0',
-    borderTop: '1px solid rgba(0,200,167,0.12)',
-    marginTop: 4,
+  const cardStyle: React.CSSProperties = {
+    background: '#11201B',
+    border: '1px solid rgba(134,239,172,0.12)',
+    borderRadius: 16,
+    padding: 20,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 16,
   };
+
+  const cardTitle = (titulo: string, sub?: string) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <h2 style={{ fontSize: 16, fontWeight: 800, color: '#EEF6F1' }}>{titulo}</h2>
+      {sub && <p style={{ fontSize: 13, color: '#A3BCB0', lineHeight: 1.5 }}>{sub}</p>}
+    </div>
+  );
 
   const toggleSize = (size: string) => {
     setAcceptedSizes(prev =>
@@ -157,24 +169,25 @@ export default function ProfileForm({
   const removeSummaryItem = (index: number) => setSummaryItems(prev => prev.filter((_, i) => i !== index));
 
   return (
-    <form onSubmit={save} style={{ display: 'flex', flexDirection: 'column', gap: 20, color: '#E8F5F0' }}>
-      {/* Plano badge */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: '#132219', borderRadius: 10, border: '1px solid rgba(0,200,167,0.12)' }}>
-        <span style={{ fontSize: 22 }}>{plan === 'pro' ? '✦' : '○'}</span>
-        <div>
-          <p style={{ fontWeight: 700, color: '#E8F5F0', fontSize: 14 }}>{plan === 'pro' ? 'Plano Pro' : 'Plano Gratuito'}</p>
-          <p style={{ fontSize: 12, color: '#7FA898' }}>{plan === 'pro' ? 'Todos os recursos liberados' : 'Faça upgrade para desbloquear mais'}</p>
+    <form onSubmit={save} style={{ display: 'flex', flexDirection: 'column', gap: 16, color: '#EEF6F1' }}>
+      {/* Plano */}
+      <div style={{ ...cardStyle, flexDirection: 'row', alignItems: 'center', gap: 14, padding: '14px 18px' }}>
+        <span style={{ width: 38, height: 38, borderRadius: 10, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: plan === 'pro' ? 'rgba(251,191,36,0.12)' : 'rgba(34,197,94,0.12)', color: plan === 'pro' ? '#FBBF24' : '#22C55E' }}>
+          {plan === 'pro' ? <Crown size={18} aria-hidden /> : <Sparkles size={18} aria-hidden />}
+        </span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontWeight: 800, fontSize: 15 }}>{plan === 'pro' ? 'Plano Pro' : 'Plano gratuito'}</p>
+          <p style={{ fontSize: 13, color: '#A3BCB0' }}>{plan === 'pro' ? 'Todos os recursos liberados' : 'Link público, serviços ilimitados e mais no Pro'}</p>
         </div>
+        {plan !== 'pro' && <a href="/dashboard/pro" className="zw-btn zw-btn-ghost zw-btn-s">Conhecer o Pro</a>}
       </div>
 
-      {/* Username Pro */}
+      {/* Link público (Pro) */}
       {plan === 'pro' && (
-        <div style={{ padding: '18px 20px', background: '#132219', borderRadius: 14, border: '1.5px solid rgba(0,198,167,0.25)', display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {/* Header com tooltip */}
+        <section style={cardStyle}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: '#E8F5F0' }}>🔗 Link público personalizado</span>
-            <span style={{ fontSize: 10, fontWeight: 700, color: '#00C6A7', background: 'rgba(0,198,167,0.12)', border: '1px solid rgba(0,198,167,0.3)', borderRadius: 20, padding: '2px 8px' }}>Pro</span>
-            {/* Ícone de ajuda com tooltip */}
+            <Link2 size={18} color="#22C55E" aria-hidden />
+            <h2 style={{ fontSize: 16, fontWeight: 800 }}>Link público</h2>
             <div style={{ position: 'relative', display: 'inline-flex' }}>
               <button
                 type="button"
@@ -187,105 +200,89 @@ export default function ProfileForm({
                 }}
                 onFocus={() => setTooltipVisible(true)}
                 onBlur={() => setTooltipVisible(false)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: '#7FA898', display: 'flex', alignItems: 'center' }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: '#A3BCB0', display: 'flex', alignItems: 'center' }}
                 aria-label="O que é o link público?"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10"/>
-                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-                  <line x1="12" y1="17" x2="12.01" y2="17"/>
-                </svg>
+                <HelpCircle size={16} aria-hidden />
               </button>
               {tooltipVisible && (
-                <div style={{
-                  position: 'absolute', bottom: '120%', left: '50%', transform: 'translateX(-50%)',
-                  background: '#0D2E22', border: '1px solid rgba(0,198,167,0.25)', borderRadius: 10,
+                <div role="tooltip" style={{
+                  position: 'absolute', bottom: '130%', left: '50%', transform: 'translateX(-50%)',
+                  background: '#152822', border: '1px solid rgba(134,239,172,0.2)', borderRadius: 10,
                   padding: '12px 14px', width: 260, zIndex: 100,
-                  fontSize: 12, color: '#b0cfc5', lineHeight: 1.6,
+                  fontSize: 12, color: '#A3BCB0', lineHeight: 1.6,
                   boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
                 }}>
-                  <p style={{ fontWeight: 700, color: '#E8F5F0', marginBottom: 6 }}>O que é o link público?</p>
-                  <p>É uma página exclusiva sua na internet, como:</p>
-                  <p style={{ color: '#00C6A7', fontWeight: 600, margin: '6px 0' }}>walker.zupet.io/w/<strong>seu-nome</strong></p>
-                  <p>Você pode compartilhar nas redes sociais para mostrar seus serviços, avaliações e preços para potenciais clientes.</p>
-                  <div style={{ position: 'absolute', bottom: -6, left: '50%', width: 10, height: 10, background: '#0D2E22', border: '1px solid rgba(0,198,167,0.25)', borderTop: 'none', borderLeft: 'none', transform: 'translateX(-50%) rotate(45deg)' }} />
+                  <p style={{ fontWeight: 700, color: '#EEF6F1', marginBottom: 6 }}>O que é o link público?</p>
+                  <p>Uma página só sua, como <span style={{ color: '#86EFAC', fontWeight: 700 }}>walker.zupet.io/w/seu-nome</span>, para compartilhar nas redes e mostrar serviços, avaliações e preços.</p>
                 </div>
               )}
             </div>
           </div>
 
-          <p style={{ fontSize: 12, color: '#7FA898', marginTop: -8 }}>
-            Defina um apelido único para seu perfil público. Use letras minúsculas, números e hífens (3–30 caracteres).
+          <p style={{ fontSize: 13, color: '#A3BCB0', marginTop: -8 }}>
+            Escolha um apelido único: letras minúsculas, números e hífens (3 a 30 caracteres).
           </p>
 
-          {/* Input de username */}
-          <div style={{ display: 'flex', alignItems: 'center', background: '#0D2E22', border: `1.5px solid ${usernameError ? '#F87171' : 'rgba(0,200,167,0.2)'}`, borderRadius: 10, overflow: 'hidden' }}>
-            <span style={{ padding: '11px 10px 11px 14px', fontSize: 13, color: '#7FA898', whiteSpace: 'nowrap', userSelect: 'none' }}>
+          <div style={{ display: 'flex', alignItems: 'center', background: '#0B1512', border: `1px solid ${usernameError ? '#FCA5A5' : 'rgba(134,239,172,0.16)'}`, borderRadius: 10, overflow: 'hidden' }}>
+            <span style={{ padding: '11px 4px 11px 14px', fontSize: 13, color: '#8FAB9E', whiteSpace: 'nowrap', userSelect: 'none' }}>
               walker.zupet.io/w/
             </span>
             <input
               value={username}
               onChange={e => { setUsername(e.target.value.toLowerCase()); setUsernameError(''); setUsernameSuccess(false); }}
               placeholder="meu-nome"
-              style={{ flex: 1, border: 'none', background: 'transparent', padding: '11px 14px 11px 0', fontSize: 14, color: '#E8F5F0', outline: 'none', fontFamily: 'inherit' }}
+              aria-label="Apelido do link público"
+              style={{ flex: 1, minWidth: 0, border: 'none', background: 'transparent', padding: '11px 14px 11px 0', fontSize: 14, color: '#EEF6F1', outline: 'none', fontFamily: 'inherit' }}
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
             />
           </div>
-          {usernameError && <p style={{ fontSize: 12, color: '#F87171', marginTop: -8 }}>{usernameError}</p>}
+          {usernameError && <p role="alert" style={{ fontSize: 13, color: '#FCA5A5', marginTop: -8 }}>{usernameError}</p>}
           {usernameSuccess && !usernameError && (
-            <p style={{ fontSize: 12, color: '#22D3A5', fontWeight: 600, marginTop: -8 }}>
-              ✓ Link salvo! Acesse: <a href={`https://walker.zupet.io/w/${username}`} target="_blank" rel="noopener noreferrer" style={{ color: '#00C6A7' }}>walker.zupet.io/w/{username}</a>
+            <p style={{ fontSize: 13, color: '#86EFAC', fontWeight: 600, marginTop: -8, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+              <Check size={14} aria-hidden /> Link salvo:
+              <a href={`https://walker.zupet.io/w/${username}`} target="_blank" rel="noopener noreferrer" style={{ color: '#86EFAC' }}>walker.zupet.io/w/{username}</a>
             </p>
           )}
 
-          <button
-            type="button"
-            onClick={saveUsername}
-            disabled={usernameSaving}
-            style={{
-              alignSelf: 'flex-start',
-              background: usernameSaving ? '#9CA3AF' : '#00C6A7',
-              color: '#fff', fontWeight: 700, fontSize: 13,
-              padding: '9px 20px', borderRadius: 8, border: 'none',
-              cursor: usernameSaving ? 'not-allowed' : 'pointer',
-              fontFamily: 'inherit',
-            }}
-          >
-            {usernameSaving ? 'Salvando...' : 'Salvar link'}
+          <button type="button" onClick={saveUsername} disabled={usernameSaving} className="zw-btn zw-btn-ghost zw-btn-s" style={{ alignSelf: 'flex-start' }}>
+            {usernameSaving ? 'Salvando…' : 'Salvar link'}
           </button>
-        </div>
+        </section>
       )}
 
       {/* Dados básicos */}
-      <div>
-        <label style={labelStyle}>Nome</label>
-        <input value={name} onChange={e => setName(e.target.value)} style={inputStyle} required />
-      </div>
-      <div>
-        <label style={labelStyle}>Bio</label>
-        <textarea value={bio} onChange={e => setBio(e.target.value)} rows={4} style={{ ...inputStyle, resize: 'vertical' }} />
-      </div>
-      <div>
-        <label style={labelStyle}>Telefone</label>
-        <input value={phone} onChange={e => setPhone(e.target.value)} style={inputStyle} />
-      </div>
-      <div style={{ display: 'flex', gap: 12 }}>
-        <div style={{ flex: 1 }}>
-          <label style={labelStyle}>Cidade</label>
-          <input value={city} onChange={e => setCity(e.target.value)} style={inputStyle} />
+      <section style={cardStyle}>
+        {cardTitle('Sobre você', 'Aparece no seu perfil para os tutores.')}
+        <div>
+          <label htmlFor="pf-nome" style={labelStyle}>Nome</label>
+          <input id="pf-nome" value={name} onChange={e => setName(e.target.value)} style={inputStyle} required />
         </div>
-        <div style={{ flex: 1 }}>
-          <label style={labelStyle}>Bairro</label>
-          <input value={neighborhood} onChange={e => setNeighborhood(e.target.value)} style={inputStyle} placeholder="Ex: Centro" />
+        <div>
+          <label htmlFor="pf-bio" style={labelStyle}>Bio</label>
+          <textarea id="pf-bio" value={bio} onChange={e => setBio(e.target.value)} rows={4} style={{ ...inputStyle, resize: 'vertical' }} placeholder="Conte sua experiência com pets, como são seus passeios…" />
         </div>
-      </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+          <div>
+            <label htmlFor="pf-tel" style={labelStyle}>Telefone</label>
+            <input id="pf-tel" value={phone} onChange={e => setPhone(e.target.value)} style={inputStyle} inputMode="tel" />
+          </div>
+          <div>
+            <label htmlFor="pf-cidade" style={labelStyle}>Cidade</label>
+            <input id="pf-cidade" value={city} onChange={e => setCity(e.target.value)} style={inputStyle} />
+          </div>
+          <div>
+            <label htmlFor="pf-bairro" style={labelStyle}>Bairro</label>
+            <input id="pf-bairro" value={neighborhood} onChange={e => setNeighborhood(e.target.value)} style={inputStyle} placeholder="Ex: Centro" />
+          </div>
+        </div>
+      </section>
 
       {/* Diferenciais */}
-      <div style={sectionStyle}>
-        <label style={labelStyle}>Diferenciais do seu serviço</label>
-        <p style={{ fontSize: 12, color: '#7FA898', marginBottom: 12 }}>Escreva bullet points que aparecem no seu perfil público (ex: "Rotas tranquilas e adaptadas")</p>
+      <section style={cardStyle}>
+        {cardTitle('Diferenciais', 'Frases curtas que aparecem em destaque no seu perfil público. Ex: “Rotas tranquilas e adaptadas”.')}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {summaryItems.map((item, i) => (
             <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -293,14 +290,16 @@ export default function ProfileForm({
                 value={item}
                 onChange={e => updateSummaryItem(i, e.target.value)}
                 placeholder={`Diferencial ${i + 1}`}
+                aria-label={`Diferencial ${i + 1}`}
                 style={{ ...inputStyle, flex: 1 }}
               />
               {summaryItems.length > 1 && (
                 <button
                   type="button"
                   onClick={() => removeSummaryItem(i)}
-                  style={{ background: 'none', border: 'none', color: '#7FA898', cursor: 'pointer', fontSize: 18, padding: '0 4px' }}
-                >×</button>
+                  aria-label={`Remover diferencial ${i + 1}`}
+                  style={{ background: 'none', border: 'none', color: '#A3BCB0', cursor: 'pointer', padding: 6, display: 'inline-flex' }}
+                ><X size={18} aria-hidden /></button>
               )}
             </div>
           ))}
@@ -309,72 +308,78 @@ export default function ProfileForm({
           <button
             type="button"
             onClick={addSummaryItem}
-            style={{ marginTop: 8, background: 'none', border: '1px dashed rgba(0,200,167,0.3)', borderRadius: 8, padding: '8px 14px', color: '#00C6A7', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
-          >+ Adicionar diferencial</button>
+            className="zw-btn zw-btn-s zw-btn-ghost"
+            style={{ alignSelf: 'flex-start', borderStyle: 'dashed', color: '#86EFAC' }}
+          ><Plus size={14} aria-hidden /> Adicionar diferencial</button>
         )}
-      </div>
+      </section>
 
-      {/* Distância */}
-      <div style={sectionStyle}>
-        <label style={labelStyle}>Distância máxima de deslocamento</label>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <input
-            type="range"
-            min={1}
-            max={50}
-            value={serviceRadiusKm}
-            onChange={e => setServiceRadiusKm(Number(e.target.value))}
-            style={{ flex: 1, accentColor: '#00C6A7' }}
-          />
-          <span style={{ minWidth: 52, fontWeight: 700, color: '#E8F5F0', fontSize: 15 }}>{serviceRadiusKm} km</span>
+      {/* Atendimento */}
+      <section style={cardStyle}>
+        {cardTitle('Como você atende', 'Ajuda o app a sugerir você só para tutores que combinam com seu serviço.')}
+        <div>
+          <label htmlFor="pf-raio" style={labelStyle}>Distância máxima de deslocamento</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <input
+              id="pf-raio"
+              type="range"
+              min={1}
+              max={50}
+              value={serviceRadiusKm}
+              onChange={e => setServiceRadiusKm(Number(e.target.value))}
+              style={{ flex: 1, accentColor: '#22C55E' }}
+            />
+            <span style={{ minWidth: 52, fontWeight: 800, fontSize: 15, fontVariantNumeric: 'tabular-nums' }}>{serviceRadiusKm} km</span>
+          </div>
         </div>
-      </div>
 
-      {/* Porte aceito */}
-      <div style={sectionStyle}>
-        <label style={labelStyle}>Porte de cão aceito</label>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
-          {SIZE_OPTIONS.map(opt => {
-            const active = acceptedSizes.includes(opt.value);
-            return (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => toggleSize(opt.value)}
-                style={{
-                  padding: '8px 14px',
-                  borderRadius: 8,
-                  border: `1.5px solid ${active ? '#00C6A7' : 'rgba(0,200,167,0.15)'}`,
-                  background: active ? 'rgba(0,198,167,0.15)' : '#0D2E22',
-                  color: active ? '#00C6A7' : '#7FA898',
-                  fontWeight: active ? 700 : 400,
-                  fontSize: 13,
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  transition: 'all 0.15s',
-                }}
-              >{opt.label}</button>
-            );
-          })}
+        <div>
+          <span style={labelStyle}>Porte de cão aceito</span>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {SIZE_OPTIONS.map(opt => {
+              const active = acceptedSizes.includes(opt.value);
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => toggleSize(opt.value)}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    padding: '8px 14px',
+                    borderRadius: 10,
+                    border: `1px solid ${active ? 'rgba(34,197,94,0.5)' : 'rgba(134,239,172,0.12)'}`,
+                    background: active ? 'rgba(34,197,94,0.12)' : 'transparent',
+                    color: active ? '#86EFAC' : '#A3BCB0',
+                    fontWeight: 700,
+                    fontSize: 13,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    transition: 'all 0.15s',
+                  }}
+                >{active && <Check size={14} aria-hidden />}{opt.label}</button>
+              );
+            })}
+          </div>
         </div>
-      </div>
 
-      {/* Última hora */}
-      <div style={sectionStyle}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, paddingTop: 14, borderTop: '1px solid rgba(134,239,172,0.12)' }}>
           <div>
-            <p style={{ fontWeight: 700, color: '#E8F5F0', fontSize: 14, marginBottom: 2, WebkitTextFillColor: '#E8F5F0' }}>Aceita agendamentos de última hora</p>
-            <p style={{ fontSize: 12, color: '#7FA898', WebkitTextFillColor: '#7FA898' }}>Tutores podem solicitar passeios com menos de 24h de antecedência</p>
+            <p style={{ fontWeight: 700, fontSize: 14, marginBottom: 2 }}>Aceito agendamentos de última hora</p>
+            <p style={{ fontSize: 13, color: '#A3BCB0' }}>Tutores podem pedir passeios com menos de 24h de antecedência</p>
           </div>
           <button
             type="button"
+            role="switch"
+            aria-checked={acceptsLastMinute}
+            aria-label="Aceito agendamentos de última hora"
             onClick={() => setAcceptsLastMinute(v => !v)}
             style={{
               width: 44,
               height: 24,
               borderRadius: 12,
               border: 'none',
-              background: acceptsLastMinute ? '#00C6A7' : '#D1D5DB',
+              background: acceptsLastMinute ? '#22C55E' : 'rgba(255,255,255,0.14)',
               position: 'relative',
               cursor: 'pointer',
               transition: 'background 0.2s',
@@ -384,39 +389,26 @@ export default function ProfileForm({
             <span style={{
               position: 'absolute',
               top: 3,
-              left: acceptsLastMinute ? 22 : 3,
+              left: acceptsLastMinute ? 23 : 3,
               width: 18,
               height: 18,
               borderRadius: '50%',
               background: '#fff',
-              transition: 'left 0.2s',
-              boxShadow: '0 1px 3px #0002',
+              transition: 'left 0.2s cubic-bezier(.34,1.56,.64,1)',
+              boxShadow: '0 1px 3px #0003',
             }} />
           </button>
         </div>
+      </section>
+
+      {/* Salvar */}
+      <div style={{ position: 'sticky', bottom: 16, zIndex: 5, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 12, flexWrap: 'wrap', padding: '12px 16px', background: 'rgba(17,32,27,0.92)', backdropFilter: 'blur(8px)', border: '1px solid rgba(134,239,172,0.12)', borderRadius: 14 }}>
+        {error && <p role="alert" style={{ color: '#FCA5A5', fontSize: 13, marginRight: 'auto' }}>Não foi possível salvar: {error}</p>}
+        {success && <p style={{ color: '#86EFAC', fontSize: 13, fontWeight: 600, marginRight: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}><Check size={14} aria-hidden /> Perfil salvo</p>}
+        <button type="submit" disabled={saving} className="zw-btn zw-btn-primary">
+          {saving ? 'Salvando…' : 'Salvar alterações'}
+        </button>
       </div>
-
-      {error   && <p style={{ color: '#F87171', fontSize: 13 }}>{error}</p>}
-      {success && <p style={{ color: '#22D3A5', fontSize: 13, fontWeight: 600 }}>Perfil salvo com sucesso!</p>}
-
-      <button
-        type="submit"
-        disabled={saving}
-        style={{
-          background: saving ? '#9CA3AF' : '#00C6A7',
-          color: '#fff',
-          fontWeight: 700,
-          fontSize: 14,
-          padding: '12px 0',
-          borderRadius: 10,
-          border: 'none',
-          cursor: saving ? 'not-allowed' : 'pointer',
-          fontFamily: 'inherit',
-          transition: 'opacity 0.15s',
-        }}
-      >
-        {saving ? 'Salvando...' : 'Salvar alterações'}
-      </button>
     </form>
   );
 }
